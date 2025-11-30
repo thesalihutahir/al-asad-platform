@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { auth, db, storage } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 import { createUserWithEmailAndPassword, getIdToken } from "firebase/auth";
 
 export default function SignupPage() {
