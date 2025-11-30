@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { auth } from "../firebase";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, getIdToken } from "firebase/auth";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -12,9 +12,30 @@ export default function SignupPage() {
   const handleSignup = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setMsg("");
+
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      setMsg("Account created successfully");
+      // Create account
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Get ID token
+      const token = await getIdToken(user, true);
+
+      // Call API route to assign admin claim
+      const response = await fetch("/api/setAdmin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to assign admin role");
+      }
+
+      setMsg("Admin account created successfully");
     } catch (error) {
       setMsg(error.message);
     } finally {
