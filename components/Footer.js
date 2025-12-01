@@ -38,15 +38,13 @@ const Footer = () => {
             </ul>
           </div>
         
-        </div> {/* <-- ADDED: Correctly closes the grid div */}
-        
         {/* Copyright */}
         <div className="mt-12 border-t border-gray-700 pt-8 text-center">
           <p className="text-sm text-gray-500">&copy; {new Date().getFullYear()} Al-Asad Education Foundation. All rights reserved.</p>
         </div>
       </div>
     </footer>
-  ); {/* <-- ADDED: Closes the return statement */}
-}; {/* <-- ADDED: Closes the function definition */}
+  );
+};
 
 export default Footer;
