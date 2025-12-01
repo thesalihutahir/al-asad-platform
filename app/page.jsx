@@ -3,7 +3,6 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-// FIX: DollarSign is correctly imported now
 import { BookOpen, Users, Zap, ArrowRight, Video, FileText, Image, CalendarDays, DollarSign } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -13,7 +12,7 @@ import { getNewsArticles, getPrograms, getMultimedia } from '@/lib/firestore-uti
 const MOCK_PILLARS = [
     { icon: BookOpen, label: 'Educational Support', description: "Providing resources for Qur'an-centered learning and excellence." },
     { icon: Users, label: 'Community Development', description: "Empowering individuals and fostering social progress." },
-    { icon: Zap, label: 'Training and Innovation', description: "Developing skills and embracing modern educational techniques." },
+    { icon: Zap, label: 'Training and Innovation', description: "Developing skills and embracing modern educational educational techniques." },
 ];
 
 const FEATURED_PROGRAM = {
@@ -84,19 +83,23 @@ export default function HomePage() {
                 </section>
 
                 {/* 2. PILLARS / NAVIGATION ROW (As seen in Mockup's mobile view) */}
-                <section className="py-8 bg-white shadow-lg">
+                <section className="py-4 bg-white shadow-lg"> {/* Reduced vertical padding */}
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 md:gap-8 justify-items-center">
+                        <div className="grid grid-cols-5 gap-2 md:gap-8 justify-items-center"> {/* Changed to 5 columns */}
                             {[
                                 { name: 'Programs', href: '/programs', icon: BookOpen },
                                 { name: 'Multimedia', href: '/multimedia', icon: Video },
                                 { name: 'News', href: '/news', icon: FileText },
-                                { name: 'Donate', href: '/donate', icon: DollarSign }, // Uses DollarSign
+                                { name: 'Donate', href: '/donate', icon: DollarSign }, 
                                 { name: 'Photos', href: '/multimedia?type=photos', icon: Image },
                             ].map((item, index) => (
-                                <Link key={index} href={item.href} className="flex flex-col items-center p-3 sm:p-4 rounded-xl hover:bg-brand-sand transition-colors w-full">
-                                    <item.icon className="w-8 h-8 text-brand-gold mb-1" />
-                                    <p className="text-sm font-semibold text-brand-brown-dark mt-1 font-heading uppercase">{item.name}</p>
+                                <Link 
+                                    key={index} 
+                                    href={item.href} 
+                                    className="flex flex-col items-center p-2 rounded-xl hover:bg-brand-sand transition-colors w-full" // Adjusted padding
+                                >
+                                    <item.icon className="w-6 h-6 text-brand-gold mb-1" /> {/* Reduced icon size */}
+                                    <p className="text-xs font-semibold text-brand-brown-dark mt-1 font-heading uppercase">{item.name}</p> {/* Reduced text size */}
                                 </Link>
                             ))}
                         </div>
@@ -125,7 +128,6 @@ export default function HomePage() {
                                     >
                                         Learn More <ArrowRight className="w-4 h-4 ml-2" />
                                     </Link>
-                                    {/* Removed the extra '}' here that was causing the error */}
                                 </div>
                             </div>
                         </div>
