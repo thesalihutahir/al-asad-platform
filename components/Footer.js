@@ -15,12 +15,12 @@ export default function Footer() {
             alt="Al-Asad Education Foundation"
             width={100}
             height={100}
-            className="w-60 h-auto"
+            className="w-65 h-auto"
           />
         </div>
 
         {/* Separator line */}
-        <div className="w-90 border-t" style={{ borderColor: "#9a9a9a" }}></div>
+        <div className="w-full border-t" style={{ borderColor: "#9a9a9a" }}></div>
 
         {/* Social icons + email bar */}
         <div className="flex flex-col sm:flex-row items-center justify-center w-full mt-6 gap-4">
@@ -80,7 +80,8 @@ export default function Footer() {
 
         {/* Copyright */}
         <p className="mt-6 text-[#9a9a9a] text-sm text-center">
-          © Al-Asad Education Foundation. All rights reserved.
+          © Al-Asad Education Foundation.
+CAC-IT-363535 - All rights reserved.
         </p>
       </div>
     </footer>
