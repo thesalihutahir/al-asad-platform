@@ -36,25 +36,25 @@ export default function HomePage() {
                 <section className="py-6 px-8">
                     <div className="grid grid-cols-4 gap-4 justify-items-center">
                         <Link href="/programs" className="flex flex-col items-center group">
-                            <div className="w-15 h-15 relative mb-2 transition-transform group-hover:scale-110 drop-shadow-md">
+                            <div className="w-13 h-13 relative mb-2 transition-transform group-hover:scale-110 drop-shadow-md">
                                 <Image src="/programsicon.svg" alt="Programs" fill className="object-contain" />
                             </div>
                             <span className="font-agency text-sm text-brand-brown-dark">Programs</span>
                         </Link>
                         <Link href="/multimedia" className="flex flex-col items-center group">
-                            <div className="w-15 h-15 relative mb-2 transition-transform group-hover:scale-110 drop-shadow-md">
+                            <div className="w-13 h-13 relative mb-2 transition-transform group-hover:scale-110 drop-shadow-md">
                                 <Image src="/mediaicon.svg" alt="Media" fill className="object-contain" />
                             </div>
                             <span className="font-agency text-sm text-brand-brown-dark">Media</span>
                         </Link>
                         <Link href="/news" className="flex flex-col items-center group">
-                            <div className="w-15 h-15 relative mb-2 transition-transform group-hover:scale-110 drop-shadow-md">
+                            <div className="w-13 h-13 relative mb-2 transition-transform group-hover:scale-110 drop-shadow-md">
                                 <Image src="/blogsicon.svg" alt="Blogs" fill className="object-contain" />
                             </div>
                             <span className="font-agency text-sm text-brand-brown-dark">Blogs</span>
                         </Link>
                         <Link href="/about" className="flex flex-col items-center group">
-                            <div className="w-15 h-15 relative mb-2 transition-transform group-hover:scale-110 drop-shadow-md">
+                            <div className="w-13 h-13 relative mb-2 transition-transform group-hover:scale-110 drop-shadow-md">
                                 <Image src="/abouticon.svg" alt="About" fill className="object-contain" />
                             </div>
                             <span className="font-agency text-sm text-brand-brown-dark">About</span>
@@ -66,13 +66,13 @@ export default function HomePage() {
                 <section className="py-6 px-10 flex justify-center gap-4">
                     <Link
                         href="/donate"
-                        className="flex-1 py-1 px-2 text-center font-agency text-lg text-white bg-brand-gold rounded-md shadow-xl transition-transform hover:scale-110"
+                        className="flex py-1 px-1 text-center font-agency text-lg text-white bg-brand-brown-dark rounded-xl shadow-xl transition-transform hover:scale-110"
                     >
                         Donate
                     </Link>
                     <Link
                         href="/volunteer"
-                        className="flex-1 py-1 px-2 text-center font-agency text-lg text-white bg-brand-gold rounded-md shadow-xl transition-transform hover:scale-110"
+                        className="flex py-1 px-1 text-center font-agency text-lg text-white bg-brand-gold rounded-xl shadow-xl transition-transform hover:scale-110"
                     >
                         Volunteer
                     </Link>
@@ -80,44 +80,43 @@ export default function HomePage() {
 
                 {/* 4. LATEST UPDATES (Horizontal Beige Design) */}
 <section className="py-12 px-6">
-    {/* Section Title */}
-    <h2 className="font-agency text-4xl font-bold text-brand-brown-dark mb-8 text-left">
-        Latest Updates:
-    </h2>
+  {/* Section Title */}
+  <h2 className="font-agency text-2xl text-brand-brown-dark mb-6 text-left">
+    Latest Updates:
+  </h2>
 
-    {/* Card Container: Beige, Very Rounded Corners, Horizontal Layout */}
-    <div className="bg-[#F0E4D4] rounded-[3rem] p-6 md:p-8">
-        <Link href="/news" className="flex flex-col md:flex-row items-center gap-8 group">
-            
-            {/* 1. Image Side - Square-ish, Rounded Corners */}
-            <div className="relative w-full md:w-80 h-72 flex-shrink-0 transition-transform duration-500 group-hover:scale-105">
-                <Image
-                    src="/hero.jpg" 
-                    alt="Weekly Lecture"
-                    fill
-                    className="object-cover rounded-3xl shadow-sm"
-                />
-            </div>
+  {/* Card */}
+  <div className="bg-[#F0E4D4] rounded-[3rem] p-8 md:p-10">
+    <Link 
+      href="/news" 
+      className="flex flex-row items-center gap-10 group"
+    >
 
-            {/* 2. Content Side */}
-            <div className="flex-1 text-left">
-                {/* Title: Dark Brown, Bold, Large */}
-                <h3 className="font-agency text-4xl md:text-5xl font-bold text-brand-brown-dark leading-tight">
-                    Weekly Lecture: <br />
-                    Bulugul Maram
-                </h3>
+      {/* IMAGE SIDE */}
+      <div className="relative w-[180px] sm:w-[240px] md:w-[320px] h-[160px] sm:h-[200px] md:h-[260px] flex-shrink-0 overflow-hidden rounded-[2.2rem]">
+        <Image
+          src="/hero.jpg"
+          alt="Weekly Lecture"
+          fill
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+      </div>
 
-                {/* The Gold Separator Line */}
-                <div className="w-32 h-1 bg-[#C68E17] mt-4 mb-5"></div>
+      {/* TEXT SIDE */}
+      <div className="flex-1 text-left">
+        <h3 className="font-agency text-[28px] sm:text-[34px] md:text-[42px] font-bold text-brand-brown-dark leading-tight">
+          Weekly Lecture: Bulugul Maram
+        </h3>
 
-                {/* Subtitle/Description */}
-                <p className="font-lato text-xl text-brand-brown-dark leading-normal">
-                    Lessons on Bulugul Maram by Sheikh <br className="hidden md:block" />
-                    Goni Dr. Muneer Ja'afar Katsina
-                </p>
-            </div>
-        </Link>
-    </div>
+        <div className="w-32 h-[3px] bg-brand-gold mt-4 mb-4"></div>
+
+        <p className="font-lato text-base sm:text-lg md:text-xl text-brand-brown-dark leading-relaxed">
+          Lessons on Bulugul Maram by Sheikh Goni Dr. Muneer Ja'afar Katsina
+        </p>
+      </div>
+
+    </Link>
+  </div>
 </section>
 
 
@@ -135,55 +134,55 @@ export default function HomePage() {
 
     <div className="relative z-10 text-center text-white">
         {/* Vision */}
-        <div className="mb-10">
-            <h2 className="font-agency text-4xl font-bold text-white mb-4 text-center">
+        <div className="mb-5">
+            <h2 className="font-agency text-md text-white mb-2 text-center">
                 Vision Statement
             </h2>
-            <p className="font-lato text-xl leading-snug max-w-xl mx-auto">
+            <p className="font-lato leading-snug mx-auto">
                 To be a leading force in transforming education through Qur'an values, excellence in learning, and empowerment of communities.
             </p>
         </div>
 
         {/* Separator & Icons */}
         <div className="mb-10 max-w-xl mx-auto">
-            {/* Separator Lines */}
+            {/* Separator Line */}
             <div className="flex justify-center items-center my-6">
-                <hr className="w-1/4 h-0.5 bg-white opacity-50 border-0" />
-                <hr className="w-1/4 h-0.5 bg-white opacity-50 border-0 ml-4" />
+                <hr className="w-3/4 h-0.5 bg-white border-0 ml-4" />
             </div>
 
             {/* Icons and Labels */}
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-3 gap-4">
                 <div className="flex flex-col items-center">
-                    <div className="w-16 h-16 relative mb-2">
+                    <div className="w-18 h-18 relative">
                         <Image src="/educationalsupporticon.svg" alt="Educational Support" fill className="object-contain" />
                     </div>
-                    <span className="font-lato text-sm text-white">Educational Support</span>
                 </div>
 
                 <div className="flex flex-col items-center">
-                    <div className="w-16 h-16 relative mb-2">
+                    <div className="w-18 h-18 relative">
                         <Image src="/communitydevelopmenticon.svg" alt="Community Development" fill className="object-contain" />
                     </div>
-                    <span className="font-lato text-sm text-white">Community Development</span>
                 </div>
 
                 <div className="flex flex-col items-center">
-                    <div className="w-16 h-16 relative mb-2">
+                    <div className="w-18 h-18 relative">
                         <Image src="/trainingandinnovationicon.svg" alt="Training & Innovation" fill className="object-contain" />
                     </div>
-                    <span className="font-lato text-sm text-white">Training and Innovation</span>
                 </div>
+            </div>
+{/* Separator Line */}
+            <div className="flex justify-center items-center my-6">
+                <hr className="w-3/4 h-0.5 bg-white border-0 ml-4" />
             </div>
         </div>
         
 
         {/* Mission */}
         <div>
-            <h2 className="font-agency text-4xl font-bold text-white mb-4 text-center">
+            <h2 className="font-agency text-md text-white mb-2 text-center">
                 Mission Statement
             </h2>
-            <p className="font-lato text-xl leading-snug max-w-xl mx-auto">
+            <p className="font-lato leading-snug mx-auto">
                 Expanding access to knowledge through Qur'an-centered and community driven education.
             </p>
         </div>
