@@ -1,9 +1,10 @@
 "use client";
 
 import Link from 'next/link';
-// Removed DollarSign from here as the button is removed
-import { Menu, X, Search } from 'lucide-react'; 
+// Import the components needed for the icons
+import { Menu, Search, X } from 'lucide-react'; 
 import { useState } from 'react';
+import Image from 'next/image'; // Import Image component for the logo
 
 const navItems = [
   { name: 'Home', href: '/' },
@@ -13,77 +14,142 @@ const navItems = [
   { name: 'About Us', href: '/about' },
 ];
 
+// Define the dark brown color used in the icons/search background in the mockup
+const ICON_BG_COLOR = 'bg-[#432e16]';
+
 export default function Header() {
-  const [isOpen, setIsOpen] = useState(false);
+  // State for controlling the sidebar/drawer visibility
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // State to track if the sidebar is opened for the search view or the main menu view
+  const [sidebarContentType, setSidebarContentType] = useState('menu'); // 'menu' or 'search'
+
+  const openSidebar = (type) => {
+    setSidebarContentType(type);
+    setIsSidebarOpen(true);
+  };
+
+  const closeSidebar = () => {
+    setIsSidebarOpen(false);
+  };
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-md font-body"> {/* Changed to bg-white */}
+    // The header in the mockup is white/light
+    <header className="sticky top-0 z-50 bg-white shadow-md font-body">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           
-          {/* Logo */}
-          <div className="flex-shrink-0">
-            <Link href="/" className="flex items-center space-x-2">
-              <img 
-                src="/headerlogo.png" 
+          {/* Left Side: Menu and Search Icons (Styled to match mockup) */}
+          <div className="flex items-center space-x-2">
+            
+            {/* Menu Button (Styled as a rounded button with dark background) */}
+            <button
+              onClick={() => openSidebar('menu')}
+              className={`p-3 rounded-full ${ICON_BG_COLOR} text-white focus:outline-none`}
+              aria-expanded={isSidebarOpen && sidebarContentType === 'menu'}
+            >
+              <Menu className="h-5 w-5" aria-hidden="true" />
+            </button>
+
+            {/* Search Button (Styled as a rounded button with dark background) */}
+            <button
+              onClick={() => openSidebar('search')}
+              className={`p-3 rounded-full ${ICON_BG_COLOR} text-white focus:outline-none`}
+              aria-expanded={isSidebarOpen && sidebarContentType === 'search'}
+            >
+              <Search className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </div>
+
+          {/* Center: Logo (Styled and Sized to match mockup) */}
+          <div className="flex-shrink-0 absolute left-1/2 transform -translate-x-1/2 md:static md:translate-x-0">
+            <Link href="/" className="flex items-center">
+              {/* Using next/image for better performance and sizing */}
+              <Image 
+                src="/headerlogo.png" // Assume this path now points to the full Arabic/English logo
                 alt="Al-Asad Education Foundation Logo" 
-                className="h-14 w-auto" 
-                onError={(e) => { e.target.onerror = null; e.target.src="/placeholder.png" }} 
+                width={300} // Increased size significantly to match the mockup
+                height={50}
+                className="h-12 w-auto" // Set height for visual control
               />
             </Link>
           </div>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex lg:space-x-8 items-center">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="text-brand-brown-dark hover:text-brand-gold text-lg font-bold transition duration-150 ease-in-out font-heading tracking-wider uppercase" // Changed text color
-              >
-                {item.name}
-              </Link>
-            ))}
-          </nav>
           
-          {/* Search & Mobile Menu Button */}
-          <div className="flex items-center space-x-4">
-            <button className="hidden sm:block p-2 text-brand-brown-dark hover:text-brand-gold"> {/* Changed text color */}
-                <Search className="w-5 h-5" />
-            </button>
-            {/* REMOVED DONATE BUTTON FROM HEADER */}
-            
-            {/* Mobile menu button */}
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="lg:hidden p-2 rounded-md text-brand-brown-dark hover:text-brand-gold hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-gold" // Changed text color
-              aria-expanded={isOpen}
-            >
-              <span className="sr-only">Open main menu</span>
-              {isOpen ? (
-                <X className="block h-6 w-6" aria-hidden="true" />
-              ) : (
-                <Menu className="block h-6 w-6" aria-hidden="true" />
-              )}
-            </button>
+          {/* Right Side: Spacer (or additional links if needed, but the mockup is centered) */}
+          <div className="hidden lg:block">
+            {/* Empty div for balancing layout if flex-justify-between is used, or you can use justify-center on the main container */}
           </div>
 
         </div>
       </div>
 
-      {/* Mobile Menu Panel */}
-      <div className={`lg:hidden ${isOpen ? 'block' : 'hidden'} bg-white`}> {/* Changed to bg-white */}
-        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-          {navItems.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              onClick={() => setIsOpen(false)}
-              className="block px-3 py-2 rounded-md text-base font-medium text-brand-brown-dark hover:text-brand-gold hover:bg-gray-50 transition font-heading" // Changed text color
+      {/* ---------------------------------------------------- */}
+      {/* Sidebar/Drawer Navigation (Matches chat screenshot style) */}
+      {/* ---------------------------------------------------- */}
+      
+      {/* Overlay Backdrop */}
+      <div 
+        className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        onClick={closeSidebar}
+      />
+
+      {/* Sidebar Panel */}
+      <div 
+        className={`fixed top-0 left-0 w-80 max-w-full h-full bg-[#f9f9f9] text-gray-800 shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      >
+        <div className="flex flex-col h-full">
+          
+          {/* Header Bar with Close Button */}
+          <div className="p-4 flex justify-between items-center border-b border-gray-200">
+            {/* Content Title based on what was clicked */}
+            <h3 className="text-xl font-bold font-heading">
+                {sidebarContentType === 'menu' ? 'Navigation' : 'Search'}
+            </h3>
+            <button 
+              onClick={closeSidebar} 
+              className="p-2 text-brand-brown-dark hover:text-brand-gold rounded-full hover:bg-gray-100"
             >
-              {item.name}
-            </Link>
-          ))}
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Sidebar Content */}
+          <div className="p-4 flex-grow overflow-y-auto">
+            {sidebarContentType === 'menu' ? (
+              // Main Navigation Links
+              <nav className="space-y-1">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={closeSidebar}
+                    className="block px-3 py-2 rounded-md text-base font-medium text-brand-brown-dark hover:text-brand-gold hover:bg-gray-100 transition font-heading"
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </nav>
+            ) : (
+              // Search Input/Bar Content
+              <div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search the site..."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-brand-gold focus:border-brand-gold outline-none text-base"
+                  />
+                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                </div>
+                <p className="mt-4 text-sm text-gray-500">
+                    Type a query above to find programs, news, or media.
+                </p>
+              </div>
+            )}
+          </div>
+          
+          {/* Footer of Sidebar (Optional, but good for context) */}
+          <div className="p-4 border-t border-gray-200 text-xs text-gray-500">
+            Al-Asad Education Foundation
+          </div>
         </div>
       </div>
     </header>
