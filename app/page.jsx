@@ -63,16 +63,16 @@ export default function HomePage() {
                 </section>
 
                 {/* 3. ACTION BUTTONS */}
-                <section className="py-6 px-8 flex justify-center gap-4 card-shadow">
+                <section className="py-6 px-8 flex justify-center gap-4">
                     <Link
                         href="/donate"
-                        className="flex-1 py-2 text-center font-agency text-lg text-white bg-brand-brown-dark rounded-xl shadow-xl hover:bg-opacity-90 transition-colors"
+                        className="flex-1 py-1 text-center font-agency text-lg text-white bg-brand-brown-dark rounded-xl shadow-xl transition-transform hover:scale-110"
                     >
                         Donate
                     </Link>
                     <Link
                         href="/volunteer"
-                        className="flex-1 py-2 text-center font-agency text-lg text-white bg-brand-gold rounded-xl shadow-xl hover:bg-opacity-90 transition-colors"
+                        className="flex-1 py-1 text-center font-agency text-lg text-white bg-brand-gold rounded-xl shadow-xl transition-transform group-hover:scale-110"
                     >
                         Volunteer
                     </Link>
@@ -83,7 +83,7 @@ export default function HomePage() {
                     <h2 className="font-agency text-2xl text-brand-brown-dark mb-6 text-left">Latest Updates</h2>
                     <div className="bg-white rounded-xl overflow-hidden card-shadow">
 <Link href="/news" className="flex flex-col items-center group">
-                        <div className="relative w-full h-48">
+                        <div className="relative w-full h-48 transition-transform group-hover:scale-110">
                             {/* Placeholder Image - Replace src with dynamic data later */}
                             <Image
                                 src="/hero.jpg"
@@ -97,7 +97,7 @@ export default function HomePage() {
                             <div className="absolute top-0 left-0 bg-brand-gold text-white py-2 px-3 rounded-br-lg font-agency text-sm">
                                 20 DEC
                             </div>
-                            <div className="flex items-center gap-2 mb-2 mt-2">
+                            <div className="flex items-center gap-5 mb-2 mt-2">
                                 <span className="font-lato text-xs text-brand-gold uppercase tracking-wider">Education</span>
                             </div>
                             <h3 className="font-agency text-xl text-brand-brown-dark mb-3 leading-snug">
@@ -114,7 +114,7 @@ export default function HomePage() {
                 {/* 5. VISION AND MISSION STATEMENTS */}
                 <section className="relative py-16 px-6 bg-brand-gold overflow-hidden">
                     {/* Background Overlay Pattern */}
-                    <div className="absolute inset-0 opacity-100 pointer-events-none">
+                    <div className="absolute inset-0 pointer-events-none">
                         <Image src="/visionandmissionbg.svg" alt="" fill className="object-cover" />
                     </div>
 
@@ -130,7 +130,7 @@ export default function HomePage() {
                         </div>
 
                         {/* Separator & Icons */}
-                        <div className="flex items-center justify-center gap-4 mb-10 opacity-100">
+                        <div className="flex items-center justify-center gap-4 mb-4 opacity-100">
 
                             <div className="flex gap-4">
                                 <div className="w-10 h-10 relative">
