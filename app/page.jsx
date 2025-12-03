@@ -26,7 +26,7 @@ export default function HomePage() {
                         />
                     </div>
                     <div className="text-center py-6 px-4">
-                        <h1 className="font-agency text-3xl text-brand-brown-dark leading-tight">
+                        <h1 className="font-agency text-2xl text-brand-brown-dark leading-tight">
                             Guiding through Qur'an, Empowering Communities.
                         </h1>
                     </div>
@@ -37,25 +37,25 @@ export default function HomePage() {
                     <div className="grid grid-cols-4 gap-4 justify-items-center">
                         <Link href="/programs" className="flex flex-col items-center group">
                             <div className="w-12 h-12 relative mb-2 transition-transform group-hover:scale-110">
-                                <Image src="/programsicon.svg" alt="Programs" fill className="object-contain" />
+                                <Image src="/programsicon.svg" alt="Programs" fill className="object-contain card-shadow" />
                             </div>
                             <span className="font-agency text-sm text-brand-brown-dark">Programs</span>
                         </Link>
                         <Link href="/multimedia" className="flex flex-col items-center group">
                             <div className="w-12 h-12 relative mb-2 transition-transform group-hover:scale-110">
-                                <Image src="/mediaicon.svg" alt="Media" fill className="object-contain" />
+                                <Image src="/mediaicon.svg" alt="Media" fill className="object-contain card-shadow" />
                             </div>
                             <span className="font-agency text-sm text-brand-brown-dark">Media</span>
                         </Link>
                         <Link href="/news" className="flex flex-col items-center group">
                             <div className="w-12 h-12 relative mb-2 transition-transform group-hover:scale-110">
-                                <Image src="/blogsicon.svg" alt="Blogs" fill className="object-contain" />
+                                <Image src="/blogsicon.svg" alt="Blogs" fill className="object-contain card-shadow" />
                             </div>
                             <span className="font-agency text-sm text-brand-brown-dark">Blogs</span>
                         </Link>
                         <Link href="/about" className="flex flex-col items-center group">
                             <div className="w-12 h-12 relative mb-2 transition-transform group-hover:scale-110">
-                                <Image src="/abouticon.svg" alt="About" fill className="object-contain" />
+                                <Image src="/abouticon.svg" alt="About" fill className="object-contain card-shadow" />
                             </div>
                             <span className="font-agency text-sm text-brand-brown-dark">About</span>
                         </Link>
@@ -66,13 +66,13 @@ export default function HomePage() {
                 <section className="py-6 px-8 flex justify-center gap-4">
                     <Link
                         href="/donate"
-                        className="flex-1 py-3 text-center font-agency text-lg text-white bg-brand-brown-dark rounded-md shadow-md hover:bg-opacity-90 transition-colors"
+                        className="flex-1 py-3 text-center font-agency text-lg text-white bg-brand-brown-dark rounded-md shadow-md hover:bg-opacity-90 transition-colors card-shadow"
                     >
                         Donate
                     </Link>
                     <Link
                         href="/volunteer"
-                        className="flex-1 py-3 text-center font-agency text-lg text-white bg-brand-gold rounded-md shadow-md hover:bg-opacity-90 transition-colors"
+                        className="flex-1 py-3 text-center font-agency text-lg text-white bg-brand-gold rounded-md shadow-md hover:bg-opacity-90 transition-colors card-shadow"
                     >
                         Volunteer
                     </Link>
@@ -80,12 +80,12 @@ export default function HomePage() {
 
                 {/* 4. LATEST UPDATES */}
                 <section className="py-8 px-6">
-                    <h2 className="font-agency text-2xl text-brand-brown-dark mb-6 text-center">Latest Updates</h2>
+                    <h2 className="font-agency text-2xl text-brand-brown-dark mb-6 text-left">Latest Updates</h2>
                     <div className="bg-white rounded-xl overflow-hidden card-shadow">
                         <div className="relative w-full h-48">
                             {/* Placeholder Image - Replace src with dynamic data later */}
                             <Image
-                                src="https://placehold.co/600x400/655037/FFFFFF?text=Update+Image"
+                                src="/hero.jpg"
                                 alt="Latest Update"
                                 fill
                                 className="object-cover"
@@ -112,14 +112,14 @@ export default function HomePage() {
                 {/* 5. VISION AND MISSION STATEMENTS */}
                 <section className="relative py-16 px-6 bg-brand-gold overflow-hidden">
                     {/* Background Overlay Pattern */}
-                    <div className="absolute inset-0 opacity-10 pointer-events-none">
+                    <div className="absolute inset-0 opacity-100 pointer-events-none">
                         <Image src="/visionandmissionbg.svg" alt="" fill className="object-cover" />
                     </div>
 
                     <div className="relative z-10 text-center text-white">
                         {/* Vision */}
                         <div className="mb-10">
-                            <h2 className="font-agency text-3xl mb-4 inline-block border-b-2 border-white/30 pb-1">
+                            <h2 className="font-agency text-2xl mb-4 inline-block border-b-2 border-white/30 pb-1">
                                 Vision Statement
                             </h2>
                             <p className="font-lato text-lg leading-relaxed max-w-md mx-auto">
@@ -129,7 +129,7 @@ export default function HomePage() {
 
                         {/* Separator & Icons */}
                         <div className="flex items-center justify-center gap-4 mb-10 opacity-80">
-                            <div className="h-px bg-white/50 flex-grow max-w-[60px]"></div>
+
                             <div className="flex gap-6">
                                 <div className="w-10 h-10 relative">
                                     <Image src="/educationalsupporticon.svg" alt="Educational Support" fill className="object-contain" />
@@ -141,12 +141,12 @@ export default function HomePage() {
                                     <Image src="/trainingandinnovationicon.svg" alt="Training & Innovation" fill className="object-contain" />
                                 </div>
                             </div>
-                            <div className="h-px bg-white/50 flex-grow max-w-[60px]"></div>
+
                         </div>
 
                         {/* Mission */}
                         <div>
-                            <h2 className="font-agency text-3xl mb-4 inline-block border-b-2 border-white/30 pb-1">
+                            <h2 className="font-agency text-2xl mb-4 inline-block border-b-2 border-white/30 pb-1">
                                 Mission Statement
                             </h2>
                             <p className="font-lato text-lg leading-relaxed max-w-md mx-auto">
