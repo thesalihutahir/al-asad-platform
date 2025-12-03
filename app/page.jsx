@@ -37,25 +37,25 @@ export default function HomePage() {
                     <div className="grid grid-cols-4 gap-4 justify-items-center">
                         <Link href="/programs" className="flex flex-col items-center group">
                             <div className="w-12 h-12 relative mb-2 transition-transform group-hover:scale-110">
-                                <Image src="/programsicon.svg" alt="Programs" fill className="object-contain card-shadow" />
+                                <Image src="/programsicon.svg" alt="Programs" fill className="object-contain" />
                             </div>
                             <span className="font-agency text-sm text-brand-brown-dark">Programs</span>
                         </Link>
                         <Link href="/multimedia" className="flex flex-col items-center group">
                             <div className="w-12 h-12 relative mb-2 transition-transform group-hover:scale-110">
-                                <Image src="/mediaicon.svg" alt="Media" fill className="object-contain card-shadow" />
+                                <Image src="/mediaicon.svg" alt="Media" fill className="object-contain" />
                             </div>
                             <span className="font-agency text-sm text-brand-brown-dark">Media</span>
                         </Link>
                         <Link href="/news" className="flex flex-col items-center group">
                             <div className="w-12 h-12 relative mb-2 transition-transform group-hover:scale-110">
-                                <Image src="/blogsicon.svg" alt="Blogs" fill className="object-contain card-shadow" />
+                                <Image src="/blogsicon.svg" alt="Blogs" fill className="object-contain" />
                             </div>
                             <span className="font-agency text-sm text-brand-brown-dark">Blogs</span>
                         </Link>
                         <Link href="/about" className="flex flex-col items-center group">
                             <div className="w-12 h-12 relative mb-2 transition-transform group-hover:scale-110">
-                                <Image src="/abouticon.svg" alt="About" fill className="object-contain card-shadow" />
+                                <Image src="/abouticon.svg" alt="About" fill className="object-contain" />
                             </div>
                             <span className="font-agency text-sm text-brand-brown-dark">About</span>
                         </Link>
@@ -63,16 +63,16 @@ export default function HomePage() {
                 </section>
 
                 {/* 3. ACTION BUTTONS */}
-                <section className="py-6 px-8 flex justify-center gap-4">
+                <section className="py-6 px-8 flex justify-center gap-4 card-shadow">
                     <Link
                         href="/donate"
-                        className="flex-1 py-3 text-center font-agency text-lg text-white bg-brand-brown-dark rounded-md shadow-md hover:bg-opacity-90 transition-colors card-shadow"
+                        className="flex-1 py-2 text-center font-agency text-lg text-white bg-brand-brown-dark rounded-xl shadow-xl hover:bg-opacity-90 transition-colors"
                     >
                         Donate
                     </Link>
                     <Link
                         href="/volunteer"
-                        className="flex-1 py-3 text-center font-agency text-lg text-white bg-brand-gold rounded-md shadow-md hover:bg-opacity-90 transition-colors card-shadow"
+                        className="flex-1 py-2 text-center font-agency text-lg text-white bg-brand-gold rounded-xl shadow-xl hover:bg-opacity-90 transition-colors"
                     >
                         Volunteer
                     </Link>
@@ -82,6 +82,7 @@ export default function HomePage() {
                 <section className="py-8 px-6">
                     <h2 className="font-agency text-2xl text-brand-brown-dark mb-6 text-left">Latest Updates</h2>
                     <div className="bg-white rounded-xl overflow-hidden card-shadow">
+<Link href="/news" className="flex flex-col items-center group">
                         <div className="relative w-full h-48">
                             {/* Placeholder Image - Replace src with dynamic data later */}
                             <Image
@@ -93,7 +94,7 @@ export default function HomePage() {
                         </div>
                         <div className="p-5 relative">
                             {/* Date Badge */}
-                            <div className="absolute top-0 left-0 bg-brand-gold text-white py-1 px-3 rounded-br-lg font-agency text-sm">
+                            <div className="absolute top-0 left-0 bg-brand-gold text-white py-2 px-3 rounded-br-lg font-agency text-sm">
                                 20 DEC
                             </div>
                             <div className="flex items-center gap-2 mb-2 mt-2">
@@ -106,6 +107,7 @@ export default function HomePage() {
                                 The foundation celebrated the achievements of over 100 students who participated in this year's regional memorization and recitation contest.
                             </p>
                         </div>
+                      </Link>
                     </div>
                 </section>
 
@@ -119,18 +121,18 @@ export default function HomePage() {
                     <div className="relative z-10 text-center text-white">
                         {/* Vision */}
                         <div className="mb-10">
-                            <h2 className="font-agency text-2xl mb-4 inline-block border-b-2 border-white/30 pb-1">
+                            <h2 className="font-agency text-2xl text-white mb-6 text-center">
                                 Vision Statement
                             </h2>
                             <p className="font-lato text-lg leading-relaxed max-w-md mx-auto">
-                                "To be a leading force in transforming education through Qur'an values, excellence in learning, and empowerment of communities."
+                                To be a leading force in transforming education through Qur'an values, excellence in learning, and empowerment of communities.
                             </p>
                         </div>
 
                         {/* Separator & Icons */}
-                        <div className="flex items-center justify-center gap-4 mb-10 opacity-80">
+                        <div className="flex items-center justify-center gap-4 mb-10 opacity-100">
 
-                            <div className="flex gap-6">
+                            <div className="flex gap-4">
                                 <div className="w-10 h-10 relative">
                                     <Image src="/educationalsupporticon.svg" alt="Educational Support" fill className="object-contain" />
                                 </div>
@@ -146,18 +148,18 @@ export default function HomePage() {
 
                         {/* Mission */}
                         <div>
-                            <h2 className="font-agency text-2xl mb-4 inline-block border-b-2 border-white/30 pb-1">
+                            <h2 className="font-agency text-2xl text-white mb-6 text-center">
                                 Mission Statement
                             </h2>
                             <p className="font-lato text-lg leading-relaxed max-w-md mx-auto">
-                                "Expanding access to knowledge through Qur'an-centered and community driven education."
+                                Expanding access to knowledge through Qur'an-centered and community driven education.
                             </p>
                         </div>
                     </div>
                 </section>
 
                 {/* 6. ARABIC QUOTE & FINAL CTA */}
-                <section className="py-16 px-6 text-center bg-brand-sand">
+                <section className="py-12 px-4 text-center bg-brand-sand">
                     <div className="relative w-4/5 mx-auto h-24 mb-8">
                         <Image
                             src="/ilmquote.svg"
