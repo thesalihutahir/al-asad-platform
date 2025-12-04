@@ -16,15 +16,16 @@ export default function HomePage() {
 
                 {/* 1. HERO SECTION */}
                 <section className="w-full">
-                    <div className="relative w-full aspect-[4/3] sm:aspect-[16/9]">
-                        <Image
-                            src="/hero.svg"
-                            alt="Al-Asad Foundation Hero"
-                            fill
-                            className="object-cover"
-                            priority
-                        />
-                    </div>
+                    <div className="relative w-full aspect-[720/317]">
+    <Image
+        src="/hero.svg"
+        alt="Al-Asad Foundation Hero"
+        fill
+        className="object-cover"
+        priority
+    />
+</div>
+
                     <div className="text-center py-6 px-4">
                         <h1 className="font-agency text-2xl text-brand-brown-dark leading-tight">
                             Guiding through Qur'an, Empowering Communities.
@@ -47,7 +48,7 @@ export default function HomePage() {
                             </div>
                             <span className="font-agency text-sm text-brand-brown-dark">Media</span>
                         </Link>
-                        <Link href="/news" className="flex flex-col items-center group">
+                        <Link href="/blogs" className="flex flex-col items-center group">
                             <div className="w-14 h-14 relative mb-2 transition-transform group-hover:scale-110">
                                 <Image src="/blogsicon.svg" alt="Blogs" fill className="object-contain overflow-hidden drop-shadow-md" />
                             </div>
