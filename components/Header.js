@@ -45,7 +45,7 @@ export default function Header() {
               className={`p-3 rounded-full ${ICON_BG_COLOR} text-white focus:outline-none`}
               aria-expanded={isSidebarOpen && sidebarContentType === 'menu'}
             >
-              <Menu className="h-5 w-5" aria-hidden="true" />
+              <Menu className="h-4 w-4" aria-hidden="true" />
             </button>
 
             {/* Search Button */}
@@ -54,7 +54,7 @@ export default function Header() {
               className={`p-3 rounded-full ${ICON_BG_COLOR} text-white focus:outline-none`}
               aria-expanded={isSidebarOpen && sidebarContentType === 'search'}
             >
-              <Search className="h-5 w-5" aria-hidden="true" />
+              <Search className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
 
@@ -88,7 +88,7 @@ export default function Header() {
       <div 
         // Use inline style for background color to apply opacity effectively
         style={{ backgroundColor: BRAND_GOLD, '--tw-bg-opacity': isSidebarOpen ? '0.9' : '0' }}
-        className={`fixed top-0 left-0 w-60 max-w-full h-full text-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed top-0 left-0 w-65 max-w-full h-full text-white opacity-80 shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="flex flex-col h-full">
           
