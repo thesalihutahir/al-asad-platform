@@ -247,7 +247,7 @@ export default function HomePage() {
 
 
                 {/* 6. ARABIC QUOTE & FINAL CTA */}
-                <section className="py-12 px-4 text-center bg-brand-sand">
+                <section className="py-12 px-4 text-center bg-white">
                     <div className="relative w-4/5 mx-auto h-24 mb-8">
                         <Image
                             src="/ilmquote.svg"
@@ -256,7 +256,7 @@ export default function HomePage() {
                             className="object-contain"
                         />
                     </div>
-                    <h2 className="font-agency text-2xl text-brand-brown-dark leading-snug max-w-xs mx-auto">
+                    <h2 className="font-agency text-2xl text-brand-gold leading-snug max-w-xs mx-auto">
                         Join us in building a future shaped by knowledge and faith.
                     </h2>
                 </section>
