@@ -30,10 +30,11 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 bg-white font-lato">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+        {/* Changed to flex items-center h-20 relative */}
+        <div className="flex items-center justify-center h-20 relative">
           
-          {/* LEFT SIDE: Menu Icon Only */}
-          <div className="flex items-center space-x-2">
+          {/* LEFT SIDE: Menu Icon Only - Now absolutely positioned */}
+          <div className="flex items-center absolute left-0 top-1/2 transform -translate-y-1/2">
             <button
               onClick={() => setIsSidebarOpen(true)}
               className={`p-3 rounded-full ${ICON_BG_COLOR} text-white focus:outline-none`}
@@ -43,16 +44,25 @@ export default function Header() {
             </button>
           </div>
 
-          {/* RIGHT SIDE: Logo (Flexible Size) */}
-          <div className="flex-shrink-0">
+          {/* CENTER: Logo (Flexible Size) - Now using justify-center on the parent */}
+          <div className="flex-shrink-0 flex justify-center">
             <Link href="/" className="flex items-center">
               <Image 
                 src="/headerlogo.svg" 
                 alt="Al-Asad Education Foundation Logo" 
-                className="h-12 w-auto object-contain" 
+                // Increased size slightly for better visibility and added max-h for responsiveness
+                className="h-14 max-h-full w-auto object-contain" 
                 sizes="100vw"
+                // Added a priority flag as this is a critical asset (LCP element)
+                priority
               />
             </Link>
+          </div>
+          
+          {/* RIGHT SIDE: Add an empty placeholder to balance the absolute left icon for perfect visual centering */}
+          <div className="flex items-center absolute right-0 top-1/2 transform -translate-y-1/2">
+             {/* This div acts as a spacer, mimicking the space taken by the left menu button */}
+             <div className="p-3 rounded-full h-11 w-11" /> 
           </div>
           
         </div>
@@ -112,10 +122,10 @@ export default function Header() {
           
           {/* Footer of Sidebar */}
           <Link href="/admin/login">
-<div className="p-4 border-t border-gray-100 border-opacity-30 text-xs text-white opacity-80 font-lato">
-            Al-Asad Education Foundation
-          </div>
-</Link>
+            <div className="p-4 border-t border-gray-100 border-opacity-30 text-xs text-white opacity-80 font-lato">
+              Al-Asad Education Foundation
+            </div>
+          </Link>
         </div>
       </div>
     </header>
