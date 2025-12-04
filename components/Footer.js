@@ -7,37 +7,36 @@ import Image from "next/image";
 const BRAND_DARK = '#432e16'; // Footer background
 const BRAND_GOLD = '#d17600'; // Brand gold
 
-// NOTE: This code assumes you have defined 'font-lato' and 'font-agency'
-// in your tailwind.config.js file to point to your actual fonts.
+// NOTE: Assumes 'font-lato' and 'font-agency' are defined in tailwind.config.js
 
 export default function Footer() {
 
-    // Define navigation links
+    // Define the updated navigation links
     const quickLinks = [
         { name: "Home", href: "/" },
-        { name: "Programs", href: "/programs" },
-        { name: "About Us", href: "/about" },
         { name: "Media", href: "/media" },
+        { name: "About Us", href: "/about" },
     ];
 
     const getInvolved = [
-        { name: "Donate Now", href: "/donate" },
+        { name: "Donate", href: "/donate" },
         { name: "Volunteer", href: "/volunteer" },
-        { name: "Contact Us", href: "/contact" },
+        { name: "Meet our team", href: "/team" }, // Assuming a /team or /about#team route
     ];
 
     return (
         <footer className={`w-full bg-[${BRAND_DARK}] text-white font-lato pt-12 pb-6`}>
             <div className="max-w-7xl mx-auto flex flex-col px-4">
 
-                {/* --- 1. MINI-NAVIGATION GRID --- */}
-                <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-8 mb-10 text-center md:text-left">
+                {/* --- 1. MINI-NAVIGATION HORIZONTAL GRID (Quick Links & Get Involved) --- */}
+                {/* Grid is now always 2 columns (grid-cols-2) and uses text-left */}
+                <div className="w-full grid grid-cols-2 gap-8 mb-10">
                     
                     {/* Quick Links Column */}
-                    <div className="col-span-2 md:col-span-1">
+                    <div className="text-left"> 
                         {/* Heading uses the Agency font */}
-                        <h3 className="font-agency text-lg font-bold mb-4">Quick Links</h3>
-                        <ul className="space-y-2 text-sm">
+                        <h3 className="font-agency text-xl font-bold mb-4">Quick Links</h3>
+                        <ul className="space-y-3 text-base">
                             {quickLinks.map((link) => (
                                 <li key={link.name}>
                                     <Link href={link.href} className="hover:text-amber-400 transition-colors">
@@ -49,10 +48,10 @@ export default function Footer() {
                     </div>
 
                     {/* Get Involved Column */}
-                    <div className="col-span-2 md:col-span-1">
+                    <div className="text-left"> 
                         {/* Heading uses the Agency font */}
-                        <h3 className="font-agency text-lg font-bold mb-4">Get Involved</h3>
-                        <ul className="space-y-2 text-sm">
+                        <h3 className="font-agency text-xl font-bold mb-4">Get Involved</h3>
+                        <ul className="space-y-3 text-base">
                             {getInvolved.map((link) => (
                                 <li key={link.name}>
                                     <Link href={link.href} className="hover:text-amber-400 transition-colors">
@@ -62,19 +61,6 @@ export default function Footer() {
                             ))}
                         </ul>
                     </div>
-
-                    {/* Contact/Address Column */}
-                    <div className="col-span-2 md:col-span-2">
-                         {/* Heading uses the Agency font */}
-                        <h3 className="font-agency text-lg font-bold mb-4">Contact</h3>
-                        {/* Body text uses the default font-lato inherited from the footer */}
-                        <p className="text-sm">Email: alasadeducationfoundation@yahoo.com</p>
-                        <p className="text-sm mt-1">Phone: +234 803 700 8593</p>
-                        <p className="text-sm mt-3">
-                            <span className="font-semibold">Head Office:</span> <br/>
-                            14, Sultan Abubakar Road, Kaduna, Nigeria.
-                        </p>
-                    </div>
                 </div>
                 
                 {/* --- 2. DIVIDER LINE --- */}
@@ -82,6 +68,7 @@ export default function Footer() {
 
 
                 {/* --- 3. SOCIAL ICONS AND COPYRIGHT --- */}
+                {/* Copyright and social icons remain centered for visual balance */}
                 <div className="flex flex-col items-center justify-center w-full">
                     
                     {/* Social Icons */}
