@@ -256,7 +256,7 @@ export default function HomePage() {
                             className="object-contain"
                         />
                     </div>
-                    <h2 className="font-agency text-2xl text-brand-gold leading-snug max-w-xs mx-auto">
+                    <h2 className="font-agency text-md text-brand-gold leading-snug max-w-xs mx-auto">
                         Join us in building a future shaped by knowledge and faith.
                     </h2>
                 </section>
