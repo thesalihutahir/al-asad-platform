@@ -111,7 +111,7 @@ export default function Header() {
           </div>
           
           {/* Footer of Sidebar */}
-          <Link href="/adminlogin">
+          <Link href="/admin/login">
 <div className="p-4 border-t border-gray-100 border-opacity-30 text-xs text-white opacity-80 font-lato">
             Al-Asad Education Foundation
           </div>
