@@ -30,11 +30,14 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 bg-white font-lato">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Changed to flex items-center h-20 relative */}
-        <div className="flex items-center justify-center h-20 relative">
+        {/* Reverted to justify-between to push elements to opposite ends */}
+        <div className="flex justify-between items-center h-20">
           
-          {/* LEFT SIDE: Menu Icon Only - Now absolutely positioned */}
-          <div className="flex items-center absolute left-0 top-1/2 transform -translate-y-1/2">
+          {/* LEFT SIDE: Menu Icon and Logo Container */}
+          {/* We combine the menu and logo into one flex group to left-align them */}
+          <div className="flex items-center space-x-3 sm:space-x-4"> {/* Increased space-x for separation */}
+            
+            {/* Menu Icon */}
             <button
               onClick={() => setIsSidebarOpen(true)}
               className={`p-3 rounded-full ${ICON_BG_COLOR} text-white focus:outline-none`}
@@ -42,27 +45,26 @@ export default function Header() {
             >
               <Menu className="h-5 w-5" aria-hidden="true" />
             </button>
-          </div>
 
-          {/* CENTER: Logo (Flexible Size) - Now using justify-center on the parent */}
-          <div className="flex-shrink-0 flex justify-center">
+            {/* Logo (Flexible Size) - Now placed directly next to the menu button */}
             <Link href="/" className="flex items-center">
               <Image 
                 src="/headerlogo.svg" 
                 alt="Al-Asad Education Foundation Logo" 
-                // Increased size slightly for better visibility and added max-h for responsiveness
-                className="h-14 max-h-full w-auto object-contain" 
-                sizes="100vw"
-                // Added a priority flag as this is a critical asset (LCP element)
-                priority
+                // Increased the height to h-16 (or h-14) to match the mockup's prominence
+                // The logo should be tall to occupy the space next to the menu button.
+                className="h-16 w-auto object-contain max-h-full" 
+                sizes="(max-width: 640px) 70vw, 30vw"
+                priority 
               />
             </Link>
           </div>
-          
-          {/* RIGHT SIDE: Add an empty placeholder to balance the absolute left icon for perfect visual centering */}
-          <div className="flex items-center absolute right-0 top-1/2 transform -translate-y-1/2">
-             {/* This div acts as a spacer, mimicking the space taken by the left menu button */}
-             <div className="p-3 rounded-full h-11 w-11" /> 
+
+          {/* RIGHT SIDE: Placeholder/Empty div to keep logo left-aligned and separate from right edge */}
+          {/* Since there is no element on the far right in the mockup, this div is technically unnecessary 
+             if you only care about the left-side positioning, but keeping it simple for the mobile view: */}
+          <div className="flex-shrink-0">
+             {/* This space is empty in the current design */}
           </div>
           
         </div>
