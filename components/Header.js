@@ -79,7 +79,7 @@ export default function Header() {
       {/* Sidebar Panel - BRAND GOLD WITH OPACITY */}
       <div 
         style={{ backgroundColor: BRAND_GOLD, '--tw-bg-opacity': isSidebarOpen ? '0.9' : '0' }}
-        className={`fixed top-0 left-0 w-80 max-w-full h-full opacity-95 text-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed top-0 left-0 w-65 max-w-full h-full text-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="flex flex-col h-full">
           
