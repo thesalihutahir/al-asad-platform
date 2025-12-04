@@ -24,17 +24,17 @@ export default function Footer() {
 
     return (
         <footer className={`w-full bg-[${BRAND_DARK}] text-white font-lato pt-12 pb-6`}>
-            <div className="max-w-7xl mx-auto flex flex-col px-4">
+            {/* Increased padding here to px-8 for larger overall margin */}
+            <div className="max-w-7xl mx-auto flex flex-col px-8"> 
 
                 {/* --- 1. MINI-NAVIGATION HORIZONTAL GRID (Quick Links & Get Involved) --- */}
-                {/* Changes: Added centering (mx-auto), set max-width for margin control, reduced gap */}
                 <div className="w-full grid grid-cols-2 gap-4 mb-10 mx-auto max-w-xs sm:max-w-md">
                     
                     {/* Quick Links Column */}
                     <div className="text-left"> 
-                        {/* Heading uses the Agency font */}
-                        <h3 className="font-agency text-xl font-bold mb-4">Quick Links</h3>
-                        <ul className="space-y-2 text-sm"> {/* Changed space-y and text size */}
+                        <h3 className="font-agency text-md font-bold mb-2">Quick Links</h3>
+                        {/* Changed from space-y-2 to space-y-1 */}
+                        <ul className="space-y-1 text-sm"> 
                             {quickLinks.map((link) => (
                                 <li key={link.name}>
                                     <Link href={link.href} className="hover:text-amber-400 transition-colors">
@@ -47,9 +47,9 @@ export default function Footer() {
 
                     {/* Get Involved Column */}
                     <div className="text-left"> 
-                        {/* Heading uses the Agency font */}
-                        <h3 className="font-agency text-xl font-bold mb-4">Get Involved</h3>
-                        <ul className="space-y-2 text-sm"> {/* Changed space-y and text size */}
+                        <h3 className="font-agency text-md font-bold mb-2">Get Involved</h3>
+                        {/* Changed from space-y-2 to space-y-1 */}
+                        <ul className="space-y-1 text-sm"> 
                             {getInvolved.map((link) => (
                                 <li key={link.name}>
                                     <Link href={link.href} className="hover:text-amber-400 transition-colors">
@@ -96,7 +96,7 @@ export default function Footer() {
                     {/* Copyright */}
                     <p className="mt-2 text-[#9a9a9a] text-sm text-center">
                         Al-Asad Education Foundation
-<br />
+            <br />
 © All rights reserved | CAC-IT-973975
                     </p>
                 </div>
