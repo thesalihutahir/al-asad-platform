@@ -29,31 +29,31 @@ export default function Footer() {
           {/* Social icons - Added styling to match the circular, dark brown backgrounds */}
           <div className="flex items-center gap-1">
             <Link href="https://www.facebook.com/share/1D438MVXpQ/" target="_blank" className="p-1 rounded-full bg-[#432e16]">
-              <Image src="/fbicon.svg" alt="Facebook" width={28} height={28} />
+              <Image src="/fbicon.svg" alt="Facebook" w-3 h-3 />
             </Link>
 
             <Link href="https://youtube.com/@alasadeducation" target="_blank" className="p-1 rounded-full bg-[#432e16]">
-              <Image src="/yticon.svg" alt="YouTube" width={28} height={28} />
+              <Image src="/yticon.svg" alt="YouTube" w-3 h-3 />
             </Link>
 
             <Link href="https://www.instagram.com/alasad_education_foundation" target="_blank" className="p-1 rounded-full bg-[#432e16]">
-              <Image src="/igicon.svg" alt="Instagram" width={28} height={28} />
+              <Image src="/igicon.svg" alt="Instagram" w-3 h-3 />
             </Link>
 
             <Link href="https://www.tiktok.com/@alasad_tv" target="_blank" className="p-1 rounded-full bg-[#432e16]">
-              <Image src="/tticon.svg" alt="TikTok" width={28} height={28} />
+              <Image src="/tticon.svg" alt="TikTok" w-3 h-3 />
             </Link>
 
             <Link href="https://t.me/alasadeducation" target="_blank" className="p-1 rounded-full bg-[#432e16]">
-              <Image src="/tgicon.svg" alt="Telegram" width={28} height={28} />
+              <Image src="/tgicon.svg" alt="Telegram" w-3 h-3 />
             </Link>
 
             <Link href="https://x.com/AsadEducation" target="_blank" className="p-1 rounded-full bg-[#432e16]">
-              <Image src="/xicon.svg" alt="X" width={28} height={28} />
+              <Image src="/xicon.svg" alt="X" w-3 h-3 />
             </Link>
 
             <Link href="https://whatsapp.com/channel/0029VawdL4n6xCSHyUsMzc2V" target="_blank" className="p-1 rounded-full bg-[#432e16]">
-              <Image src="/waicon.svg" alt="WhatsApp" width={28} height={28} />
+              <Image src="/waicon.svg" alt="WhatsApp" w-3 h-3 />
             </Link>
           </div>
 
