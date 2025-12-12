@@ -1,125 +1,131 @@
-"use client"; // Required because we will handle form states
-
-import { useState } from 'react';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import Link from 'next/link';
 
-export default function ScholarshipApplyPage() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+const eligibilityCriteria = [
+  "Must be a registered student of an affiliated Quranic center.",
+  "Demonstrated excellence in Quranic memorization or studies.",
+  "Financial need based on family income assessment.",
+  "Recommendation from a recognized community lead or scholar."
+];
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    // Logic for form submission would go here
-    setTimeout(() => {
-      alert("Application submitted successfully!");
-      setIsSubmitting(false);
-    }, 2000);
-  };
-
+export default function ScholarshipsPage() {
   return (
-    <main className="bg-brand-sand min-h-screen pb-20">
-      {/* Top Navigation / Breadcrumbs */}
-      <nav className="pt-24 pb-8 px-6 container mx-auto">
-        <div className="flex items-center gap-2 text-sm font-lato text-brand-brown">
-          <Link href="/" className="hover:text-brand-gold">Home</Link>
-          <span>/</span>
-          <Link href="/programs/scholarships" className="hover:text-brand-gold">Scholarships</Link>
-          <span>/</span>
-          <span className="text-brand-brown-dark font-bold">Apply</span>
-        </div>
-      </nav>
+    <main className="bg-brand-sand min-h-screen">
 
-      <section className="container mx-auto px-6 max-w-4xl">
-        <div className="bg-white rounded-3xl p-8 md:p-12 card-shadow">
-          <header className="mb-10 border-b border-gray-100 pb-6">
-            <h1 className="font-agency text-4xl text-brand-brown-dark uppercase tracking-tight">
-              Scholarship Application Form
-            </h1>
-            <p className="font-lato text-brand-brown mt-2">
-              Please ensure all information provided is accurate and verifiable.
-            </p>
-          </header>
+      <Header />
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Section 1: Personal Info */}
-            <div>
-              <h2 className="font-agency text-2xl text-brand-gold mb-4 uppercase">1. Personal Information</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-lato">
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-bold text-brand-brown-dark">Full Name</label>
-                  <input type="text" required placeholder="John Doe" className="p-3 bg-brand-sand rounded-xl border-none focus:ring-2 focus:ring-brand-gold transition-all" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-bold text-brand-brown-dark">Email Address</label>
-                  <input type="email" required placeholder="example@mail.com" className="p-3 bg-brand-sand rounded-xl border-none focus:ring-2 focus:ring-brand-gold transition-all" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-bold text-brand-brown-dark">Date of Birth</label>
-                  <input type="date" required className="p-3 bg-brand-sand rounded-xl border-none focus:ring-2 focus:ring-brand-gold transition-all" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-bold text-brand-brown-dark">Gender</label>
-                  <select required className="p-3 bg-brand-sand rounded-xl border-none focus:ring-2 focus:ring-brand-gold transition-all">
-                    <option value="">Select Gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 2: Academic Details */}
-            <div>
-              <h2 className="font-agency text-2xl text-brand-gold mb-4 uppercase">2. Quranic Study Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-lato">
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-bold text-brand-brown-dark">Affiliated Quranic Center</label>
-                  <input type="text" required placeholder="e.g. Al-Hikmah Center" className="p-3 bg-brand-sand rounded-xl border-none focus:ring-2 focus:ring-brand-gold transition-all" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-bold text-brand-brown-dark">Current Student ID</label>
-                  <input type="text" placeholder="AL-12345" className="p-3 bg-brand-sand rounded-xl border-none focus:ring-2 focus:ring-brand-gold transition-all" />
-                </div>
-                <div className="flex flex-col gap-1 md:col-span-2">
-                  <label className="text-sm font-bold text-brand-brown-dark">Memorization Progress (Juz)</label>
-                  <input type="number" min="0" max="30" placeholder="Number of Juz memorized" className="p-3 bg-brand-sand rounded-xl border-none focus:ring-2 focus:ring-brand-gold transition-all" />
-                </div>
-              </div>
-            </div>
-
-            {/* Section 3: Document Uploads */}
-            <div>
-              <h2 className="font-agency text-2xl text-brand-gold mb-4 uppercase">3. Supporting Documents</h2>
-              <div className="bg-brand-sand p-6 rounded-2xl border-2 border-dashed border-gray-300">
-                <div className="flex flex-col gap-4 font-lato">
-                  <div className="flex flex-col">
-                    <label className="text-sm font-bold text-brand-brown-dark">Academic Record / Recommendation Letter</label>
-                    <input type="file" required className="mt-2 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:bg-brand-brown-dark file:text-white hover:file:bg-brand-gold cursor-pointer" />
-                  </div>
-                  <div className="flex flex-col">
-                    <label className="text-sm font-bold text-brand-brown-dark">Identity Proof (ID Card/Birth Cert)</label>
-                    <input type="file" required className="mt-2 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:bg-brand-brown-dark file:text-white hover:file:bg-brand-gold cursor-pointer" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Submission */}
-            <div className="pt-6 border-t border-gray-100 flex flex-col md:flex-row gap-4 justify-between items-center">
-              <p className="text-xs font-lato text-brand-brown italic max-w-sm">
-                By submitting this form, you certify that all inputs are true. Discovery of false documents leads to immediate disqualification.
-              </p>
-              <button 
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full md:w-auto bg-brand-brown-dark text-white font-bold font-lato px-12 py-4 rounded-full hover:bg-brand-gold transition-all disabled:opacity-50"
-              >
-                {isSubmitting ? 'Processing Application...' : 'Submit Application'}
-              </button>
-            </div>
-          </form>
+      {/* Hero / Intro */}
+      <section className="pt-24 pb-16 px-6 bg-brand-brown-dark text-white text-center">
+        <div className="container mx-auto">
+          <h1 className="font-agency text-5xl md:text-7xl uppercase tracking-wider mb-4">
+            Scholarship Portal
+          </h1>
+          <p className="font-lato text-lg md:text-xl max-w-2xl mx-auto opacity-90">
+            Investing in the future of our youth through educational financial support 
+            and excellence in Quranic studies.
+          </p>
+          <div className="mt-8">
+            <Link 
+              href="/programs/scholarships/apply" 
+              className="bg-brand-gold text-white font-bold px-10 py-4 rounded-full text-lg shadow-lg hover:brightness-110 transition-all inline-block"
+            >
+              Start Application
+            </Link>
+          </div>
         </div>
       </section>
+
+      <section className="container mx-auto px-6 py-16 grid grid-cols-1 lg:grid-cols-2 gap-12">
+
+        {/* Left: About the Program */}
+        <div className="space-y-6">
+          <h2 className="font-agency text-4xl text-brand-brown-dark uppercase">
+            About the Scholarship
+          </h2>
+          <p className="font-lato text-brand-brown leading-relaxed">
+            The Al-Asad Education Foundation Scholarship Program is designed to remove 
+            financial barriers for students who show exceptional dedication to learning. 
+            We provide full and partial tuition coverage, learning materials, and 
+            mentorship for the duration of the academic year.
+          </p>
+
+          <div className="bg-white p-8 rounded-2xl card-shadow">
+            <h3 className="font-agency text-2xl text-brand-gold mb-4">
+              ELIGIBILITY REQUIREMENTS
+            </h3>
+            <ul className="space-y-3">
+              {eligibilityCriteria.map((item, index) => (
+                <li key={index} className="flex items-start font-lato text-brand-brown">
+                  <span className="text-brand-gold mr-3">✔</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Right: Process / Timeline */}
+        <div className="bg-brand-brown-dark text-white p-8 rounded-2xl relative overflow-hidden">
+          {/* Decorative background circle */}
+          <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-brand-gold rounded-full opacity-10"></div>
+
+          <h2 className="font-agency text-4xl mb-8 uppercase text-brand-gold">
+            How to Apply
+          </h2>
+
+          <div className="space-y-8 relative z-10">
+            {[
+              { step: "01", title: "Create an Account", desc: "Register on our portal with your basic details." },
+              { step: "02", title: "Upload Documents", desc: "Submit your academic records and proof of need." },
+              { step: "03", title: "Interview Phase", desc: "Shortlisted candidates will be invited for an oral assessment." },
+              { step: "04", title: "Grant Award", desc: "Successful applicants receive enrollment packages." }
+            ].map((item) => (
+              <div key={item.step} className="flex gap-4">
+                <span className="font-agency text-4xl text-brand-gold opacity-50">
+                  {item.step}
+                </span>
+                <div>
+                  <h4 className="font-bold text-xl mb-1">{item.title}</h4>
+                  <p className="text-gray-300 font-lato text-sm">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 pt-6 border-t border-white/10">
+            <p className="text-sm italic opacity-70">
+              Deadline for this semester: December 31st, 2024
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Statistics / Impact */}
+      <section className="bg-white py-16">
+        <div className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+          <div>
+            <div className="font-agency text-5xl text-brand-gold">500+</div>
+            <div className="font-lato text-brand-brown uppercase tracking-widest mt-2">
+              Scholars Supported
+            </div>
+          </div>
+          <div>
+            <div className="font-agency text-5xl text-brand-gold">20+</div>
+            <div className="font-lato text-brand-brown uppercase tracking-widest mt-2">
+              Partner Centers
+            </div>
+          </div>
+          <div>
+            <div className="font-agency text-5xl text-brand-gold">100%</div>
+            <div className="font-lato text-brand-brown uppercase tracking-widest mt-2">
+              Transparency
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
     </main>
   );
 }
