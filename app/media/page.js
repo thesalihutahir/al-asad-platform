@@ -1,7 +1,7 @@
 // CORRECTED IMPORTS: Switched from relative path + .js extension
 // to the preferred Path Alias for central layout components.
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import Link from 'next/link';
 
 const mediaCategories = [
