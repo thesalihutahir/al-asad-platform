@@ -1,5 +1,7 @@
-import Header from '../components/Header.js';
-import Footer from '../components/Footer.js';
+// CORRECTED IMPORTS: Switched from relative path + .js extension
+// to the preferred Path Alias for central layout components.
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import Link from 'next/link';
 
 const mediaCategories = [
@@ -39,7 +41,7 @@ export default function MediaLandingPage() {
       <Header />
 
       <main className="bg-brand-sand min-h-screen pb-20">
-        
+
         {/* Media Hero */}
         <section className="pt-32 pb-16 px-6 bg-brand-brown-dark text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand-gold rounded-full blur-3xl opacity-10 -mr-32 -mt-32"></div>
