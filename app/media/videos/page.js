@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import Header from '@/components/layout/Header.js';
-import Footer from '@/components/layout/Footer.js';
+// CORRECTED: Removed the unnecessary .js extension from the layout components
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 
 const videoCategories = ["All", "Lectures", "Events", "Series", "Documentaries"];
 
@@ -83,7 +84,7 @@ export default function VideosPage() {
         <section className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
           {videos.map((video, index) => (
             <div key={index} className="group cursor-pointer">
-              
+
               {/* Thumbnail */}
               <div className={`aspect-video rounded-2xl relative overflow-hidden card-shadow ${video.thumbnail}`}>
                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
