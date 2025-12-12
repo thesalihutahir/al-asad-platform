@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 
 const galleryCategories = ["All", "Campus", "Events", "Students", "Outreach"];
 
@@ -13,17 +15,24 @@ const photos = [
 
 export default function GalleryPage() {
   return (
-    <main className="bg-brand-sand min-h-screen pb-20">
-      {/* Header */}
-      <section className="pt-32 pb-12 px-6">
+    <main className="bg-brand-sand min-h-screen">
+      <Header />
+
+      {/* Header Section */}
+      <section className="pt-28 pb-12 px-6">
         <div className="container mx-auto text-center">
-          <Link href="/media" className="text-brand-gold font-bold font-lato hover:underline mb-4 inline-block">
+          <Link 
+            href="/media" 
+            className="text-brand-gold font-bold font-lato hover:underline mb-4 inline-block"
+          >
             ← Back to Media Hub
           </Link>
+
           <h1 className="font-agency text-5xl md:text-6xl text-brand-brown-dark uppercase tracking-wide">
             Photo Gallery
           </h1>
-          <p className="font-lato text-brand-brown mt-4 text-lg max-w-2xl mx-auto">
+
+          <p className="font-lato text-brand-brown mt-4 text-lg max-w-2xl mx-auto leading-relaxed">
             A visual journey through our centers, our milestones, and the faces 
             of the community we serve.
           </p>
@@ -37,10 +46,11 @@ export default function GalleryPage() {
             <button 
               key={cat} 
               className={`font-lato px-8 py-2 rounded-full border-2 transition-all text-sm uppercase font-bold tracking-widest ${
-                cat === "All" 
-                ? "bg-brand-gold text-white border-brand-gold shadow-lg" 
-                : "bg-white border-gray-100 text-brand-brown-dark hover:border-brand-gold"
+                cat === "All"
+                  ? "bg-brand-gold text-white border-brand-gold shadow-lg"
+                  : "bg-white border-gray-200 text-brand-brown-dark hover:border-brand-gold hover:text-brand-gold"
               }`}
+              aria-label={`Filter by ${cat}`}
             >
               {cat}
             </button>
@@ -57,14 +67,15 @@ export default function GalleryPage() {
           >
             {/* Image Placeholder */}
             <div className="absolute inset-0 bg-brand-brown-dark opacity-10 group-hover:opacity-20 transition-opacity"></div>
-            <div className="h-full w-full bg-gray-200"></div> {/* Replace with <Image /> tag later */}
-            
+            <div className="h-full w-full bg-gray-200"></div> 
+            {/* Replace with: <Image src={`/gallery/${photo.id}.jpg`} alt={photo.title} fill /> */}
+
             {/* Overlay Info */}
             <div className="absolute inset-0 bg-gradient-to-t from-brand-brown-dark/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-6">
               <span className="text-brand-gold font-bold text-xs uppercase tracking-widest mb-1">
                 {photo.category}
               </span>
-              <h3 className="text-white font-agency text-xl leading-tight uppercase">
+              <h3 className="text-white font-agency text-xl uppercase leading-tight">
                 {photo.title}
               </h3>
             </div>
@@ -73,10 +84,15 @@ export default function GalleryPage() {
       </section>
 
       {/* Social CTA */}
-      <section className="container mx-auto px-6 mt-20">
+      <section className="container mx-auto px-6 mt-20 mb-20">
         <div className="bg-white p-10 rounded-[3rem] text-center border-2 border-brand-sand shadow-sm featured-background">
-          <h2 className="font-agency text-3xl text-brand-brown-dark uppercase mb-4">Follow our journey on Instagram</h2>
-          <p className="font-lato text-brand-brown mb-8">Get daily updates and behind-the-scenes glimpses into our programs.</p>
+          <h2 className="font-agency text-3xl text-brand-brown-dark uppercase mb-4">
+            Follow our journey on Instagram
+          </h2>
+          <p className="font-lato text-brand-brown mb-8">
+            Get daily updates and behind-the-scenes glimpses into our programs.
+          </p>
+
           <a 
             href="#" 
             className="inline-block bg-brand-brown-dark text-white font-bold font-lato px-10 py-3 rounded-full hover:bg-brand-gold transition-all shadow-md"
@@ -85,6 +101,8 @@ export default function GalleryPage() {
           </a>
         </div>
       </section>
+
+      <Footer />
     </main>
   );
 }
