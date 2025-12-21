@@ -124,14 +124,14 @@ export default function HomePage() {
 
                 {/* 5. MEDIA PREVIEWS */}
                 <section className="py-10 px-6 bg-white">
-                    
+
                     {/* VIDEO SECTION (Source: 'Videos' collection) */}
                     <div className="mb-12">
                         <div className="flex justify-between items-end mb-6">
                             <h2 className="font-agency text-2xl text-brand-brown-dark">Latest Videos</h2>
                             <Link href="/media/videos" className="text-xs font-bold text-brand-gold uppercase tracking-widest hover:underline">See More</Link>
                         </div>
-                        
+
                         <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-xl bg-black">
                             <iframe
                                 className="absolute inset-0 w-full h-full"
@@ -241,6 +241,12 @@ export default function HomePage() {
                                 </div>
                             </div>
                         </div>
+
+<div className="flex justify-center items-center my-6 opacity-50">
+                                <div className="w-24 h-0.5 bg-white"></div>
+                                <div className="mx-4 text-2xl">✦</div>
+                                <div className="w-24 h-0.5 bg-white"></div>
+                            </div>
 
                         {/* Mission */}
                         <div>
