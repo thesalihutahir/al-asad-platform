@@ -20,7 +20,7 @@ export default function HomePage() {
                 <section className="w-full relative">
                     <div className="relative w-full aspect-[720/400]">
                         <Image
-                            src="/hero.svg"
+                            src="/sheikhhero.jpg"
                             alt="Al-Asad Foundation Hero"
                             fill
                             className="object-cover"
@@ -30,9 +30,9 @@ export default function HomePage() {
                         <div className="absolute inset-0 bg-gradient-to-t from-white/90 to-transparent"></div>
                     </div>
 
-                    <div className="relative -mt-12 text-center px-6 pb-4 z-10">
+                    <div className="relative -mt-12 text-left px-6 pb-4 z-10">
                         <h1 className="font-agency text-3xl text-brand-brown-dark leading-none drop-shadow-sm">
-                            Guiding through Qur'an,<br />Empowering Communities.
+                            Welcome to Al-Asad Education Foundation Official Platform
                         </h1>
                     </div>
                 </section>
