@@ -7,7 +7,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 export default function ProgramsPage() {
-    
+
     // Program Data configuration for easy management
     const programs = [
         {
@@ -40,21 +40,37 @@ export default function ProgramsPage() {
         <div className="min-h-screen flex flex-col bg-white">
             <Header />
 
-            <main className="flex-grow pt-8 pb-16 px-6">
-                
-                {/* 1. PAGE HEADER */}
-                <section className="mb-10 text-center">
-                    <h1 className="font-agency text-4xl text-brand-brown-dark mb-3">
-                        Our Programs
-                    </h1>
-                    <div className="w-16 h-1 bg-brand-gold mx-auto rounded-full mb-4"></div>
-                    <p className="font-lato text-brand-brown text-sm max-w-md mx-auto leading-relaxed">
-                        A holistic approach to serving humanity—building minds, supporting lives, and innovating for the future.
-                    </p>
+            <main className="flex-grow pb-16">
+
+                {/* 1. HERO SECTION (Shorter than Homepage) */}
+                <section className="w-full relative bg-white mb-8">
+                    {/* Hero Image with Gradient Fade */}
+                    <div className="relative w-full aspect-[2.5/1] md:aspect-[4/1]">
+                        <Image
+                            src="/hero.jpg" // Ensure this is a relevant general image for programs
+                            alt="Programs Hero"
+                            fill
+                            className="object-cover object-center"
+                            priority
+                        />
+                        {/* The Fade Effect: Transparent top -> Solid White bottom */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/20 to-white"></div>
+                    </div>
+
+                    {/* Text Content - Pulled up into the fade area */}
+                    <div className="relative -mt-12 md:-mt-20 text-center px-6 z-10">
+                        <h1 className="font-agency text-4xl text-brand-brown-dark mb-3 drop-shadow-sm">
+                            Our Programs
+                        </h1>
+                        <div className="w-16 h-1 bg-brand-gold mx-auto rounded-full mb-4"></div>
+                        <p className="font-lato text-brand-brown text-sm max-w-md mx-auto leading-relaxed">
+                            A holistic approach to serving humanity—building minds, supporting lives, and innovating for the future.
+                        </p>
+                    </div>
                 </section>
 
                 {/* 2. PROGRAM CARDS LIST */}
-                <section className="space-y-8">
+                <section className="space-y-8 px-6">
                     {programs.map((program) => (
                         <Link 
                             key={program.id} 
@@ -93,7 +109,7 @@ export default function ProgramsPage() {
                                 <p className="font-lato text-sm text-brand-brown leading-relaxed mb-4 line-clamp-3">
                                     {program.description}
                                 </p>
-                                
+
                                 <div className="flex items-center text-brand-gold font-bold text-xs uppercase tracking-widest">
                                     <span>Explore Program</span>
                                     <svg className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -106,7 +122,7 @@ export default function ProgramsPage() {
                 </section>
 
                 {/* 3. CTA SECTION */}
-                <section className="mt-16 text-center bg-brand-brown-dark rounded-2xl p-8 text-white relative overflow-hidden">
+                <section className="mt-16 mx-6 text-center bg-brand-brown-dark rounded-2xl p-8 text-white relative overflow-hidden">
                      {/* Background Pattern Element (Optional) */}
                     <div className="absolute top-0 right-0 w-32 h-32 bg-brand-gold opacity-10 rounded-full blur-3xl -mr-10 -mt-10"></div>
 
