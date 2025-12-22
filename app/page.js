@@ -19,7 +19,7 @@ export default function HomePage() {
                 {/* 1. HERO SECTION */}
 <section className="w-full relative bg-white">
     {/* Hero Image with Gradient Fade */}
-    <div className="relative w-full aspect-[4/3] md:aspect-[21/9]">
+    <div className="relative w-full aspect-[720/400] md:aspect-[21/9]">
         <Image
             src="/sheikhhero.jpg"
             alt="Al-Asad Foundation Hero"
