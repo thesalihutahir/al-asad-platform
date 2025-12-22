@@ -1,109 +1,86 @@
 "use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-
-const faqData = [
-  {
-    category: "Scholarships",
-    questions: [
-      { q: "Who is eligible to apply for a scholarship?", a: "Eligibility is open to students currently enrolled in an affiliated Quranic center who show exceptional progress and financial need." },
-      { q: "What documents are required for application?", a: "You will need a letter of recommendation, student ID, and academic records from your local center." },
-    ]
-  },
-  {
-    category: "Donations",
-    questions: [
-      { q: "Is my donation tax-deductible?", a: "Yes, the Al-Asad Foundation is a registered non-profit, and we provide tax receipts upon request." },
-      { q: "Can I donate to a specific project?", a: "Absolutely. During the donation process, you can choose between our General Fund, Scholarship Fund, or Rural Outreach." },
-    ]
-  },
-  {
-    category: "Media & Press",
-    questions: [
-      { q: "Can I use foundation photos for my research?", a: "All gallery photos are available for educational use. For commercial use, please contact our Media Team." },
-    ]
-  }
-];
+import React from 'react';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 export default function FAQPage() {
-  const [openIndex, setOpenIndex] = useState(null);
+    
+    const faqs = [
+        {
+            category: "General",
+            questions: [
+                { q: "What is the primary mission of Al-Asad Foundation?", a: "Our mission is to expand access to knowledge through Qur'an-centered and community-driven education, bridging the gap between traditional Islamic sciences and modern learning." },
+                { q: "Where is the foundation located?", a: "Our headquarters are located in Katsina State, Nigeria. We operate various centers and outreach programs within the region." },
+            ]
+        },
+        {
+            category: "Donations & Zakat",
+            questions: [
+                { q: "Is my donation Zakat eligible?", a: "Yes, we have a dedicated Zakat Fund. Please ensure you donate to the specific account labeled for Zakat or specify 'Zakat' in your transfer description so it is distributed strictly according to Shari'ah." },
+                { q: "Can I donate anonymously?", a: "Absolutely. You can make a direct bank transfer without notifying us, or use 'Anonymous' when filling out our future online donation forms." },
+            ]
+        },
+        {
+            category: "Volunteering",
+            questions: [
+                { q: "How can I join the volunteer team?", a: "You can apply through the 'Get Involved > Volunteer' page on this website. Fill out the application form, and our team will review your skills and availability." },
+                { q: "Do I need specific qualifications to volunteer?", a: "Not necessarily. While we need professionals (teachers, medics, tech), we also need general support for logistics and welfare distribution. Sincerity and dedication are the most important qualifications." },
+            ]
+        }
+    ];
 
-  const toggleAccordion = (index) => {
-    setOpenIndex(openIndex === index ? null : index);
-  };
+    return (
+        <div className="min-h-screen flex flex-col bg-white">
+            <Header />
 
-  return (
-    <main className="bg-brand-sand min-h-screen pb-20">
-      {/* FAQ Hero */}
-      <section className="pt-32 pb-16 px-6 bg-brand-brown-dark text-white text-center">
-        <div className="container mx-auto">
-          <h1 className="font-agency text-5xl md:text-7xl uppercase tracking-widest mb-4">Support <span className="text-brand-gold">Center</span></h1>
-          <p className="font-lato text-gray-300 max-w-2xl mx-auto text-lg leading-relaxed">
-            Quick answers to our most common questions. If you can't find what you're 
-            looking for, feel free to reach out to our team.
-          </p>
+            <main className="flex-grow pt-10 pb-16 px-6">
+                
+                {/* Page Title */}
+                <div className="max-w-3xl mx-auto text-center mb-12">
+                    <h1 className="font-agency text-4xl text-brand-brown-dark mb-2">Frequently Asked Questions</h1>
+                    <p className="font-lato text-brand-brown text-sm">
+                        Common questions about our mission, programs, and how you can help.
+                    </p>
+                </div>
+
+                {/* FAQ List */}
+                <div className="max-w-2xl mx-auto space-y-8">
+                    {faqs.map((section, idx) => (
+                        <div key={idx}>
+                            <h2 className="font-agency text-xl text-brand-gold uppercase tracking-widest mb-4 border-b border-gray-100 pb-2">
+                                {section.category}
+                            </h2>
+                            <div className="space-y-4">
+                                {section.questions.map((item, qIdx) => (
+                                    <details key={qIdx} className="group bg-brand-sand/30 rounded-xl overflow-hidden border border-transparent open:border-brand-gold/20 transition-all">
+                                        <summary className="flex justify-between items-center font-agency text-lg text-brand-brown-dark p-5 cursor-pointer list-none hover:bg-brand-sand/50 transition-colors">
+                                            <span>{item.q}</span>
+                                            <span className="transition-transform group-open:rotate-180">
+                                                <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                            </span>
+                                        </summary>
+                                        <div className="px-5 pb-5 pt-0 font-lato text-sm text-brand-brown leading-relaxed text-justify">
+                                            {item.a}
+                                        </div>
+                                    </details>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Still have questions? */}
+                <div className="text-center mt-12">
+                    <p className="font-lato text-sm text-brand-brown mb-2">Can't find what you're looking for?</p>
+                    <a href="/contact" className="font-agency text-lg text-brand-brown-dark underline decoration-brand-gold hover:text-brand-gold transition-colors">
+                        Contact our Support Team
+                    </a>
+                </div>
+
+            </main>
+
+            <Footer />
         </div>
-      </section>
-
-      {/* Accordion List */}
-      <section className="container mx-auto px-6 -mt-10 max-w-4xl relative z-10">
-        <div className="bg-white rounded-[2rem] p-8 md:p-12 card-shadow">
-          {faqData.map((group, groupIdx) => (
-            <div key={groupIdx} className="mb-10 last:mb-0">
-              <h2 className="font-agency text-2xl text-brand-gold uppercase tracking-widest border-b border-gray-100 pb-2 mb-6">
-                {group.category}
-              </h2>
-              
-              <div className="space-y-4">
-                {group.questions.map((faq, faqIdx) => {
-                  const itemIndex = `${groupIdx}-${faqIdx}`;
-                  const isOpen = openIndex === itemIndex;
-                  
-                  return (
-                    <div key={faqIdx} className="border-b border-gray-50 last:border-none">
-                      <button 
-                        onClick={() => toggleAccordion(itemIndex)}
-                        className="w-full py-5 flex justify-between items-center text-left group"
-                      >
-                        <span className="font-lato font-bold text-brand-brown-dark group-hover:text-brand-gold transition-colors pr-4">
-                          {faq.q}
-                        </span>
-                        <span className={`text-brand-gold text-2xl transition-transform duration-300 ${isOpen ? 'rotate-45' : ''}`}>
-                          +
-                        </span>
-                      </button>
-                      <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-40 pb-5' : 'max-h-0'}`}>
-                        <p className="font-lato text-brand-brown leading-relaxed text-sm">
-                          {faq.a}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Final Contact CTA */}
-      <section className="container mx-auto px-6 mt-16 text-center">
-        <div className="bg-brand-brown-dark rounded-3xl p-10 md:p-16 text-white featured-background border-none relative overflow-hidden">
-          <div className="relative z-10">
-            <h3 className="font-agency text-3xl mb-4 uppercase tracking-widest">Still have questions?</h3>
-            <p className="font-lato text-gray-300 mb-8 max-w-md mx-auto">
-              Our support team usually responds within 24 hours during business days.
-            </p>
-            <Link 
-              href="/contact" 
-              className="bg-brand-gold text-white font-bold font-lato px-10 py-3 rounded-full hover:scale-105 transition-all inline-block shadow-lg"
-            >
-              Contact Support
-            </Link>
-          </div>
-        </div>
-      </section>
-    </main>
-  );
+    );
 }
