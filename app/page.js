@@ -269,33 +269,59 @@ export default function HomePage() {
                         </div>
                     </div>
 
-                    {/* UPCOMING EVENTS */}
+                                        {/* UPCOMING EVENTS */}
                     <div className="mt-12">
-                        <div className="flex justify-between items-end mb-4">
+                        <div className="flex justify-between items-end mb-6">
                             <h2 className="font-agency text-2xl text-brand-brown-dark">Upcoming Events</h2>
                         </div>
 
                         <div className="flex overflow-x-auto pb-4 gap-4 scrollbar-hide">
                             {/* Event Card */}
-                            <div className="min-w-[280px] md:min-w-[320px] bg-white rounded-2xl p-0 shadow-md border border-gray-100 flex flex-col group overflow-hidden">
+                            <div className="min-w-[280px] md:min-w-[320px] bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100 flex flex-col group">
                                 {/* Date Strip */}
                                 <div className="bg-brand-brown-dark text-white text-center py-2 font-agency text-lg tracking-widest">
-                                    COMING SOON
+                                    RAMADAN 2025
                                 </div>
                                 <div className="p-6 flex-grow flex flex-col justify-center text-center bg-brand-sand/10 group-hover:bg-brand-sand/30 transition-colors">
                                     <h3 className="font-agency text-2xl text-brand-brown-dark mb-2">
-                                        Annual Ramadan Tafsir
+                                        Annual Tafsir
                                     </h3>
                                     <p className="font-lato text-sm text-brand-brown mb-4">
-                                        Join us for the daily commentary of the Holy Qur'an.
+                                        Join us for the daily commentary of the Holy Qur'an during the blessed month.
                                     </p>
                                     <span className="text-xs font-bold text-brand-gold uppercase tracking-widest border border-brand-gold/30 rounded-full px-4 py-2 mx-auto">
-                                        Details Pending
+                                        Coming Soon
                                     </span>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                {/* 5B. PARTNERS & AFFILIATIONS */}
+                <section className="py-10 px-6 bg-white border-t border-gray-100">
+                    <p className="text-center font-lato text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">
+                        Trusted Partners & Collaborators
+                    </p>
+                    
+                    {/* Logos Grid (Placeholders) */}
+                    <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60 grayscale">
+                        {/* Placeholder 1: Circle */}
+                        <div className="w-12 h-12 rounded-full border-2 border-brand-brown-dark/30 bg-brand-sand/20"></div>
+                        
+                        {/* Placeholder 2: Rectangle */}
+                        <div className="w-24 h-8 border-2 border-brand-brown-dark/30 bg-brand-sand/20 rounded"></div>
+                        
+                        {/* Placeholder 3: Square */}
+                        <div className="w-10 h-10 border-2 border-brand-brown-dark/30 bg-brand-sand/20 transform rotate-45"></div>
+                        
+                        {/* Placeholder 4: Rectangle */}
+                        <div className="w-24 h-8 border-2 border-brand-brown-dark/30 bg-brand-sand/20 rounded"></div>
+                        
+                         {/* Placeholder 5: Circle */}
+                         <div className="w-12 h-12 rounded-full border-2 border-brand-brown-dark/30 bg-brand-sand/20"></div>
+                    </div>
+                </section>
+
 
 
                 </section>
@@ -372,8 +398,42 @@ export default function HomePage() {
                         Join us in building a future shaped by knowledge and faith.
                     </h2>
                 </section>
+                {/* 8. NEWSLETTER SUBSCRIPTION */}
+                <section className="py-16 px-6 bg-brand-brown-dark text-white text-center">
+                    <div className="max-w-2xl mx-auto">
+                        <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6 text-brand-gold">
+                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                        </div>
+                        
+                        <h2 className="font-agency text-3xl mb-3">
+                            Stay Connected
+                        </h2>
+                        <p className="font-lato text-white/80 text-sm mb-8 leading-relaxed">
+                            Subscribe to our newsletter to receive updates on lectures, community programs, and opportunities to get involved.
+                        </p>
+
+                        <form className="flex flex-col sm:flex-row gap-3">
+                            <input 
+                                type="email" 
+                                placeholder="Enter your email address" 
+                                className="flex-grow px-5 py-3 rounded-full bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-brand-gold focus:bg-white/20 transition-all text-sm"
+                            />
+                            <button 
+                                type="button" 
+                                className="px-8 py-3 rounded-full bg-brand-gold text-white font-bold text-sm uppercase tracking-wider hover:bg-white hover:text-brand-brown-dark transition-colors shadow-lg"
+                            >
+                                Subscribe
+                            </button>
+                        </form>
+                        <p className="text-[10px] text-white/40 mt-4">
+                            We respect your privacy. No spam, ever.
+                        </p>
+                    </div>
+                </section>
+
 
             </main>
+
             <Footer />
         </div>
     );
