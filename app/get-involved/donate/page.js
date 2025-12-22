@@ -1,102 +1,165 @@
 "use client";
 
-import { useState } from 'react';
+import React from 'react';
+import Image from 'next/image';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 export default function DonatePage() {
-  const [amount, setAmount] = useState('50');
-  const [frequency, setFrequency] = useState('once');
 
-  return (
-    <main className="bg-brand-sand min-h-screen pb-20">
-      {/* Header */}
-      <section className="pt-32 pb-16 px-6 bg-brand-brown-dark text-white text-center">
-        <div className="container mx-auto">
-          <h1 className="font-agency text-5xl md:text-7xl uppercase tracking-widest mb-4">Support the <span className="text-brand-gold">Impact</span></h1>
-          <p className="font-lato text-gray-300 max-w-2xl mx-auto text-lg leading-relaxed">
-            Your contributions provide education, clean water, and community growth. 
-            Choose how you want to make a difference today.
-          </p>
+    // Mock Bank Details
+    // You will replace these with the Foundation's actual account numbers
+    const accounts = [
+        {
+            id: 1,
+            type: "General Donation & Sadaqah",
+            bank: "Jaiz Bank",
+            number: "0000 000 000",
+            name: "Al-Asad Education Foundation",
+            color: "bg-brand-brown-dark",
+            textColor: "text-white"
+        },
+        {
+            id: 2,
+            type: "Zakat Fund",
+            bank: "Jaiz Bank",
+            number: "1111 111 111",
+            name: "Al-Asad Zakat",
+            color: "bg-brand-gold",
+            textColor: "text-white"
+        }
+    ];
+
+    return (
+        <div className="min-h-screen flex flex-col bg-white">
+            <Header />
+
+            <main className="flex-grow pb-16">
+
+                {/* 1. HERO SECTION */}
+                <section className="w-full relative bg-white mb-10">
+                    <div className="relative w-full aspect-[2.5/1] md:aspect-[4/1]">
+                        <Image
+                            src="/hero.jpg" // Placeholder: Giving hands or happy students
+                            alt="Donate"
+                            fill
+                            className="object-cover object-center"
+                            priority
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/20 to-white"></div>
+                    </div>
+
+                    <div className="relative -mt-12 md:-mt-20 text-center px-6 z-10">
+                        <h1 className="font-agency text-4xl text-brand-brown-dark mb-3 drop-shadow-sm">
+                            Invest in an Eternal Legacy
+                        </h1>
+                        <div className="w-16 h-1 bg-brand-gold mx-auto rounded-full mb-4"></div>
+                        <p className="font-lato text-brand-brown text-sm max-w-md mx-auto leading-relaxed">
+                            "When a person dies, his deeds come to an end except for three: Sadaqah Jariyah..."
+                        </p>
+                    </div>
+                </section>
+
+                {/* 2. DIRECT BANK TRANSFER (Primary Method) */}
+                <section className="px-6 mb-16 max-w-4xl mx-auto">
+                    <div className="text-center mb-8">
+                        <h2 className="font-agency text-2xl text-brand-brown-dark mb-2">
+                            Direct Bank Transfer
+                        </h2>
+                        <p className="font-lato text-sm text-brand-brown">
+                            Please use the account details below.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {accounts.map((acc) => (
+                            <div key={acc.id} className={`${acc.color} ${acc.textColor} p-8 rounded-2xl shadow-xl relative overflow-hidden group`}>
+                                {/* Decorative Pattern */}
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                                
+                                <h3 className="font-agency text-xl opacity-90 mb-6 border-b border-white/20 pb-2">
+                                    {acc.type}
+                                </h3>
+
+                                <div className="space-y-1 mb-6">
+                                    <p className="font-lato text-xs opacity-70 uppercase tracking-widest">Bank Name</p>
+                                    <p className="font-agency text-2xl tracking-wide">{acc.bank}</p>
+                                </div>
+
+                                <div className="space-y-1 mb-6">
+                                    <p className="font-lato text-xs opacity-70 uppercase tracking-widest">Account Number</p>
+                                    <div className="flex items-center gap-3">
+                                        <p className="font-mono text-3xl font-bold tracking-widest">{acc.number}</p>
+                                        {/* Copy Icon (Visual only for now) */}
+                                        <button className="opacity-50 hover:opacity-100 transition-opacity">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <p className="font-lato text-xs opacity-70 uppercase tracking-widest">Account Name</p>
+                                    <p className="font-lato text-sm font-bold">{acc.name}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
+                {/* 3. ONLINE PAYMENT (Placeholder for Future Integration) */}
+                <section className="px-6 mb-16 max-w-lg mx-auto">
+                    <div className="bg-brand-sand/40 border-2 border-dashed border-brand-brown/20 rounded-2xl p-8 text-center">
+                        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 text-brand-gold shadow-sm">
+                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                        </div>
+                        <h3 className="font-agency text-xl text-brand-brown-dark mb-2">
+                            Pay with Card
+                        </h3>
+                        <p className="font-lato text-sm text-brand-brown mb-4">
+                            Secure online donation via Paystack/Flutterwave is coming soon.
+                        </p>
+                        <button disabled className="px-6 py-2 bg-gray-200 text-gray-400 font-bold text-xs rounded-full uppercase tracking-wider cursor-not-allowed">
+                            Coming Soon
+                        </button>
+                    </div>
+                </section>
+
+                {/* 4. IMPACT BREAKDOWN */}
+                <section className="px-6">
+                    <div className="bg-brand-brown-dark text-white rounded-3xl p-8 md:p-12 text-center">
+                        <h2 className="font-agency text-2xl mb-8">Where does your donation go?</h2>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div className="flex flex-col items-center">
+                                <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mb-3">
+                                    <span className="text-2xl">🎓</span>
+                                </div>
+                                <h3 className="font-agency text-lg text-brand-gold mb-1">Scholarships</h3>
+                                <p className="font-lato text-xs text-white/70">Supporting indigent students with tuition and books.</p>
+                            </div>
+                            
+                            <div className="flex flex-col items-center">
+                                <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mb-3">
+                                    <span className="text-2xl">🍲</span>
+                                </div>
+                                <h3 className="font-agency text-lg text-brand-gold mb-1">Welfare</h3>
+                                <p className="font-lato text-xs text-white/70">Feeding programs and emergency relief for families.</p>
+                            </div>
+
+                            <div className="flex flex-col items-center">
+                                <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mb-3">
+                                    <span className="text-2xl">💡</span>
+                                </div>
+                                <h3 className="font-agency text-lg text-brand-gold mb-1">Dawah</h3>
+                                <p className="font-lato text-xs text-white/70">Producing educational content and organizing lectures.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+
+            <Footer />
         </div>
-      </section>
-
-      <section className="container mx-auto px-6 -mt-10 grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
-        {/* Left: Donation Form */}
-        <div className="lg:col-span-2 bg-white rounded-3xl p-8 md:p-12 card-shadow">
-          <h2 className="font-agency text-3xl text-brand-brown-dark uppercase mb-8">Choose Amount</h2>
-          
-          {/* Frequency Toggle */}
-          <div className="flex bg-brand-sand p-1 rounded-full w-fit mb-8">
-            <button 
-              onClick={() => setFrequency('once')}
-              className={`px-8 py-2 rounded-full font-lato text-sm font-bold transition-all ${frequency === 'once' ? 'bg-brand-gold text-white shadow-md' : 'text-brand-brown'}`}
-            >
-              Give Once
-            </button>
-            <button 
-              onClick={() => setFrequency('monthly')}
-              className={`px-8 py-2 rounded-full font-lato text-sm font-bold transition-all ${frequency === 'monthly' ? 'bg-brand-gold text-white shadow-md' : 'text-brand-brown'}`}
-            >
-              Monthly
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            {['25', '50', '100', '250'].map((val) => (
-              <button 
-                key={val}
-                onClick={() => setAmount(val)}
-                className={`p-4 rounded-2xl font-agency text-2xl border-2 transition-all ${amount === val ? 'bg-brand-brown-dark text-white border-brand-brown-dark' : 'bg-white text-brand-brown-dark border-gray-100 hover:border-brand-gold'}`}
-              >
-                ${val}
-              </button>
-            ))}
-            <input 
-              type="text" 
-              placeholder="Custom" 
-              className="p-4 rounded-2xl bg-brand-sand font-lato text-center outline-none focus:ring-2 focus:ring-brand-gold" 
-            />
-          </div>
-
-          {/* Allocation Selection */}
-          <h2 className="font-agency text-2xl text-brand-brown-dark uppercase mb-4">Direct Your Gift</h2>
-          <div className="space-y-4 font-lato mb-8">
-            {['General Fund', 'Scholarship Fund', 'Water & Health Projects'].map((fund) => (
-              <label key={fund} className="flex items-center gap-4 p-4 bg-brand-sand rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
-                <input type="radio" name="allocation" defaultChecked={fund === 'General Fund'} className="accent-brand-gold w-5 h-5" />
-                <span className="font-bold text-brand-brown-dark">{fund}</span>
-              </label>
-            ))}
-          </div>
-
-          <button className="w-full bg-brand-gold text-white font-bold font-lato text-lg py-5 rounded-full hover:brightness-110 transition-all shadow-xl uppercase tracking-widest">
-            Proceed to Payment
-          </button>
-        </div>
-
-        {/* Right: Side Info */}
-        <div className="space-y-6">
-          <div className="bg-white rounded-3xl p-8 card-shadow border-b-4 border-brand-gold">
-            <h3 className="font-agency text-2xl text-brand-brown-dark uppercase mb-4">Bank Transfer</h3>
-            <p className="font-lato text-xs text-brand-brown mb-6 leading-relaxed">
-              Prefer to donate via direct bank transfer? Use our official local account details:
-            </p>
-            <div className="font-lato bg-brand-sand p-4 rounded-xl space-y-2 text-sm">
-              <p><span className="font-bold">Bank:</span> Al-Hikmah Islamic Bank</p>
-              <p><span className="font-bold">Acc:</span> 100767676</p>
-              <p><span className="font-bold">Name:</span> Al-Asad Foundation</p>
-            </div>
-          </div>
-
-          <div className="bg-brand-brown-dark text-white rounded-3xl p-8 card-shadow">
-            <h3 className="font-agency text-2xl text-brand-gold uppercase mb-4">Trust Guarantee</h3>
-            <ul className="space-y-4 font-lato text-sm text-gray-300">
-              <li className="flex gap-3"><span>✅</span> SSL Secured Payment</li>
-              <li className="flex gap-3"><span>✅</span> No Admin Deductions</li>
-              <li className="flex gap-3"><span>✅</span> Tax Receipt Provided</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-    </main>
-  );
+    );
 }
