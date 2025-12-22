@@ -213,7 +213,7 @@ export default function HomePage() {
                     <div className="relative z-10 text-center text-white">
                         {/* Vision */}
                         <div className="mb-8">
-                            <h2 className="font-agency text-xl uppercase tracking-widest text-white/80 mb-3">
+                            <h2 className="font-agency text-xl text-white/80 mb-3">
                                 Vision Statement
                             </h2>
                             <p className="font-lato text-lg leading-relaxed max-w-md mx-auto">
@@ -234,21 +234,27 @@ export default function HomePage() {
                                     <div className="w-16 h-16 relative mb-2">
                                         <Image src="/educationalsupporticon.svg" alt="Educational Support" fill className="object-contain" />
                                     </div>
-                                    <span className="font-agency text-xs tracking-wide">Education</span>
+                                    <span className="font-agency text-xs tracking-wide">Educational
+<br className="md:hidden" />
+Support</span>
                                 </div>
 
                                 <div className="flex flex-col items-center">
                                     <div className="w-16 h-16 relative mb-2">
                                         <Image src="/communitydevelopmenticon.svg" alt="Community Development" fill className="object-contain" />
                                     </div>
-                                    <span className="font-agency text-xs tracking-wide">Community</span>
+                                    <span className="font-agency text-xs tracking-wide">Community
+<br className="md:hidden" />
+Development</span>
                                 </div>
 
                                 <div className="flex flex-col items-center">
                                     <div className="w-16 h-16 relative mb-2">
                                         <Image src="/trainingandinnovationicon.svg" alt="Training & Innovation" fill className="object-contain" />
                                     </div>
-                                    <span className="font-agency text-xs tracking-wide">Innovation</span>
+                                    <span className="font-agency text-xs tracking-wide">Training &
+<br className="md:hidden" />
+Innovation</span>
                                 </div>
                             </div>
                         </div>
@@ -261,7 +267,7 @@ export default function HomePage() {
 
                         {/* Mission */}
                         <div>
-                            <h2 className="font-agency text-xl uppercase tracking-widest text-white/80 mb-3">
+                            <h2 className="font-agency text-xl text-white/80 mb-3">
                                 Mission Statement
                             </h2>
                             <p className="font-lato text-lg leading-relaxed max-w-md mx-auto">
