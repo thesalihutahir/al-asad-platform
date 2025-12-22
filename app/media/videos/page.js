@@ -1,131 +1,168 @@
+"use client";
+
+import React from 'react';
 import Link from 'next/link';
-// CORRECTED: Removed the unnecessary .js extension from the layout components
+import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
-const videoCategories = ["All", "Lectures", "Events", "Series", "Documentaries"];
-
-const videos = [
-  {
-    title: "The Path of Excellence: Quranic Memorization",
-    category: "Lectures",
-    duration: "45:20",
-    thumbnail: "bg-brand-brown",
-    date: "Oct 12, 2024"
-  },
-  {
-    title: "Al-Asad Annual Graduation Ceremony 2024",
-    category: "Events",
-    duration: "1:15:00",
-    thumbnail: "bg-brand-gold",
-    date: "Sep 28, 2024"
-  },
-  {
-    title: "Understanding Tafsir: Episode 1",
-    category: "Series",
-    duration: "22:15",
-    thumbnail: "bg-brand-brown-dark",
-    date: "Sep 15, 2024"
-  },
-  {
-    title: "Community Impact: The Clean Water Project",
-    category: "Documentaries",
-    duration: "12:05",
-    thumbnail: "bg-brand-sand",
-    date: "Aug 30, 2024"
-  }
-];
-
 export default function VideosPage() {
-  return (
-    <>
-      <Header />
+    
+    // Mock Data for Videos
+    const videos = [
+        {
+            id: 1,
+            title: "Tafsir Surah Al-Baqarah: Ayah 255",
+            category: "Tafsir",
+            date: "20 Dec 2024",
+            duration: "45:00",
+            image: "/hero.jpg", // Placeholder
+            url: "https://youtube.com/..." 
+        },
+        {
+            id: 2,
+            title: "The Importance of Zakat in Modern Society",
+            category: "Lecture",
+            date: "15 Dec 2024",
+            duration: "32:15",
+            image: "/hero.jpg", 
+            url: "#"
+        },
+        {
+            id: 3,
+            title: "Annual Community Iftar Gathering 2024",
+            category: "Event",
+            date: "10 Mar 2024",
+            duration: "12:50",
+            image: "/hero.jpg", 
+            url: "#"
+        },
+        {
+            id: 4,
+            title: "Preparing for Ramadan: Spiritual Guide",
+            category: "Lecture",
+            date: "01 Mar 2024",
+            duration: "55:00",
+            image: "/hero.jpg", 
+            url: "#"
+        }
+    ];
 
-      <main className="bg-brand-sand min-h-screen pb-20">
-        {/* Header Section */}
-        <section className="pt-32 pb-12 px-6">
-          <div className="container mx-auto">
-            <Link 
-              href="/media" 
-              className="text-brand-gold font-bold font-lato hover:underline mb-4 inline-block"
-            >
-              ← Back to Media Hub
-            </Link>
+    // Filter Categories (Visual only for now)
+    const filters = ["All Videos", "Tafsir", "Lectures", "Events", "Shorts"];
 
-            <h1 className="font-agency text-5xl md:text-6xl text-brand-brown-dark uppercase tracking-wide">
-              Video Library
-            </h1>
+    return (
+        <div className="min-h-screen flex flex-col bg-white">
+            <Header />
 
-            <p className="font-lato text-brand-brown mt-4 text-lg max-w-2xl">
-              Watch our latest lectures, special event highlights, and educational documentaries.
-            </p>
-          </div>
-        </section>
+            <main className="flex-grow pb-16">
 
-        {/* Filter Bar */}
-        <section className="container mx-auto px-6 mb-12">
-          <div className="flex flex-wrap gap-4 border-b border-gray-200 pb-6">
-            {videoCategories.map((cat) => (
-              <button 
-                key={cat} 
-                className={`font-lato px-6 py-2 rounded-full border-2 transition-all ${
-                  cat === "All" 
-                  ? "bg-brand-brown-dark text-white border-brand-brown-dark" 
-                  : "border-gray-300 text-brand-brown hover:border-brand-gold"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </section>
+                {/* 1. HERO SECTION */}
+                <section className="w-full relative bg-white mb-6">
+                    <div className="relative w-full aspect-[2.5/1] md:aspect-[4/1]">
+                        <Image
+                            src="/hero.jpg" 
+                            alt="Video Archive Hero"
+                            fill
+                            className="object-cover object-center"
+                            priority
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/20 to-white"></div>
+                    </div>
 
-        {/* Video Grid */}
-        <section className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-          {videos.map((video, index) => (
-            <div key={index} className="group cursor-pointer">
+                    <div className="relative -mt-12 md:-mt-20 text-center px-6 z-10">
+                        <h1 className="font-agency text-4xl text-brand-brown-dark mb-3 drop-shadow-sm">
+                            Video Library
+                        </h1>
+                        <div className="w-16 h-1 bg-brand-gold mx-auto rounded-full mb-4"></div>
+                        <p className="font-lato text-brand-brown text-sm max-w-md mx-auto leading-relaxed">
+                            Watch lectures, sermons, and event highlights from Al-Asad Foundation.
+                        </p>
+                    </div>
+                </section>
 
-              {/* Thumbnail */}
-              <div className={`aspect-video rounded-2xl relative overflow-hidden card-shadow ${video.thumbnail}`}>
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
+                {/* 2. FILTER BAR */}
+                <section className="px-6 mb-8">
+                    <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-hide">
+                        {filters.map((filter, index) => (
+                            <button 
+                                key={index}
+                                className={`px-5 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${
+                                    index === 0 
+                                    ? 'bg-brand-gold text-white shadow-md' 
+                                    : 'bg-brand-sand text-brand-brown-dark hover:bg-brand-gold/10'
+                                }`}
+                            >
+                                {filter}
+                            </button>
+                        ))}
+                    </div>
+                </section>
 
-                {/* Play Button */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <span className="text-white text-2xl">▶</span>
-                  </div>
-                </div>
+                {/* 3. VIDEO GRID */}
+                <section className="px-6 space-y-6">
+                    {videos.map((video) => (
+                        <div key={video.id} className="group block bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 transition-transform hover:-translate-y-1">
+                            
+                            {/* Thumbnail Container */}
+                            <div className="relative w-full aspect-video bg-gray-900">
+                                <Image
+                                    src={video.image}
+                                    alt={video.title}
+                                    fill
+                                    className="object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                                />
+                                
+                                {/* Play Button Overlay */}
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:bg-brand-gold group-hover:scale-110 transition-all duration-300">
+                                        <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M8 5v14l11-7z" />
+                                        </svg>
+                                    </div>
+                                </div>
 
-                {/* Duration */}
-                <span className="absolute bottom-4 right-4 bg-black/70 text-white text-xs px-2 py-1 rounded font-lato">
-                  {video.duration}
-                </span>
-              </div>
+                                {/* Duration Badge */}
+                                <div className="absolute bottom-3 right-3 bg-black/70 text-white text-[10px] font-bold px-2 py-1 rounded">
+                                    {video.duration}
+                                </div>
+                            </div>
 
-              {/* Content */}
-              <div className="mt-6">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-brand-gold font-bold text-xs uppercase tracking-widest">{video.category}</span>
-                  <span className="text-brand-brown/60 text-xs font-lato">{video.date}</span>
-                </div>
+                            {/* Content */}
+                            <div className="p-5">
+                                <div className="flex justify-between items-start mb-2">
+                                    <span className="text-[10px] font-bold text-brand-gold uppercase tracking-widest">
+                                        {video.category}
+                                    </span>
+                                    <span className="text-[10px] text-gray-400 font-lato">
+                                        {video.date}
+                                    </span>
+                                </div>
+                                
+                                <h3 className="font-agency text-xl text-brand-brown-dark leading-tight mb-2 group-hover:text-brand-gold transition-colors">
+                                    {video.title}
+                                </h3>
+                                
+                                <div className="flex items-center gap-2 mt-3">
+                                    <p className="text-xs font-bold text-brand-brown underline decoration-brand-gold/50">
+                                        Watch Now
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </section>
 
-                <h2 className="font-agency text-2xl text-brand-brown-dark group-hover:text-brand-gold transition-colors leading-tight uppercase">
-                  {video.title}
-                </h2>
-              </div>
-            </div>
-          ))}
-        </section>
+                {/* 4. LOAD MORE (Future functionality) */}
+                <section className="py-8 text-center">
+                    <button className="px-6 py-3 border-2 border-brand-sand text-brand-brown-dark rounded-full font-agency text-sm hover:bg-brand-sand transition-colors">
+                        Load More Videos
+                    </button>
+                </section>
 
-        {/* Load More */}
-        <div className="container mx-auto px-6 mt-16 text-center">
-          <button className="bg-white border-2 border-brand-brown-dark text-brand-brown-dark font-bold font-lato px-10 py-3 rounded-full hover:bg-brand-brown-dark hover:text-white transition-all">
-            Load More Videos
-          </button>
+            </main>
+
+            <Footer />
         </div>
-      </main>
-
-      <Footer />
-    </>
-  );
+    );
 }
