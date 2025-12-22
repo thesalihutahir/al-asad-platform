@@ -40,7 +40,7 @@ export default function HomePage() {
         </p>
         
         {/* Main Headline */}
-        <h1 className="font-agency text-4xl md:text-6xl text-brand-brown-dark font-bold leading-none drop-shadow-sm">
+        <h1 className="font-agency text-3xl md:text-6xl text-brand-brown-dark leading-none drop-shadow-sm">
             Where Education <br />
             Creates Impact
         </h1>
