@@ -1,134 +1,141 @@
-// app/admin/login/page.jsx
 "use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase'; // Import auth from your initialized firebase
+import React, { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function AdminLoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
+    const router = useRouter();
+    
+    // Form State
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
+    const handleLogin = (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
 
-    if (!email || !password) {
-      setError('Please enter both email and password.');
-      setLoading(false);
-      return;
-    }
+        // SIMULATION: In real backend phase, this checks Firebase Auth
+        setTimeout(() => {
+            if (email === "admin@alasad.com" && password === "password") {
+                // Success: Redirect to Dashboard
+                router.push('/admin/dashboard');
+            } else {
+                // Failure
+                setError('Invalid credentials. Please try again.');
+                setLoading(false);
+            }
+        }, 1500);
+    };
 
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      
-      // On successful login, the AuthContext listener will update the user state.
-      // We wait briefly for the context to update the isAdmin status, 
-      // then redirect to the protected dashboard.
+    return (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-brand-sand/20 relative overflow-hidden px-4">
+            
+            {/* Background Pattern */}
+            <div className="absolute inset-0 z-0 opacity-10">
+                <Image src="/overlay.jpg" alt="Pattern" fill className="object-cover" />
+            </div>
 
-      // IMPORTANT: In a real app, you might want to wait for the custom role (isAdmin)
-      // to be fetched before redirecting, but a simple timeout usually works well 
-      // since the context is already listening.
+            {/* Login Card */}
+            <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 md:p-10 relative z-10 border border-brand-gold/20">
+                
+                {/* Logo Area */}
+                <div className="flex justify-center mb-8">
+                    <div className="relative w-32 h-12">
+                        <Image src="/headerlogo.svg" alt="Al-Asad Logo" fill className="object-contain" />
+                    </div>
+                </div>
 
-      setTimeout(() => {
-          // Redirect to the Admin Dashboard root
-          router.push('/admin'); 
-      }, 500);
+                <div className="text-center mb-8">
+                    <h1 className="font-agency text-3xl text-brand-brown-dark mb-1">
+                        Admin Portal
+                    </h1>
+                    <p className="font-lato text-sm text-gray-500">
+                        Secure access for foundation staff only.
+                    </p>
+                </div>
 
-    } catch (firebaseError) {
-      console.error("Login Error:", firebaseError.code, firebaseError.message);
-      
-      let friendlyError;
-      switch (firebaseError.code) {
-        case 'auth/invalid-credential':
-          friendlyError = 'Invalid email or password. Please try again.';
-          break;
-        case 'auth/user-disabled':
-          friendlyError = 'This user account has been disabled.';
-          break;
-        default:
-          friendlyError = 'An unexpected error occurred during login. Check console.';
-          break;
-      }
-      
-      setError(friendlyError);
-      setLoading(false);
-    }
-  };
+                {/* Error Message */}
+                {error && (
+                    <div className="mb-6 bg-red-50 border border-red-200 text-red-600 text-xs font-bold px-4 py-3 rounded-lg text-center">
+                        {error}
+                    </div>
+                )}
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to the Admin Panel
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Al Asad Foundation Content Management System
-          </p>
+                <form onSubmit={handleLogin} className="space-y-5">
+                    
+                    {/* Email Input */}
+                    <div>
+                        <label className="block text-xs font-bold text-brand-brown uppercase tracking-wider mb-2">
+                            Email Address
+                        </label>
+                        <div className="relative">
+                            <input 
+                                type="email" 
+                                required
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 focus:bg-white transition-all text-brand-brown-dark"
+                                placeholder="name@alasadfoundation.org"
+                            />
+                            {/* Icon */}
+                            <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" /></svg>
+                        </div>
+                    </div>
+
+                    {/* Password Input */}
+                    <div>
+                        <label className="block text-xs font-bold text-brand-brown uppercase tracking-wider mb-2">
+                            Password
+                        </label>
+                        <div className="relative">
+                            <input 
+                                type="password" 
+                                required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 focus:bg-white transition-all text-brand-brown-dark"
+                                placeholder="••••••••"
+                            />
+                            {/* Icon */}
+                            <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                        </div>
+                    </div>
+
+                    {/* Action Button */}
+                    <button 
+                        type="submit" 
+                        disabled={loading}
+                        className={`w-full py-3 rounded-xl font-agency text-xl tracking-wide text-white transition-all shadow-lg flex justify-center items-center ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-brand-brown-dark hover:bg-brand-gold'}`}
+                    >
+                        {loading ? (
+                            <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        ) : (
+                            "Sign In"
+                        )}
+                    </button>
+
+                </form>
+
+                <div className="mt-8 text-center border-t border-gray-100 pt-6">
+                    <Link href="/" className="text-xs text-gray-400 hover:text-brand-gold transition-colors flex items-center justify-center gap-1">
+                        ← Back to Website
+                    </Link>
+                </div>
+
+            </div>
+            
+            <p className="mt-6 text-[10px] text-gray-400 font-mono z-10">
+                Al-Asad Education Foundation • Admin System v1.0
+            </p>
+
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <input
-                id="email-address"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-            <div>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-          </div>
-
-          {error && (
-            <div className="text-sm font-medium text-red-600 text-center">
-              {error}
-            </div>
-          )}
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${
-                loading ? 'bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700'
-              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
-            >
-              {loading ? 'Signing In...' : 'Sign In'}
-            </button>
-          </div>
-        </form>
-        <div className="text-center">
-            <Link href="/" className="text-sm text-indigo-600 hover:text-indigo-500">
-                Go back to the main site
-            </Link>
-        </div>
-      </div>
-    </div>
-  );
+    );
 }
