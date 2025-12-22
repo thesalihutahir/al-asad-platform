@@ -1,12 +1,14 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 export default function MediaPage() {
+    // State to handle Video Facade
+    const [playVideo, setPlayVideo] = useState(false);
     
     // Media Categories Configuration
     const categories = [
@@ -16,7 +18,7 @@ export default function MediaPage() {
             subtitle: 'Lectures & Events',
             link: '/media/videos',
             image: '/hero.jpg', // Placeholder: Video thumbnail/Camera
-            icon: '/mediaicon.svg' // You might want specific icons later like 'videoicon.svg'
+            icon: '/mediaicon.svg' 
         },
         {
             id: 'audios',
@@ -87,7 +89,7 @@ export default function MediaPage() {
                     <h2 className="font-agency text-2xl text-brand-brown-dark mb-6 text-left">
                         Browse Archive
                     </h2>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                         {categories.map((cat) => (
                             <Link 
@@ -108,7 +110,6 @@ export default function MediaPage() {
                                 {/* Content */}
                                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-3">
                                     <div className="w-10 h-10 mb-2 relative opacity-80 group-hover:opacity-100 transition-opacity">
-                                         {/* Note: Using generic media icon for now, ideally use specific ones */}
                                         <Image src={cat.icon} alt="Icon" fill className="object-contain invert brightness-0" /> 
                                     </div>
                                     <h3 className="font-agency text-xl text-white tracking-wide">
@@ -132,18 +133,39 @@ export default function MediaPage() {
                     </div>
 
                     <div className="bg-brand-sand rounded-2xl overflow-hidden shadow-lg border border-brand-gold/20">
-                        {/* Video Preview Area */}
-                        <div className="relative w-full aspect-video bg-black">
-                             <iframe
-                                className="absolute inset-0 w-full h-full"
-                                src="https://www.youtube.com/embed/BYdCnmAgvhs?rel=0&modestbranding=1"
-                                title="Featured Lecture"
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                            ></iframe>
+                        {/* Video Preview Area - UPDATED WITH FACADE */}
+                        <div className="relative w-full aspect-video bg-black group">
+                            {!playVideo ? (
+                                <button 
+                                    onClick={() => setPlayVideo(true)}
+                                    className="absolute inset-0 w-full h-full relative"
+                                >
+                                    <Image 
+                                        src="/hero.jpg" // Video Thumbnail
+                                        alt="Video Thumbnail" 
+                                        fill 
+                                        className="object-cover opacity-90 group-hover:opacity-100 transition-opacity" 
+                                    />
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:bg-brand-gold group-hover:scale-110 transition-all duration-300 shadow-lg">
+                                            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M8 5v14l11-7z" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </button>
+                            ) : (
+                                <iframe
+                                    className="absolute inset-0 w-full h-full"
+                                    src="https://www.youtube.com/embed/BYdCnmAgvhs?rel=0&modestbranding=1&autoplay=1"
+                                    title="Featured Lecture"
+                                    frameBorder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                ></iframe>
+                            )}
                         </div>
-                        
+
                         {/* Info Area */}
                         <div className="p-5">
                             <span className="inline-block px-2 py-1 bg-brand-gold text-white text-[10px] font-bold uppercase rounded mb-3">
