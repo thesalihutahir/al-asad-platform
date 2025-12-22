@@ -5,19 +5,15 @@ import { Menu, Search, X } from 'lucide-react';
 import { useState } from 'react';
 import Image from 'next/image'; 
 
-const ICON_BG_COLOR = 'bg-[#432e16]'; 
-const BRAND_GOLD = '#d17600'; 
-
+// Updated Navigation to match the new Sitemap
 const navItems = [
   { name: 'Home', href: '/' },
+  { name: 'About', href: '/about' },
   { name: 'Programs', href: '/programs' },
-  { name: 'Multimedia', 'href': '/multimedia' },
+  { name: 'Media', href: '/media' },
   { name: 'Blogs', href: '/blogs' },
-  { name: 'Scholarships', href: '/scholarships' },
-  { name: 'Learn a skill', href: '/skills' },
-  { name: 'Donate', href: '/donate' },
-  { name: 'Volunteer', href: '/volunteer' },
-  { name: 'About Us', href: '/about' },
+  { name: 'Get Involved', href: '/get-involved' },
+  { name: 'Contact', href: '/contact' },
 ];
 
 export default function Header() {
@@ -28,104 +24,99 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white font-lato">
+    <header className="sticky top-0 z-50 bg-white font-lato shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Reverted to justify-between to push elements to opposite ends */}
         <div className="flex justify-between items-center h-20">
-          
-          {/* LEFT SIDE: Menu Icon and Logo Container */}
-          {/* We combine the menu and logo into one flex group to left-align them */}
-          <div className="flex items-center space-x-3 sm:space-x-4"> {/* Increased space-x for separation */}
-            
-            {/* Menu Icon */}
+
+          {/* LEFT SIDE: Menu Icon and Logo */}
+          <div className="flex items-center space-x-4"> 
+
+            {/* Menu Icon - Using Brand Brown */}
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className={`p-3 rounded-full ${ICON_BG_COLOR} text-white focus:outline-none`}
+              className="p-3 rounded-full bg-brand-brown-dark text-white focus:outline-none hover:bg-brand-gold transition-colors"
               aria-expanded={isSidebarOpen}
+              aria-label="Open Menu"
             >
               <Menu className="h-5 w-5" aria-hidden="true" />
             </button>
 
-            {/* Logo (Flexible Size) - Now placed directly next to the menu button */}
-            <Link href="/" className="flex items-center">
+            {/* Logo */}
+            <Link href="/" className="flex items-center relative h-16 w-40">
               <Image 
                 src="/headerlogo.svg" 
                 alt="Al-Asad Education Foundation Logo" 
-                // Increased the height to h-16 (or h-14) to match the mockup's prominence
-                // The logo should be tall to occupy the space next to the menu button.
-                className="h-16 w-auto object-contain max-h-full" 
-                sizes="(max-width: 640px) 70vw, 30vw"
+                fill
+                className="object-contain object-left"
                 priority 
               />
             </Link>
           </div>
 
-          {/* RIGHT SIDE: Placeholder/Empty div to keep logo left-aligned and separate from right edge */}
-          {/* Since there is no element on the far right in the mockup, this div is technically unnecessary 
-             if you only care about the left-side positioning, but keeping it simple for the mobile view: */}
+          {/* RIGHT SIDE: Placeholder (Empty for now, but ready for desktop nav in future) */}
           <div className="flex-shrink-0">
-             {/* This space is empty in the current design */}
+             {/* Future Desktop Nav or Donate Button can go here */}
           </div>
-          
+
         </div>
       </div>
 
       {/* Overlay Backdrop */}
       <div 
-        className={`fixed inset-0 bg-black z-40 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-50' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 bg-brand-brown-dark/60 z-40 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={closeSidebar}
       />
 
-      {/* Sidebar Panel - BRAND GOLD WITH OPACITY */}
+      {/* Sidebar Panel - BRAND GOLD */}
       <div 
-        style={{ backgroundColor: BRAND_GOLD, '--tw-bg-opacity': isSidebarOpen ? '0.9' : '0' }}
-        className={`fixed top-0 left-0 w-65 max-w-full h-full text-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed top-0 left-0 w-72 max-w-full h-full bg-brand-gold text-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="flex flex-col h-full">
-          
+
           {/* Header Bar with Close Button */}
-          <div className="p-4 flex justify-end items-center border-b border-gray-100 border-opacity-30">
+          <div className="p-4 flex justify-between items-center border-b border-white/20">
+             <span className="font-agency text-xl tracking-wide">Menu</span>
             <button 
               onClick={closeSidebar} 
-              className={`p-2 rounded-full text-white hover:text-[#432e16] hover:bg-white focus:outline-none`}
+              className="p-2 rounded-full text-white hover:text-brand-brown-dark hover:bg-white transition-colors focus:outline-none"
             >
               <X className="w-6 h-6" />
             </button>
           </div>
 
-          {/* Sidebar Content - COMBINED SEARCH AND NAVIGATION */}
-          <div className="p-4 flex-grow overflow-y-auto space-y-4">
-            
-            {/* Search Input (Always visible at the top) */}
-            <div className="relative mb-4">
+          {/* Sidebar Content */}
+          <div className="p-4 flex-grow overflow-y-auto">
+
+            {/* Search Input */}
+            <div className="relative mb-6">
               <input
                 type="text"
-                placeholder="Search the site..."
-                className="w-full px-4 py-3 border-none rounded-xl focus:ring-2 focus:ring-white outline-none text-base text-black"
+                placeholder="Search..."
+                className="w-full px-4 py-3 border-none rounded-xl bg-white/90 text-brand-brown-dark placeholder-brand-brown/50 focus:ring-2 focus:ring-brand-brown-dark outline-none text-sm"
               />
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#9a9a9a]" />
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-brand-brown/50" />
             </div>
 
             {/* Main Navigation Links */}
-            <nav className="space-y-1 border-t border-gray-100 border-opacity-30 pt-4">
+            <nav className="space-y-2">
               {navItems.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
                   onClick={closeSidebar}
-                  className={`block px-3 py-2 rounded-md text-base font-lato font-medium text-white hover:text-white hover:bg-[#432e16] transition`}
+                  className="block px-4 py-3 rounded-lg text-lg font-agency tracking-wide text-white hover:bg-brand-brown-dark transition-colors"
                 >
                   {item.name}
                 </Link>
               ))}
             </nav>
-            
+
           </div>
-          
+
           {/* Footer of Sidebar */}
-          <Link href="/admin/login">
-            <div className="p-4 border-t border-gray-100 border-opacity-30 text-xs text-white opacity-80 font-lato">
-              Al-Asad Education Foundation
+          <Link href="/admin/login" onClick={closeSidebar}>
+            <div className="p-6 border-t border-white/20 text-xs text-white/80 font-lato text-center hover:text-white transition-colors">
+              © Al-Asad Education Foundation
             </div>
           </Link>
         </div>
