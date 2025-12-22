@@ -100,7 +100,7 @@ export default function HomePage() {
 
                     <div className="space-y-6">
                         {updates.map((item, index) => (
-                            <div key={index} className="bg-[#F0E4D4] rounded-xl overflow-hidden card-shadow group">
+                            <div key={index} className="bg-[#F0E4D4] rounded-3xl overflow-hidden card-shadow group">
                                 <Link href="/news" className="block">
                                     <div className="relative w-full h-48 overflow-hidden">
                                         <Image
