@@ -73,7 +73,7 @@ export default function ProgramsPage() {
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
 
                                 {/* Floating Icon Badge */}
-                                <div className="absolute -bottom-6 right-6 w-14 h-14 bg-white rounded-full p-3 shadow-md border-2 border-brand-gold z-10">
+                                <div className="absolute -bottom-6 right-6 w-14 h-14 bg-brand-gold rounded-full p-3 shadow-md border-2 border-brand-brown-dark z-10">
                                     <div className="relative w-full h-full">
                                         <Image 
                                             src={program.icon} 
@@ -116,7 +116,7 @@ export default function ProgramsPage() {
                     </p>
                     <Link
                         href="/get-involved/donate"
-                        className="inline-block py-3 px-8 font-agency text-lg text-brand-brown-dark bg-brand-gold rounded-full shadow-lg hover:bg-white transition-colors relative z-10"
+                        className="inline-block py-3 px-8 font-agency text-lg text-white bg-brand-gold rounded-full shadow-lg hover:bg-white transition-colors relative z-10"
                     >
                         Donate Now
                     </Link>
