@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
+// Import the real Auth hook
+import { useAuth } from '@/context/AuthContext'; 
 import { 
     LayoutDashboard, 
     FileText, 
@@ -22,6 +24,9 @@ export default function AdminLayout({ children }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const pathname = usePathname();
     const router = useRouter();
+    
+    // Get the real logout function
+    const { logout } = useAuth(); 
 
     // Skip the layout for the login page specifically
     if (pathname === '/admin/login') {
@@ -39,9 +44,15 @@ export default function AdminLayout({ children }) {
         { name: 'Settings', icon: Settings, href: '/admin/settings' },
     ];
 
-    const handleLogout = () => {
-        // In real app: Clear session/cookies here
-        router.push('/admin/login');
+    const handleLogout = async () => {
+        try {
+            await logout(); // Real Firebase Logout
+            // The AuthContext will automatically redirect to /admin/login, 
+            // but we can force it here just in case.
+            router.push('/admin/login');
+        } catch (error) {
+            console.error("Failed to log out", error);
+        }
     };
 
     return (
@@ -55,7 +66,7 @@ export default function AdminLayout({ children }) {
 
             {/* 2. SIDEBAR NAVIGATION */}
             <aside 
-                className={`fixed lg:sticky top-0 left-0 h-screen w-64 bg-brand-brown-dark text-white z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+                className={`fixed lg:sticky top-0 left-0 h-screen w-64 bg-[#432e16] text-white z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
             >
                 {/* Logo Area */}
                 <div className="p-6 border-b border-white/10 flex items-center justify-between">
@@ -83,7 +94,7 @@ export default function AdminLayout({ children }) {
                                 onClick={() => setIsSidebarOpen(false)}
                                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                                     isActive 
-                                    ? 'bg-brand-gold text-white font-bold shadow-md' 
+                                    ? 'bg-[#d17600] text-white font-bold shadow-md' 
                                     : 'text-white/70 hover:bg-white/10 hover:text-white'
                                 }`}
                             >
@@ -94,11 +105,11 @@ export default function AdminLayout({ children }) {
                     })}
                 </nav>
 
-                {/* Footer / Logout */}
-                <div className="p-4 border-t border-white/10">
+                {/* Footer / Logout Button */}
+                <div className="p-4 border-t border-white/10 mt-auto">
                     <button 
                         onClick={handleLogout}
-                        className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-red-300 hover:bg-red-500/10 hover:text-red-200 transition-colors"
+                        className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-red-300 hover:bg-white/5 hover:text-red-200 transition-colors"
                     >
                         <LogOut className="w-5 h-5" />
                         <span className="text-sm font-bold">Log Out</span>
@@ -107,18 +118,18 @@ export default function AdminLayout({ children }) {
             </aside>
 
             {/* 3. MAIN CONTENT AREA */}
-            <div className="flex-grow flex flex-col min-w-0">
+            <div className="flex-grow flex flex-col min-w-0 h-screen overflow-y-auto">
                 
                 {/* Top Mobile Header (Only visible on small screens) */}
                 <header className="lg:hidden bg-white border-b border-gray-200 p-4 flex items-center gap-4 sticky top-0 z-30">
                     <button onClick={() => setIsSidebarOpen(true)} className="p-2 bg-gray-100 rounded-lg text-gray-600">
                         <Menu className="w-6 h-6" />
                     </button>
-                    <span className="font-agency text-lg text-brand-brown-dark">Dashboard</span>
+                    <span className="font-agency text-lg text-[#432e16]">Dashboard</span>
                 </header>
 
-                {/* Page Content Rendered Here */}
-                <main className="flex-grow p-4 md:p-8 overflow-x-hidden">
+                {/* Page Content */}
+                <main className="flex-grow p-4 md:p-8">
                     {children}
                 </main>
 
