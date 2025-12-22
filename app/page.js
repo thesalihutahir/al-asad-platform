@@ -139,7 +139,7 @@ export default function HomePage() {
                     {/* VIDEO SECTION (Source: 'Videos' collection) */}
                     <div className="mb-12">
                         <div className="flex justify-between items-end mb-6">
-                            <h2 className="font-agency text-2xl text-brand-brown-dark">Latest Videos</h2>
+                            <h2 className="font-agency text-2xl text-brand-brown-dark">Latest Video</h2>
                             <Link href="/media/videos" className="text-xs font-bold text-brand-gold uppercase tracking-widest hover:underline">See More</Link>
                         </div>
 
@@ -158,7 +158,7 @@ export default function HomePage() {
                     {/* AUDIO SECTION (Source: 'Audios' collection) */}
                     <div className="mb-12">
                         <div className="flex justify-between items-end mb-6">
-                            <h2 className="font-agency text-2xl text-brand-brown-dark">Latest Audios</h2>
+                            <h2 className="font-agency text-2xl text-brand-brown-dark">Latest Audio</h2>
                             <Link href="/media/audios" className="text-xs font-bold text-brand-gold uppercase tracking-widest hover:underline">Listen All</Link>
                         </div>
 
