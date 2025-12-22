@@ -7,31 +7,36 @@ import Footer from '@/components/Footer';
 
 export default function AboutPage() {
     
-    const objectives = [
-        {
-            id: 1,
-            title: "Financial Assistance & Infrastructure",
-            text: "To provide financial assistance through scholarships, grants, or subsidies to students in need; support the development of educational infrastructure; and respect underserved communities."
+    // Core Values Data
+    const values = [
+        { title: "Iman (Faith)", text: "Grounding every action in sincerity and God-consciousness." },
+        { title: "Ilm (Knowledge)", text: "Pursuing beneficial knowledge as a lifelong sacred duty." },
+        { title: "Ihsan (Excellence)", text: "Striving for perfection and beauty in service and conduct." },
+        { title: "Khidmah (Service)", text: " dedicating resources to the upliftment of the Ummah." },
+    ];
+
+    // Leadership Data (3 Prominent Leaders)
+    const leaders = [
+        { 
+            id: 1, 
+            name: "Sheikh Goni Dr. Muneer Ja'afar Katsina", 
+            role: "Founder & Lead Scholar", 
+            bio: "A renowned scholar and visionary dedicated to bridging the gap between traditional Islamic sciences and modern educational needs.",
+            image: "/sheikhhero.jpg" // Use real photo
         },
-        {
-            id: 2,
-            title: "Access & Literacy",
-            text: "To foster educational initiatives to ensure access to quality education for all, with a focus on underserved populations; aiming to improve literacy rates and enhance educational outcomes."
+        { 
+            id: 2, 
+            name: "Ustaz Ibrahim Ahmed", // Placeholder Name
+            role: "Director of Education", 
+            bio: "An educationist with over 15 years of experience in curriculum development and administration.",
+            image: "/hero.jpg" // Placeholder
         },
-        {
-            id: 3,
-            title: "Islamic Sciences & Research",
-            text: "To support the study of the Qur’an, Hadith, Fiqh, and other Islamic sciences; provide resources and opportunities for Islamic research and scholarship."
-        },
-        {
-            id: 4,
-            title: "Heritage in a Modern Context",
-            text: "To develop programs that instill pride in Islamic heritage and culture; ensure students understand their faith in the context of a modern, globalized educational system."
-        },
-        {
-            id: 5,
-            title: "Innovation in Teaching",
-            text: "To promote teachers’ training programs through improving teaching methodologies; support innovative curriculum development and advanced learning technologies."
+        { 
+            id: 3, 
+            name: "Hajiya Fatima Bello", // Placeholder Name
+            role: "Head of Welfare & Admin", 
+            bio: "Driving the foundation's community outreach and ensuring operational excellence.",
+            image: "/hero.jpg" // Placeholder
         }
     ];
 
@@ -42,10 +47,10 @@ export default function AboutPage() {
             <main className="flex-grow pb-16">
 
                 {/* 1. HERO SECTION */}
-                <section className="w-full relative bg-white mb-8">
+                <section className="w-full relative bg-white mb-10">
                     <div className="relative w-full aspect-[2.5/1] md:aspect-[4/1]">
                         <Image
-                            src="/hero.jpg" // Placeholder: Image of Sheikh or Foundation building
+                            src="/hero.jpg" // Placeholder: Foundation Building or Group Photo
                             alt="About Al-Asad Foundation"
                             fill
                             className="object-cover object-top"
@@ -56,83 +61,150 @@ export default function AboutPage() {
 
                     <div className="relative -mt-12 md:-mt-20 text-center px-6 z-10">
                         <h1 className="font-agency text-4xl text-brand-brown-dark mb-3 drop-shadow-sm">
-                            Who We Are
+                            About Us
                         </h1>
                         <div className="w-16 h-1 bg-brand-gold mx-auto rounded-full mb-4"></div>
                         <p className="font-lato text-brand-brown text-sm max-w-md mx-auto leading-relaxed">
-                            Al-Asad Education Foundation is a beacon of knowledge, dedicated to serving humanity through faith, education, and community development.
+                            Knowledge is a trust, education is service, and empowerment begins with faith.
                         </p>
                     </div>
                 </section>
 
-                {/* 2. MISSION & VISION */}
-                <section className="px-6 mb-16">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Mission Card */}
-                        <div className="bg-brand-brown-dark text-white p-8 rounded-2xl relative overflow-hidden shadow-lg">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-gold opacity-10 rounded-full blur-2xl -mr-10 -mt-10"></div>
-                            <h2 className="font-agency text-2xl text-brand-gold mb-4">Our Mission</h2>
-                            <p className="font-lato text-lg leading-relaxed">
-                                "Expanding access to knowledge through Qur'an-centered and community driven education."
-                            </p>
-                        </div>
-
-                        {/* Vision Card */}
-                        <div className="bg-brand-sand p-8 rounded-2xl border border-brand-gold/20 shadow-lg relative">
-                             <h2 className="font-agency text-2xl text-brand-brown-dark mb-4">Our Vision</h2>
-                             <p className="font-lato text-lg text-brand-brown leading-relaxed">
-                                "To be a leading force in transforming education through Qur'an values, excellence in learning, and empowerment of communities."
-                             </p>
-                        </div>
-                    </div>
-                </section>
-
-                {/* 3. LEADERSHIP SPOTLIGHT */}
-                <section className="px-6 mb-16">
-                    <div className="flex flex-col items-center text-center">
-                        <div className="relative w-40 h-40 rounded-full overflow-hidden border-4 border-brand-sand shadow-xl mb-6">
-                            <Image 
-                                src="/sheikhhero.jpg" // Use the Sheikh's image here
-                                alt="Sheikh Muneer Ja'afar Katsina" 
-                                fill 
-                                className="object-cover"
-                            />
-                        </div>
-                        <h2 className="font-agency text-3xl text-brand-brown-dark mb-1">
-                            Sheikh Muneer Ja'afar Katsina
-                        </h2>
-                        <p className="font-lato text-xs text-brand-gold font-bold uppercase tracking-widest mb-4">
-                            Founder & Lead Scholar
-                        </p>
-                        <p className="font-lato text-sm text-brand-brown max-w-2xl leading-relaxed">
-                            Guided by a deep commitment to Islamic scholarship and community welfare, Sheikh Muneer established the Al-Asad Foundation to bridge the gap between traditional Islamic sciences and modern educational needs, ensuring a future where faith and progress walk hand in hand.
-                        </p>
-                    </div>
-                </section>
-
-                {/* 4. AIMS & OBJECTIVES */}
-                <section className="px-6">
-                    <h2 className="font-agency text-2xl text-brand-brown-dark mb-8 text-center">
-                        Our Strategic Objectives
+                {/* 2. WHO WE ARE (The Narrative) */}
+                <section className="px-6 mb-16 max-w-4xl mx-auto text-center">
+                    <h2 className="font-agency text-3xl text-brand-brown-dark mb-6">
+                        Who We Are
                     </h2>
+                    <div className="font-lato text-brand-brown leading-loose text-lg space-y-4">
+                        <p>
+                            Al-Asad Education Foundation is a Qur’an-centered, community-driven initiative committed to expanding access to quality education and nurturing morally grounded learners.
+                        </p>
+                        <p>
+                            We believe education should shape character as much as it builds knowledge. Guided by Qur’anic values, we support students, educators, and underserved communities through inclusive educational initiatives, capacity building, and Islamic scholarship, while preparing learners for the realities of a modern world.
+                        </p>
+                    </div>
+                    <div className="mt-8 p-6 bg-brand-sand/30 rounded-xl border-l-4 border-brand-gold inline-block">
+                        <p className="font-agency text-2xl text-brand-brown-dark italic">
+                            "At Al-Asad, knowledge is a trust, education is service, and empowerment begins with faith."
+                        </p>
+                    </div>
+                </section>
 
-                    <div className="space-y-6">
-                        {objectives.map((obj) => (
-                            <div key={obj.id} className="flex gap-5 items-start">
-                                {/* Styled Number */}
-                                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-brand-sand text-brand-gold font-agency text-xl font-bold flex items-center justify-center shadow-sm mt-1">
-                                    {obj.id}
+                {/* 3. OUR STORY & FOUNDER'S MESSAGE */}
+                <section className="px-6 mb-16">
+                    <div className="flex flex-col lg:flex-row gap-12 items-center">
+                        
+                        {/* LEFT: The Story */}
+                        <div className="flex-1">
+                            <h2 className="font-agency text-3xl text-brand-brown-dark mb-4">
+                                Our Story
+                            </h2>
+                            <div className="space-y-4 font-lato text-brand-brown leading-relaxed text-justify">
+                                <p>
+                                    Founded with a vision to harmonize religious devotion with societal development, Al-Asad Education Foundation began as a response to the growing need for an educational system that does not compromise on faith while pursuing excellence.
+                                </p>
+                                <p>
+                                    Established in <strong>[Year]</strong>, the organization was created to fill the void where underserved communities lacked access to resources that dignify both their spiritual and academic potential. What started as a small circle of learning has today blossomed into a movement for intellectual and social revival.
+                                </p>
+                            </div>
+
+                            {/* Mission & Vision Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+                                <div className="bg-brand-brown-dark text-white p-5 rounded-xl">
+                                    <h3 className="font-agency text-xl text-brand-gold mb-2">Mission</h3>
+                                    <p className="font-lato text-sm">Expanding access to knowledge through Qur'an-centered and community driven education.</p>
+                                </div>
+                                <div className="bg-brand-sand text-brand-brown-dark p-5 rounded-xl border border-brand-gold/20">
+                                    <h3 className="font-agency text-xl text-brand-brown-dark mb-2">Vision</h3>
+                                    <p className="font-lato text-sm">To be a leading force in transforming education through Qur'an values and excellence.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* RIGHT: Founder's Message */}
+                        <div className="flex-1 w-full">
+                            <div className="relative bg-white rounded-2xl shadow-xl p-8 border-t-8 border-brand-gold">
+                                {/* Quote Icon */}
+                                <div className="absolute top-4 right-6 text-6xl text-brand-sand font-serif">”</div>
+                                
+                                <h3 className="font-agency text-2xl text-brand-brown-dark mb-4">
+                                    Founder’s Message
+                                </h3>
+                                
+                                <p className="font-lato text-sm text-brand-brown leading-relaxed italic mb-6">
+                                    "We established this foundation not merely to build schools, but to build souls. In a world rapidly changing, our anchor remains the Qur'an. Our goal is to raise a generation that is as competent in the sciences of the world as they are grounded in the sciences of the Deen. This is our trust, and this is our legacy."
+                                </p>
+
+                                <div className="flex items-center gap-4">
+                                    <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-brand-gold">
+                                        <Image src="/sheikhhero.jpg" alt="Founder" width={56} height={56} className="object-cover" />
+                                    </div>
+                                    <div>
+                                        <p className="font-agency text-lg text-brand-brown-dark leading-none">
+                                            Sheikh Goni Dr. Muneer Ja'afar Katsina
+                                        </p>
+                                        <p className="font-lato text-xs text-brand-gold uppercase font-bold mt-1">
+                                            Founder & Chairman
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* 4. CORE VALUES */}
+                <section className="py-16 bg-brand-brown-dark text-white px-6">
+                    <div className="text-center mb-10">
+                        <h2 className="font-agency text-3xl mb-2">Our Core Values</h2>
+                        <div className="w-16 h-1 bg-white/20 mx-auto rounded-full"></div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {values.map((val, idx) => (
+                            <div key={idx} className="bg-white/5 p-6 rounded-xl border border-white/10 hover:bg-white/10 transition-colors text-center">
+                                <h3 className="font-agency text-xl text-brand-gold mb-2">{val.title}</h3>
+                                <p className="font-lato text-sm text-white/80">{val.text}</p>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
+                {/* 5. LEADERSHIP TEAM (3 Prominent Leaders) */}
+                <section className="px-6 py-16">
+                    <div className="text-center mb-12">
+                        <h2 className="font-agency text-3xl text-brand-brown-dark mb-2">
+                            Leadership
+                        </h2>
+                        <p className="font-lato text-brand-brown text-sm">
+                            Guided by scholarship and professional excellence.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                        {leaders.map((leader) => (
+                            <div key={leader.id} className="group flex flex-col items-center text-center">
+                                {/* Leader Image */}
+                                <div className="relative w-48 h-48 md:w-56 md:h-56 rounded-full overflow-hidden mb-6 border-4 border-brand-sand shadow-lg group-hover:border-brand-gold transition-colors duration-500">
+                                    <Image 
+                                        src={leader.image} 
+                                        alt={leader.name} 
+                                        fill 
+                                        className="object-cover transition-transform duration-700 group-hover:scale-110" 
+                                    />
                                 </div>
                                 
-                                {/* Content */}
-                                <div>
-                                    <h3 className="font-agency text-xl text-brand-brown-dark mb-2">
-                                        {obj.title}
-                                    </h3>
-                                    <p className="font-lato text-sm text-brand-brown leading-relaxed text-justify border-b border-gray-100 pb-6">
-                                        {obj.text}
-                                    </p>
-                                </div>
+                                {/* Leader Info */}
+                                <h3 className="font-agency text-2xl text-brand-brown-dark mb-1">
+                                    {leader.name}
+                                </h3>
+                                <p className="font-lato text-xs text-brand-gold font-bold uppercase tracking-widest mb-3">
+                                    {leader.role}
+                                </p>
+                                <div className="w-12 h-0.5 bg-gray-200 mx-auto mb-3"></div>
+                                <p className="font-lato text-sm text-brand-brown max-w-xs leading-relaxed">
+                                    {leader.bio}
+                                </p>
                             </div>
                         ))}
                     </div>
