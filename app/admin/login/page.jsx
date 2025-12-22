@@ -4,9 +4,13 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+// Import the real Auth hook we just created
+import { useAuth } from '@/context/AuthContext'; 
 
 export default function AdminLoginPage() {
     const router = useRouter();
+    // Get the real login function from our AuthContext
+    const { login } = useAuth(); 
     
     // Form State
     const [email, setEmail] = useState('');
@@ -14,26 +18,35 @@ export default function AdminLoginPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
 
-        // SIMULATION: In real backend phase, this checks Firebase Auth
-        setTimeout(() => {
-            if (email === "admin@alasad.com" && password === "password") {
-                // Success: Redirect to Dashboard
-                router.push('/admin/dashboard');
+        try {
+            // REAL FIREBASE LOGIN
+            // This attempts to sign in with the email/password you created in the Console
+            await login(email, password);
+            
+            // If successful, redirect to dashboard
+            router.push('/admin/dashboard');
+        } catch (err) {
+            console.error(err);
+            // Specific Error Handling
+            if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+                setError('Incorrect email or password.');
+            } else if (err.code === 'auth/too-many-requests') {
+                setError('Too many failed attempts. Try again later.');
             } else {
-                // Failure
-                setError('Invalid credentials. Please try again.');
-                setLoading(false);
+                setError('Failed to login. Please check your connection.');
             }
-        }, 1500);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-brand-sand/20 relative overflow-hidden px-4">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8f5f0] relative overflow-hidden px-4">
             
             {/* Background Pattern */}
             <div className="absolute inset-0 z-0 opacity-10">
@@ -41,7 +54,7 @@ export default function AdminLoginPage() {
             </div>
 
             {/* Login Card */}
-            <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 md:p-10 relative z-10 border border-brand-gold/20">
+            <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 md:p-10 relative z-10 border border-[#d17600]/20">
                 
                 {/* Logo Area */}
                 <div className="flex justify-center mb-8">
@@ -51,7 +64,7 @@ export default function AdminLoginPage() {
                 </div>
 
                 <div className="text-center mb-8">
-                    <h1 className="font-agency text-3xl text-brand-brown-dark mb-1">
+                    <h1 className="font-agency text-3xl text-[#432e16] mb-1">
                         Admin Portal
                     </h1>
                     <p className="font-lato text-sm text-gray-500">
@@ -59,7 +72,7 @@ export default function AdminLoginPage() {
                     </p>
                 </div>
 
-                {/* Error Message */}
+                {/* Error Message Display */}
                 {error && (
                     <div className="mb-6 bg-red-50 border border-red-200 text-red-600 text-xs font-bold px-4 py-3 rounded-lg text-center">
                         {error}
@@ -70,7 +83,7 @@ export default function AdminLoginPage() {
                     
                     {/* Email Input */}
                     <div>
-                        <label className="block text-xs font-bold text-brand-brown uppercase tracking-wider mb-2">
+                        <label className="block text-xs font-bold text-[#432e16] uppercase tracking-wider mb-2">
                             Email Address
                         </label>
                         <div className="relative">
@@ -79,7 +92,7 @@ export default function AdminLoginPage() {
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 focus:bg-white transition-all text-brand-brown-dark"
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#d17600]/50 focus:bg-white transition-all text-[#432e16]"
                                 placeholder="name@alasadfoundation.org"
                             />
                             {/* Icon */}
@@ -89,7 +102,7 @@ export default function AdminLoginPage() {
 
                     {/* Password Input */}
                     <div>
-                        <label className="block text-xs font-bold text-brand-brown uppercase tracking-wider mb-2">
+                        <label className="block text-xs font-bold text-[#432e16] uppercase tracking-wider mb-2">
                             Password
                         </label>
                         <div className="relative">
@@ -98,7 +111,7 @@ export default function AdminLoginPage() {
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 focus:bg-white transition-all text-brand-brown-dark"
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#d17600]/50 focus:bg-white transition-all text-[#432e16]"
                                 placeholder="••••••••"
                             />
                             {/* Icon */}
@@ -110,7 +123,7 @@ export default function AdminLoginPage() {
                     <button 
                         type="submit" 
                         disabled={loading}
-                        className={`w-full py-3 rounded-xl font-agency text-xl tracking-wide text-white transition-all shadow-lg flex justify-center items-center ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-brand-brown-dark hover:bg-brand-gold'}`}
+                        className={`w-full py-3 rounded-xl font-agency text-xl tracking-wide text-white transition-all shadow-lg flex justify-center items-center ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#432e16] hover:bg-[#d17600]'}`}
                     >
                         {loading ? (
                             <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -125,7 +138,7 @@ export default function AdminLoginPage() {
                 </form>
 
                 <div className="mt-8 text-center border-t border-gray-100 pt-6">
-                    <Link href="/" className="text-xs text-gray-400 hover:text-brand-gold transition-colors flex items-center justify-center gap-1">
+                    <Link href="/" className="text-xs text-gray-400 hover:text-[#d17600] transition-colors flex items-center justify-center gap-1">
                         ← Back to Website
                     </Link>
                 </div>
