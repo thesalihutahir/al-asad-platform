@@ -1,0 +1,165 @@
+"use client";
+
+import React from 'react';
+import Link from 'next/link';
+import { 
+    Users, 
+    FileText, 
+    Video, 
+    Mic, 
+    ArrowUpRight, 
+    PlusCircle,
+    Download
+} from 'lucide-react';
+
+export default function AdminDashboard() {
+
+    // Mock Statistics
+    const stats = [
+        { title: "Total Volunteers", value: "124", icon: Users, color: "bg-blue-500" },
+        { title: "Published Blogs", value: "32", icon: FileText, color: "bg-green-500" },
+        { title: "Videos Uploaded", value: "58", icon: Video, color: "bg-red-500" },
+        { title: "Audio Lectures", value: "112", icon: Mic, color: "bg-purple-500" },
+    ];
+
+    // Mock Recent Applications
+    const recentVolunteers = [
+        { id: 1, name: "Ahmed Musa", role: "Teaching", date: "2 mins ago", status: "Pending" },
+        { id: 2, name: "Fatima Sani", role: "Medical", date: "1 hour ago", status: "Approved" },
+        { id: 3, name: "Umar Farouq", role: "Tech Support", date: "3 hours ago", status: "Pending" },
+        { id: 4, name: "Zainab Aliyu", role: "Welfare", date: "1 day ago", status: "Reviewing" },
+    ];
+
+    return (
+        <div className="space-y-8">
+            
+            {/* 1. WELCOME HEADER */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="font-agency text-3xl text-brand-brown-dark">Dashboard Overview</h1>
+                    <p className="font-lato text-sm text-gray-500">Welcome back, Administrator. Here is what's happening today.</p>
+                </div>
+                <div className="flex gap-3">
+                    <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">
+                        <Download className="w-4 h-4" />
+                        Export Report
+                    </button>
+                    <Link href="/admin/blogs/new" className="flex items-center gap-2 px-4 py-2 bg-brand-gold text-white rounded-lg text-sm font-bold hover:bg-brand-brown-dark transition-colors shadow-md">
+                        <PlusCircle className="w-4 h-4" />
+                        Create New
+                    </Link>
+                </div>
+            </div>
+
+            {/* 2. STATS GRID */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {stats.map((stat, index) => {
+                    const Icon = stat.icon;
+                    return (
+                        <div key={index} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white shadow-sm ${stat.color}`}>
+                                <Icon className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">{stat.title}</p>
+                                <h3 className="font-agency text-3xl text-brand-brown-dark">{stat.value}</h3>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* 3. MAIN CONTENT SPLIT */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                {/* LEFT: Recent Volunteer Applications */}
+                <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                        <h2 className="font-agency text-xl text-brand-brown-dark">Recent Volunteer Requests</h2>
+                        <Link href="/admin/volunteers" className="text-xs font-bold text-brand-gold hover:underline">View All</Link>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                <tr>
+                                    <th className="px-6 py-4">Name</th>
+                                    <th className="px-6 py-4">Interest</th>
+                                    <th className="px-6 py-4">Date</th>
+                                    <th className="px-6 py-4">Status</th>
+                                    <th className="px-6 py-4">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {recentVolunteers.map((vol) => (
+                                    <tr key={vol.id} className="hover:bg-gray-50 transition-colors">
+                                        <td className="px-6 py-4 font-bold text-brand-brown-dark">{vol.name}</td>
+                                        <td className="px-6 py-4 text-sm text-gray-600">{vol.role}</td>
+                                        <td className="px-6 py-4 text-xs text-gray-400">{vol.date}</td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${
+                                                vol.status === 'Approved' ? 'bg-green-100 text-green-700' :
+                                                vol.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                                                'bg-blue-100 text-blue-700'
+                                            }`}>
+                                                {vol.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <button className="text-gray-400 hover:text-brand-gold">
+                                                <ArrowUpRight className="w-4 h-4" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* RIGHT: Quick Actions */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <h2 className="font-agency text-xl text-brand-brown-dark mb-4">Quick Actions</h2>
+                    <div className="space-y-3">
+                        <Link href="/admin/blogs" className="block w-full p-4 rounded-xl border border-gray-100 hover:border-brand-gold hover:bg-brand-sand/20 transition-all group">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-green-100 text-green-600 p-2 rounded-lg group-hover:bg-green-600 group-hover:text-white transition-colors">
+                                    <FileText className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-gray-700 text-sm">Post New Blog</h3>
+                                    <p className="text-xs text-gray-400">Write an article or update</p>
+                                </div>
+                            </div>
+                        </Link>
+
+                        <Link href="/admin/videos" className="block w-full p-4 rounded-xl border border-gray-100 hover:border-brand-gold hover:bg-brand-sand/20 transition-all group">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-red-100 text-red-600 p-2 rounded-lg group-hover:bg-red-600 group-hover:text-white transition-colors">
+                                    <Video className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-gray-700 text-sm">Add YouTube Video</h3>
+                                    <p className="text-xs text-gray-400">Link a new lecture</p>
+                                </div>
+                            </div>
+                        </Link>
+
+                        <Link href="/admin/audios" className="block w-full p-4 rounded-xl border border-gray-100 hover:border-brand-gold hover:bg-brand-sand/20 transition-all group">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-purple-100 text-purple-600 p-2 rounded-lg group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                                    <Mic className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-gray-700 text-sm">Upload Audio</h3>
+                                    <p className="text-xs text-gray-400">Add MP3 sermon/tafsir</p>
+                                </div>
+                            </div>
+                        </Link>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    );
+}
