@@ -1,6 +1,7 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/components/AuthContext";
+// UPDATE 1: Correct path matches where we created the file
+import { AuthContextProvider } from "@/context/AuthContext"; 
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -13,10 +14,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        {/* Wrap the entire app in AuthProvider for Admin access */}
-        <AuthProvider>
+        {/* UPDATE 2: Correct Name matches the export */}
+        <AuthContextProvider>
           {children}
-        </AuthProvider>
+        </AuthContextProvider>
       </body>
     </html>
   );
