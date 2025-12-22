@@ -158,7 +158,7 @@ export default function HomePage() {
                     {/* VIDEO SECTION - New "Latest Release" Card Style */}
                     <div className="mb-12">
                         <div className="flex justify-between items-end mb-4">
-                            <h2 className="font-agency text-2xl text-brand-brown-dark">Latest Release</h2>
+                            <h2 className="font-agency text-2xl text-brand-brown-dark">Latest Video</h2>
                         </div>
 
                         {/* Card Container */}
@@ -217,7 +217,7 @@ export default function HomePage() {
                     {/* AUDIO SECTION - New "List/Card" Style (2 Items) */}
                     <div className="mb-8">
                         <div className="flex justify-between items-end mb-4">
-                            <h2 className="font-agency text-2xl text-brand-brown-dark">Latest Audio</h2>
+                            <h2 className="font-agency text-2xl text-brand-brown-dark">Latest Audios</h2>
                             <Link href="/media/audios" className="text-xs font-bold text-brand-gold uppercase tracking-widest hover:underline">View Library</Link>
                         </div>
 
