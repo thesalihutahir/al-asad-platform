@@ -9,16 +9,25 @@ import {
     Youtube, 
     PlayCircle,
     CheckCircle,
-    AlertCircle
+    AlertCircle,
+    ListVideo
 } from 'lucide-react';
 
 export default function AddVideoPage() {
-    
+
+    // Mock Playlists (In real app, fetch from API)
+    const availablePlaylists = [
+        { id: 1, title: "Tafsir Surah Al-Baqarah (2024)" },
+        { id: 2, title: "Ramadan Spiritual Guide" },
+        { id: 3, title: "Seerah Series" }
+    ];
+
     // Form State
     const [formData, setFormData] = useState({
         title: '',
         url: '',
         category: 'Lecture',
+        playlist: '', // New Field
         date: new Date().toISOString().split('T')[0],
         description: ''
     });
@@ -27,22 +36,21 @@ export default function AddVideoPage() {
     const [thumbnail, setThumbnail] = useState(null);
     const [isValid, setIsValid] = useState(false);
 
-    // Helper: Extract YouTube ID from various URL formats
+    // Helper: Extract YouTube ID
     const extractVideoId = (url) => {
         const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
         const match = url.match(regExp);
         return (match && match[2].length === 11) ? match[2] : null;
     };
 
-    // Handle URL Change & Auto-Fetch Thumbnail
+    // Handle URL Change
     const handleUrlChange = (e) => {
         const url = e.target.value;
         setFormData(prev => ({ ...prev, url }));
-        
+
         const id = extractVideoId(url);
         if (id) {
             setVideoId(id);
-            // YouTube Standard Thumbnail URL
             setThumbnail(`https://img.youtube.com/vi/${id}/maxresdefault.jpg`);
             setIsValid(true);
         } else {
@@ -63,12 +71,12 @@ export default function AddVideoPage() {
             alert("Please enter a valid YouTube URL first.");
             return;
         }
-        alert(`Video "${formData.title}" ready for upload! (ID: ${videoId})`);
+        alert(`Video "${formData.title}" ready for upload! \nPlaylist: ${formData.playlist || 'None'}`);
     };
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6 max-w-5xl mx-auto pb-12">
-            
+
             {/* 1. HEADER & ACTIONS */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-0 bg-gray-50 z-20 py-4 border-b border-gray-200">
                 <div className="flex items-center gap-4">
@@ -100,10 +108,10 @@ export default function AddVideoPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                
+
                 {/* 2. LEFT COLUMN: INPUT FIELDS */}
                 <div className="space-y-6">
-                    
+
                     {/* YouTube URL Input */}
                     <div className={`p-6 rounded-2xl shadow-sm border transition-colors ${isValid ? 'bg-green-50 border-green-200' : 'bg-white border-gray-100'}`}>
                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
@@ -126,10 +134,31 @@ export default function AddVideoPage() {
                         </p>
                     </div>
 
-                    {/* Basic Info */}
+                    {/* Video Details */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
                         <h3 className="font-agency text-xl text-brand-brown-dark border-b border-gray-100 pb-2">Video Details</h3>
-                        
+
+                        {/* Playlist Selection (NEW) */}
+                        <div className="bg-brand-sand/20 p-4 rounded-xl border border-brand-gold/20">
+                            <label className="flex items-center gap-2 text-xs font-bold text-brand-brown-dark uppercase tracking-wider mb-2">
+                                <ListVideo className="w-4 h-4" /> Add to Series / Playlist
+                            </label>
+                            <select 
+                                name="playlist"
+                                value={formData.playlist}
+                                onChange={handleChange}
+                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer"
+                            >
+                                <option value="">Select a Playlist (Optional)</option>
+                                {availablePlaylists.map(pl => (
+                                    <option key={pl.id} value={pl.title}>{pl.title}</option>
+                                ))}
+                            </select>
+                            <p className="text-[10px] text-gray-500 mt-1">
+                                Selecting a playlist will group this video with others in the series.
+                            </p>
+                        </div>
+
                         <div>
                             <label className="block text-xs font-bold text-brand-brown mb-1">Video Title</label>
                             <input 
@@ -187,16 +216,16 @@ export default function AddVideoPage() {
 
                 {/* 3. RIGHT COLUMN: LIVE PREVIEW */}
                 <div className="space-y-6">
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 sticky top-24">
                         <h3 className="font-agency text-xl text-brand-brown-dark mb-4 flex items-center gap-2">
                             <PlayCircle className="w-5 h-5 text-brand-gold" />
                             Live Preview
                         </h3>
-                        
-                        {/* The Preview Card (Mimics Public Site) */}
+
+                        {/* Preview Card */}
                         <div className="bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 transform transition-all hover:scale-[1.02]">
-                            
-                            {/* Facade/Thumbnail Area */}
+
+                            {/* Thumbnail Area */}
                             <div className="relative w-full aspect-video bg-black group">
                                 {thumbnail ? (
                                     <>
@@ -220,28 +249,31 @@ export default function AddVideoPage() {
                                 )}
                             </div>
 
-                            {/* Details Area */}
+                            {/* Info Area */}
                             <div className="p-5">
-                                <span className="inline-block px-2 py-1 bg-brand-gold text-white text-[10px] font-bold uppercase rounded mb-3 shadow-sm">
-                                    {formData.category}
-                                </span>
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                    <span className="inline-block px-2 py-1 bg-brand-gold text-white text-[10px] font-bold uppercase rounded shadow-sm">
+                                        {formData.category}
+                                    </span>
+                                    {formData.playlist && (
+                                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-brand-sand text-brand-brown-dark text-[10px] font-bold uppercase rounded border border-brand-gold/20">
+                                            <ListVideo className="w-3 h-3" /> Series
+                                        </span>
+                                    )}
+                                </div>
                                 <h3 className="font-agency text-xl text-brand-brown-dark mb-2 leading-tight">
                                     {formData.title || "Video Title Placeholder"}
                                 </h3>
+                                {formData.playlist && (
+                                    <p className="text-xs text-brand-gold font-bold uppercase tracking-wide mb-2">
+                                        Part of: {formData.playlist}
+                                    </p>
+                                )}
                                 <p className="font-lato text-sm text-brand-brown line-clamp-2 opacity-80">
                                     {formData.description || "The description you enter will appear here, giving users a quick summary of the lecture content."}
                                 </p>
                             </div>
                         </div>
-
-                        {!isValid && (
-                            <div className="mt-4 p-4 bg-yellow-50 rounded-xl flex gap-3 items-start">
-                                <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                                <p className="text-xs text-yellow-700 leading-relaxed">
-                                    <strong>Tip:</strong> Paste a valid link first. The system will automatically fetch the high-quality thumbnail from YouTube. You don't need to upload an image manually!
-                                </p>
-                            </div>
-                        )}
 
                     </div>
                 </div>
