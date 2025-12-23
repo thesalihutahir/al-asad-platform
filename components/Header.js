@@ -93,13 +93,13 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
 
-          {/* LEFT SIDE: Menu Icon and Logo Container */}
+          {/* LEFT SIDE: Menu Icon (Mobile Only) and Logo */}
           <div className="flex items-center space-x-3 sm:space-x-4"> 
 
-            {/* Menu Icon */}
+            {/* Menu Icon - HIDDEN ON DESKTOP (lg:hidden) */}
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className={`p-3 rounded-full ${ICON_BG_COLOR} text-white focus:outline-none hover:bg-[#d17600] transition-colors`}
+              className={`lg:hidden p-3 rounded-full ${ICON_BG_COLOR} text-white focus:outline-none hover:bg-[#d17600] transition-colors`}
               aria-expanded={isSidebarOpen}
             >
               <Menu className="h-5 w-5" aria-hidden="true" />
@@ -111,35 +111,84 @@ export default function Header() {
                 src="/headerlogo.svg" 
                 alt="Al-Asad Education Foundation Logo" 
                 className="h-16 w-auto object-contain max-h-full" 
-                sizes="(max-width: 640px) 70vw, 30vw"
+                width={200}
+                height={80}
                 priority 
               />
             </Link>
           </div>
 
-          <div className="flex-shrink-0">
-             {/* Empty Placeholder */}
+          {/* CENTER/RIGHT: DESKTOP NAVIGATION (Hidden on Mobile) */}
+          <nav className="hidden lg:flex items-center space-x-8">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href || (item.children && pathname.startsWith(item.href));
+              
+              return (
+                <div key={item.name} className="relative group">
+                  {/* Top Level Link */}
+                  <Link 
+                    href={item.href}
+                    className={`flex items-center gap-1 text-sm font-bold uppercase tracking-wide py-8 border-b-2 transition-all duration-200 
+                      ${isActive 
+                        ? 'text-[#d17600] border-[#d17600]' 
+                        : 'text-[#432e16] border-transparent hover:text-[#d17600]'
+                      }`}
+                  >
+                    {item.name}
+                    {item.children && <ChevronDown className="w-4 h-4" />}
+                  </Link>
+
+                  {/* Desktop Dropdown Menu */}
+                  {item.children && (
+                    <div className="absolute top-full left-0 w-64 bg-white shadow-xl rounded-b-xl border-t-2 border-[#d17600] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0">
+                      <div className="py-2">
+                        {item.children.map((child) => (
+                          <Link 
+                            key={child.name} 
+                            href={child.href}
+                            className="block px-6 py-3 text-sm text-gray-600 hover:text-[#d17600] hover:bg-gray-50 transition-colors border-l-4 border-transparent hover:border-[#d17600]"
+                          >
+                            {child.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </nav>
+
+          {/* RIGHT SIDE: Utility Icons (Search/Donate Button) */}
+          <div className="flex-shrink-0 flex items-center gap-4">
+             {/* Desktop Search Icon */}
+             <button className="hidden lg:block p-2 text-gray-500 hover:text-[#d17600] transition-colors">
+                <Search className="w-5 h-5" />
+             </button>
+             
+             {/* Optional: 'Donate' CTA for Desktop could go here */}
           </div>
 
         </div>
       </div>
 
+      {/* --- MOBILE SIDEBAR CODE (UNCHANGED) --- */}
+
       {/* Overlay Backdrop */}
       <div 
-        className={`fixed inset-0 bg-black z-40 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-50' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 bg-black z-40 transition-opacity duration-300 lg:hidden ${isSidebarOpen ? 'opacity-50' : 'opacity-0 pointer-events-none'}`}
         onClick={closeSidebar}
       />
 
-      {/* Sidebar Panel - BRAND BROWN DARK (Like Admin) */}
+      {/* Sidebar Panel */}
       <div 
-        className={`fixed top-0 left-0 w-72 max-w-full h-full bg-[#432e16] text-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed top-0 left-0 w-72 max-w-full h-full bg-[#432e16] text-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="flex flex-col h-full">
 
           {/* Header Bar with Close Button */}
           <div className="p-6 flex justify-between items-center border-b border-white/10">
             <div className="flex items-center gap-3">
-               {/* Optional White Logo in Sidebar */}
                <div className="relative w-8 h-8 opacity-90">
                   <Image src="/headerlogo.svg" alt="Logo" fill className="object-contain brightness-0 invert" />
                </div>
@@ -186,7 +235,7 @@ export default function Header() {
                         <span className="text-sm font-lato font-medium tracking-wide">{item.name}</span>
                       </Link>
 
-                      {/* Expand Toggle (Separate Click Target) */}
+                      {/* Expand Toggle */}
                       {item.children && (
                         <button 
                           onClick={(e) => {
@@ -204,7 +253,7 @@ export default function Header() {
                       )}
                     </div>
 
-                    {/* Sub-menu (Accordion Animation) */}
+                    {/* Sub-menu */}
                     <div className={`overflow-hidden transition-all duration-300 ease-in-out ${expandedItem === item.name ? 'max-h-96 opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}>
                       {item.children?.map((child) => (
                         <Link
