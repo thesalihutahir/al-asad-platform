@@ -5,11 +5,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { Play, Mic, Video, BookOpen, Camera, Headphones, ArrowRight } from 'lucide-react';
 
 export default function MediaPage() {
     // State to handle Video Facade
     const [playVideo, setPlayVideo] = useState(false);
-    
+
     // Media Categories Configuration
     const categories = [
         {
@@ -17,52 +18,52 @@ export default function MediaPage() {
             title: 'Videos',
             subtitle: 'Lectures & Events',
             link: '/media/videos',
-            image: '/hero.jpg', // Placeholder: Video thumbnail/Camera
-            icon: '/mediaicon.svg' 
+            image: '/hero.jpg', // Placeholder
+            icon: Video
         },
         {
             id: 'audios',
             title: 'Audios',
             subtitle: 'Sermons & Tafsir',
             link: '/media/audios',
-            image: '/hero.jpg', // Placeholder: Microphone/Waveform
-            icon: '/mediaicon.svg' 
+            image: '/hero.jpg', // Placeholder
+            icon: Mic 
         },
         {
             id: 'podcasts',
             title: 'Podcasts',
             subtitle: 'Discussions',
             link: '/media/podcasts',
-            image: '/hero.jpg', // Placeholder: Studio setting
-            icon: '/mediaicon.svg'
+            image: '/hero.jpg', // Placeholder
+            icon: Headphones
         },
         {
             id: 'ebooks',
             title: 'eBooks',
             subtitle: 'Publications',
             link: '/media/ebooks',
-            image: '/hero.jpg', // Placeholder: Bookshelf/Paper
-            icon: '/mediaicon.svg'
+            image: '/hero.jpg', // Placeholder
+            icon: BookOpen
         },
         {
             id: 'gallery',
             title: 'Gallery',
             subtitle: 'Photos & Moments',
             link: '/media/gallery',
-            image: '/hero.jpg', // Placeholder: Photo collage
-            icon: '/mediaicon.svg'
+            image: '/hero.jpg', // Placeholder
+            icon: Camera
         }
     ];
 
     return (
-        <div className="min-h-screen flex flex-col bg-white">
+        <div className="min-h-screen flex flex-col bg-white font-lato">
             <Header />
 
             <main className="flex-grow pb-16">
 
                 {/* 1. HERO SECTION */}
-                <section className="w-full relative bg-white mb-8">
-                    <div className="relative w-full aspect-[2.5/1] md:aspect-[4/1]">
+                <section className="w-full relative bg-white mb-12 md:mb-16">
+                    <div className="relative w-full aspect-[2.5/1] md:aspect-[3.5/1] lg:aspect-[4/1]">
                         <Image
                             src="/hero.jpg" // Placeholder: Library or Recording studio image
                             alt="Media Library Hero"
@@ -70,71 +71,75 @@ export default function MediaPage() {
                             className="object-cover object-center"
                             priority
                         />
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/20 to-white"></div>
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-white"></div>
                     </div>
 
-                    <div className="relative -mt-12 md:-mt-20 text-center px-6 z-10">
-                        <h1 className="font-agency text-4xl text-brand-brown-dark mb-3 drop-shadow-sm">
+                    <div className="relative -mt-16 md:-mt-32 text-center px-6 z-10 max-w-4xl mx-auto">
+                        <h1 className="font-agency text-4xl md:text-6xl lg:text-7xl text-brand-brown-dark mb-4 drop-shadow-md">
                             Media & Resources
                         </h1>
-                        <div className="w-16 h-1 bg-brand-gold mx-auto rounded-full mb-4"></div>
-                        <p className="font-lato text-brand-brown text-sm max-w-md mx-auto leading-relaxed">
-                            Access our archive of knowledge, lectures, and publications. Designed to inspire and educate.
+                        <div className="w-16 md:w-24 h-1 bg-brand-gold mx-auto rounded-full mb-6"></div>
+                        <p className="font-lato text-brand-brown text-sm md:text-xl max-w-2xl mx-auto leading-relaxed font-medium">
+                            Access our archive of knowledge, lectures, and publications. Designed to inspire, educate, and preserve our heritage.
                         </p>
                     </div>
                 </section>
 
-                {/* 2. CATEGORY GRID */}
-                <section className="px-6 mb-12">
-                    <h2 className="font-agency text-2xl text-brand-brown-dark mb-6 text-left">
+                {/* 2. CATEGORY GRID (Mobile: Grid / Desktop: Horizontal Flex) */}
+                <section className="px-6 md:px-12 lg:px-24 mb-16 md:mb-24 max-w-7xl mx-auto">
+                    <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark mb-8 text-left border-b border-gray-100 pb-4">
                         Browse Archive
                     </h2>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        {categories.map((cat) => (
-                            <Link 
-                                key={cat.id} 
-                                href={cat.link}
-                                className={`group relative rounded-2xl overflow-hidden shadow-md aspect-square ${cat.id === 'gallery' ? 'col-span-2 aspect-[2.5/1]' : ''}`}
-                            >
-                                {/* Background Image */}
-                                <Image
-                                    src={cat.image}
-                                    alt={cat.title}
-                                    fill
-                                    className="object-cover transition-transform duration-700 group-hover:scale-110"
-                                />
-                                {/* Overlay */}
-                                <div className="absolute inset-0 bg-brand-brown-dark/60 group-hover:bg-brand-brown-dark/50 transition-colors"></div>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
+                        {categories.map((cat) => {
+                            const Icon = cat.icon;
+                            return (
+                                <Link 
+                                    key={cat.id} 
+                                    href={cat.link}
+                                    className={`group relative rounded-2xl overflow-hidden shadow-lg transition-transform hover:-translate-y-2 hover:shadow-2xl 
+                                        ${cat.id === 'gallery' ? 'col-span-2 md:col-span-1 aspect-[2.5/1] md:aspect-[4/5]' : 'aspect-square md:aspect-[4/5]'}`}
+                                >
+                                    {/* Background Image */}
+                                    <Image
+                                        src={cat.image}
+                                        alt={cat.title}
+                                        fill
+                                        className="object-cover transition-transform duration-700 group-hover:scale-110"
+                                    />
+                                    {/* Overlay */}
+                                    <div className="absolute inset-0 bg-brand-brown-dark/70 group-hover:bg-brand-brown-dark/50 transition-colors backdrop-blur-[1px] group-hover:backdrop-blur-none"></div>
 
-                                {/* Content */}
-                                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-3">
-                                    <div className="w-10 h-10 mb-2 relative opacity-80 group-hover:opacity-100 transition-opacity">
-                                        <Image src={cat.icon} alt="Icon" fill className="object-contain invert brightness-0" /> 
+                                    {/* Content */}
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+                                        <div className="w-12 h-12 mb-3 relative opacity-80 group-hover:opacity-100 transition-all group-hover:scale-110 bg-white/10 rounded-full p-2.5">
+                                            <Icon className="w-full h-full text-white" />
+                                        </div>
+                                        <h3 className="font-agency text-2xl md:text-3xl text-white tracking-wide">
+                                            {cat.title}
+                                        </h3>
+                                        <p className="font-lato text-[10px] md:text-xs text-white/80 uppercase tracking-widest mt-2 border-t border-white/20 pt-2 w-1/2 mx-auto">
+                                            {cat.subtitle}
+                                        </p>
                                     </div>
-                                    <h3 className="font-agency text-xl text-white tracking-wide">
-                                        {cat.title}
-                                    </h3>
-                                    <p className="font-lato text-[10px] text-white/80 uppercase tracking-widest mt-1">
-                                        {cat.subtitle}
-                                    </p>
-                                </div>
-                            </Link>
-                        ))}
+                                </Link>
+                            );
+                        })}
                     </div>
                 </section>
 
                 {/* 3. FEATURED / LATEST UPLOAD */}
-                <section className="px-6">
-                    <div className="flex justify-between items-end mb-4">
-                        <h2 className="font-agency text-2xl text-brand-brown-dark">
+                <section className="px-6 md:px-12 lg:px-24 max-w-7xl mx-auto">
+                    <div className="flex justify-between items-end mb-6 md:mb-8">
+                        <h2 className="font-agency text-3xl md:text-5xl text-brand-brown-dark">
                             Latest Release
                         </h2>
                     </div>
 
-                    <div className="bg-brand-sand rounded-2xl overflow-hidden shadow-lg border border-brand-gold/20">
-                        {/* Video Preview Area - UPDATED WITH FACADE */}
-                        <div className="relative w-full aspect-video bg-black group">
+                    <div className="bg-brand-sand rounded-3xl overflow-hidden shadow-xl border border-brand-gold/20 flex flex-col md:flex-row">
+                        {/* Video Preview Area (Left on Desktop) */}
+                        <div className="relative w-full md:w-2/3 aspect-video bg-black group">
                             {!playVideo ? (
                                 <button 
                                     onClick={() => setPlayVideo(true)}
@@ -147,10 +152,8 @@ export default function MediaPage() {
                                         className="object-cover opacity-90 group-hover:opacity-100 transition-opacity" 
                                     />
                                     <div className="absolute inset-0 flex items-center justify-center">
-                                        <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:bg-brand-gold group-hover:scale-110 transition-all duration-300 shadow-lg">
-                                            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                                <path d="M8 5v14l11-7z" />
-                                            </svg>
+                                        <div className="w-16 h-16 md:w-24 md:h-24 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:bg-brand-gold group-hover:scale-110 transition-all duration-300 shadow-lg border border-white/50">
+                                            <Play className="w-6 h-6 md:w-10 md:h-10 text-white fill-current ml-1" />
                                         </div>
                                     </div>
                                 </button>
@@ -166,19 +169,22 @@ export default function MediaPage() {
                             )}
                         </div>
 
-                        {/* Info Area */}
-                        <div className="p-5">
-                            <span className="inline-block px-2 py-1 bg-brand-gold text-white text-[10px] font-bold uppercase rounded mb-3">
+                        {/* Info Area (Right on Desktop) */}
+                        <div className="p-6 md:p-10 md:w-1/3 flex flex-col justify-center bg-white md:bg-brand-sand">
+                            <span className="inline-block px-3 py-1 bg-brand-gold text-white text-[10px] md:text-xs font-bold uppercase rounded-md shadow-sm w-fit mb-4">
                                 New Video
                             </span>
-                            <h3 className="font-agency text-xl text-brand-brown-dark mb-2">
+                            <h3 className="font-agency text-2xl md:text-4xl text-brand-brown-dark mb-4 leading-tight">
                                 Understanding the Rights of Neighbors
                             </h3>
-                            <p className="font-lato text-sm text-brand-brown line-clamp-2 mb-4">
+                            <p className="font-lato text-sm md:text-base text-brand-brown line-clamp-3 md:line-clamp-none mb-8 leading-relaxed">
                                 A profound discussion by Sheikh Muneer Ja'afar on the importance of community cohesion and social welfare in Islam.
                             </p>
-                            <Link href="/media/videos" className="text-brand-gold font-bold text-xs uppercase tracking-widest flex items-center hover:underline">
-                                Watch Full Series <span className="ml-1">→</span>
+                            <Link 
+                                href="/media/videos" 
+                                className="inline-flex items-center text-brand-gold font-bold text-xs md:text-sm uppercase tracking-widest hover:underline group"
+                            >
+                                Watch Full Series <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
                             </Link>
                         </div>
                     </div>
