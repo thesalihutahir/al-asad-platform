@@ -4,113 +4,138 @@ import React from 'react';
 import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { ShieldCheck, Users, TrendingUp, Briefcase, Building2, Lightbulb, Handshake, Mail, User, Building } from 'lucide-react';
 
 export default function PartnerPage() {
     return (
-        <div className="min-h-screen flex flex-col bg-white">
+        <div className="min-h-screen flex flex-col bg-white font-lato">
             <Header />
 
             <main className="flex-grow pb-16">
 
                 {/* 1. HERO SECTION */}
-                <section className="w-full relative bg-white mb-10">
-                    <div className="relative w-full aspect-[2.5/1] md:aspect-[4/1]">
+                <section className="w-full relative bg-white mb-12 md:mb-20">
+                    <div className="relative w-full aspect-[2.5/1] md:aspect-[3.5/1] lg:aspect-[4/1]">
                         <Image
-                            src="/hero.jpg" // Placeholder: Handshake or Meeting
+                            src="/hero.jpg" // Placeholder
                             alt="Partner With Us"
                             fill
                             className="object-cover object-center"
                             priority
                         />
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/20 to-white"></div>
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-white"></div>
                     </div>
 
-                    <div className="relative -mt-12 md:-mt-20 text-center px-6 z-10">
-                        <h1 className="font-agency text-4xl text-brand-brown-dark mb-3 drop-shadow-sm">
+                    <div className="relative -mt-16 md:-mt-32 text-center px-6 z-10 max-w-4xl mx-auto">
+                        <h1 className="font-agency text-4xl md:text-6xl lg:text-7xl text-brand-brown-dark mb-4 drop-shadow-md">
                             Partner For Impact
                         </h1>
-                        <div className="w-16 h-1 bg-brand-gold mx-auto rounded-full mb-4"></div>
-                        <p className="font-lato text-brand-brown text-sm max-w-md mx-auto leading-relaxed">
-                            Collaborate with Al-Asad Foundation to amplify reach, empower communities, and build a lasting legacy.
+                        <div className="w-16 md:w-24 h-1 bg-brand-gold mx-auto rounded-full mb-6"></div>
+                        <p className="font-lato text-brand-brown text-sm md:text-xl max-w-2xl mx-auto leading-relaxed font-medium">
+                            Collaborate with Al-Asad Foundation to amplify reach, empower communities, and build a lasting legacy through strategic partnership.
                         </p>
                     </div>
                 </section>
 
                 {/* 2. VALUE PROPOSITION */}
-                <section className="px-6 mb-16 max-w-6xl mx-auto">
-                    <div className="text-center mb-10">
-                        <h2 className="font-agency text-2xl text-brand-brown-dark mb-4">
+                <section className="px-6 md:px-12 lg:px-24 mb-16 md:mb-24 max-w-7xl mx-auto">
+                    <div className="text-center mb-10 md:mb-16">
+                        <h2 className="font-agency text-3xl md:text-4xl text-brand-brown-dark mb-4">
                             Why Partner With Us?
                         </h2>
-                        <p className="font-lato text-sm text-brand-brown max-w-2xl mx-auto">
+                        <p className="font-lato text-sm md:text-lg text-brand-brown max-w-3xl mx-auto leading-relaxed">
                             We offer a trusted platform for organizations to fulfill their Corporate Social Responsibility (CSR) and community engagement goals through structured, transparent, and high-impact initiatives.
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10">
                         {/* Benefit 1 */}
-                        <div className="bg-brand-sand/30 p-6 rounded-xl border border-transparent hover:border-brand-gold/30 transition-colors">
-                            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-brand-gold shadow-sm mb-4">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                        <div className="bg-brand-sand/30 p-8 rounded-3xl border border-transparent hover:border-brand-gold/30 hover:bg-white hover:shadow-xl transition-all duration-300 group">
+                            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-brand-gold shadow-md mb-6 group-hover:bg-brand-brown-dark group-hover:text-white transition-colors">
+                                <ShieldCheck className="w-7 h-7" />
                             </div>
-                            <h3 className="font-agency text-xl text-brand-brown-dark mb-2">Structure & Credibility</h3>
-                            <p className="font-lato text-xs text-brand-brown leading-relaxed">
-                                Leveraging our established community trust and administrative structure ensures your resources are deployed effectively and ethically.
+                            <h3 className="font-agency text-2xl text-brand-brown-dark mb-3">Structure & Credibility</h3>
+                            <p className="font-lato text-sm text-gray-600 leading-relaxed">
+                                Leveraging our established community trust and administrative structure ensures your resources are deployed effectively, ethically, and transparently.
                             </p>
                         </div>
 
                         {/* Benefit 2 */}
-                        <div className="bg-brand-sand/30 p-6 rounded-xl border border-transparent hover:border-brand-gold/30 transition-colors">
-                            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-brand-gold shadow-sm mb-4">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                        <div className="bg-brand-sand/30 p-8 rounded-3xl border border-transparent hover:border-brand-gold/30 hover:bg-white hover:shadow-xl transition-all duration-300 group">
+                            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-brand-gold shadow-md mb-6 group-hover:bg-brand-brown-dark group-hover:text-white transition-colors">
+                                <Users className="w-7 h-7" />
                             </div>
-                            <h3 className="font-agency text-xl text-brand-brown-dark mb-2">Deep Community Reach</h3>
-                            <p className="font-lato text-xs text-brand-brown leading-relaxed">
-                                Gain access to grassroots networks where help is needed most, ensuring your support reaches the intended beneficiaries directly.
+                            <h3 className="font-agency text-2xl text-brand-brown-dark mb-3">Deep Community Reach</h3>
+                            <p className="font-lato text-sm text-gray-600 leading-relaxed">
+                                Gain access to grassroots networks where help is needed most, ensuring your support reaches the intended beneficiaries directly without middlemen.
                             </p>
                         </div>
 
                         {/* Benefit 3 */}
-                        <div className="bg-brand-sand/30 p-6 rounded-xl border border-transparent hover:border-brand-gold/30 transition-colors">
-                            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-brand-gold shadow-sm mb-4">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <div className="bg-brand-sand/30 p-8 rounded-3xl border border-transparent hover:border-brand-gold/30 hover:bg-white hover:shadow-xl transition-all duration-300 group">
+                            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-brand-gold shadow-md mb-6 group-hover:bg-brand-brown-dark group-hover:text-white transition-colors">
+                                <TrendingUp className="w-7 h-7" />
                             </div>
-                            <h3 className="font-agency text-xl text-brand-brown-dark mb-2">Measurable Impact</h3>
-                            <p className="font-lato text-xs text-brand-brown leading-relaxed">
-                                We provide clear reporting and documentation (media & data) on how every partnership milestone is achieved.
+                            <h3 className="font-agency text-2xl text-brand-brown-dark mb-3">Measurable Impact</h3>
+                            <p className="font-lato text-sm text-gray-600 leading-relaxed">
+                                We provide clear reporting and documentation (media & data) on how every partnership milestone is achieved, giving you clear visibility on ROI.
                             </p>
                         </div>
                     </div>
                 </section>
 
                 {/* 3. PARTNERSHIP MODELS */}
-                <section className="px-6 mb-16 bg-brand-brown-dark py-12 text-white">
-                    <div className="max-w-4xl mx-auto">
-                        <h2 className="font-agency text-2xl mb-8 text-center">Ways to Collaborate</h2>
-                        
-                        <div className="space-y-4">
+                <section className="px-6 md:px-12 lg:px-24 mb-16 md:mb-24 bg-brand-brown-dark py-16 md:py-20 text-white relative overflow-hidden">
+                    {/* Background Pattern */}
+                    <div className="absolute top-0 right-0 w-96 h-96 bg-brand-gold opacity-5 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                    <div className="absolute bottom-0 left-0 w-96 h-96 bg-white opacity-5 rounded-full blur-3xl -ml-20 -mb-20"></div>
+
+                    <div className="max-w-7xl mx-auto relative z-10">
+                        <div className="text-center mb-12">
+                             <h2 className="font-agency text-3xl md:text-5xl mb-4">Ways to Collaborate</h2>
+                             <p className="text-white/70 max-w-xl mx-auto font-lato">We offer flexible partnership models tailored to your organization's goals.</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
                             {/* Model 1 */}
-                            <div className="flex gap-4 items-start bg-white/5 p-4 rounded-lg border border-white/10">
-                                <span className="font-agency text-3xl text-brand-gold font-bold">01</span>
+                            <div className="flex flex-col gap-4 bg-white/5 p-8 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
+                                <div className="flex justify-between items-start">
+                                    <span className="font-agency text-4xl text-brand-gold font-bold opacity-50">01</span>
+                                    <Briefcase className="w-8 h-8 text-brand-gold" />
+                                </div>
                                 <div>
-                                    <h3 className="font-agency text-xl mb-1">Project Sponsorship</h3>
-                                    <p className="font-lato text-xs text-white/70">Adopt a specific initiative (e.g., "Build a Classroom" or "Ramadan Feeding") and fully brand it as your organization's contribution.</p>
+                                    <h3 className="font-agency text-2xl mb-2">Project Sponsorship</h3>
+                                    <p className="font-lato text-sm md:text-base text-white/70 leading-relaxed">
+                                        Adopt a specific initiative (e.g., "Build a Classroom" or "Ramadan Feeding") and fully brand it as your organization's contribution.
+                                    </p>
                                 </div>
                             </div>
+
                              {/* Model 2 */}
-                             <div className="flex gap-4 items-start bg-white/5 p-4 rounded-lg border border-white/10">
-                                <span className="font-agency text-3xl text-brand-gold font-bold">02</span>
+                             <div className="flex flex-col gap-4 bg-white/5 p-8 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
+                                <div className="flex justify-between items-start">
+                                    <span className="font-agency text-4xl text-brand-gold font-bold opacity-50">02</span>
+                                    <Building2 className="w-8 h-8 text-brand-gold" />
+                                </div>
                                 <div>
-                                    <h3 className="font-agency text-xl mb-1">CSR Implementation</h3>
-                                    <p className="font-lato text-xs text-white/70">Let us be the implementation arm for your company's annual Corporate Social Responsibility projects.</p>
+                                    <h3 className="font-agency text-2xl mb-2">CSR Implementation</h3>
+                                    <p className="font-lato text-sm md:text-base text-white/70 leading-relaxed">
+                                        Let us be the implementation arm for your company's annual Corporate Social Responsibility projects, ensuring compliance and impact.
+                                    </p>
                                 </div>
                             </div>
+
                              {/* Model 3 */}
-                             <div className="flex gap-4 items-start bg-white/5 p-4 rounded-lg border border-white/10">
-                                <span className="font-agency text-3xl text-brand-gold font-bold">03</span>
+                             <div className="flex flex-col gap-4 bg-white/5 p-8 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
+                                <div className="flex justify-between items-start">
+                                    <span className="font-agency text-4xl text-brand-gold font-bold opacity-50">03</span>
+                                    <Lightbulb className="w-8 h-8 text-brand-gold" />
+                                </div>
                                 <div>
-                                    <h3 className="font-agency text-xl mb-1">Knowledge Exchange</h3>
-                                    <p className="font-lato text-xs text-white/70">Partner with our schools for curriculum development, teacher training workshops, or tech innovation hubs.</p>
+                                    <h3 className="font-agency text-2xl mb-2">Knowledge Exchange</h3>
+                                    <p className="font-lato text-sm md:text-base text-white/70 leading-relaxed">
+                                        Partner with our schools for curriculum development, teacher training workshops, or establishing tech innovation hubs.
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -118,51 +143,66 @@ export default function PartnerPage() {
                 </section>
 
                 {/* 4. PARTNERSHIP INQUIRY FORM */}
-                <section className="px-6 max-w-3xl mx-auto">
-                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 relative">
-                        <div className="absolute top-0 left-0 w-full h-2 bg-brand-gold rounded-t-2xl"></div>
-                        
-                        <h2 className="font-agency text-3xl text-brand-brown-dark mb-2 text-center">
-                            Become a Partner
-                        </h2>
-                        <p className="font-lato text-sm text-gray-500 mb-8 text-center">
-                            Fill out the form below representing your organization.
-                        </p>
+                <section className="px-6 md:px-12 lg:px-24 mb-12 max-w-5xl mx-auto">
+                    <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 p-8 md:p-14 relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-brand-brown-dark to-brand-gold"></div>
 
-                        <form className="space-y-5">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="text-center mb-10">
+                            <Handshake className="w-12 h-12 text-brand-brown-dark mx-auto mb-4" />
+                            <h2 className="font-agency text-3xl md:text-5xl text-brand-brown-dark mb-3">
+                                Become a Partner
+                            </h2>
+                            <p className="font-lato text-sm md:text-lg text-gray-500 max-w-lg mx-auto">
+                                Fill out the form below representing your organization. We will get back to you to schedule a meeting.
+                            </p>
+                        </div>
+
+                        <form className="space-y-6 md:space-y-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                                 <div>
-                                    <label className="block text-xs font-bold text-brand-brown mb-1">Organization Name</label>
-                                    <input type="text" className="w-full bg-brand-sand/30 border border-gray-200 rounded-lg px-4 py-3 text-brand-brown-dark focus:ring-2 focus:ring-brand-gold/50 outline-none" placeholder="Company / NGO Name" />
+                                    <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Organization Name</label>
+                                    <div className="relative">
+                                        <input type="text" className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-brand-brown-dark focus:ring-2 focus:ring-brand-gold/50 outline-none transition-all" placeholder="Company / NGO Name" />
+                                        <Building className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
+                                    </div>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-brand-brown mb-1">Contact Person</label>
-                                    <input type="text" className="w-full bg-brand-sand/30 border border-gray-200 rounded-lg px-4 py-3 text-brand-brown-dark focus:ring-2 focus:ring-brand-gold/50 outline-none" placeholder="Full Name" />
+                                    <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Contact Person</label>
+                                    <div className="relative">
+                                        <input type="text" className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-brand-brown-dark focus:ring-2 focus:ring-brand-gold/50 outline-none transition-all" placeholder="Full Name" />
+                                        <User className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                                 <div>
-                                    <label className="block text-xs font-bold text-brand-brown mb-1">Email Address</label>
-                                    <input type="email" className="w-full bg-brand-sand/30 border border-gray-200 rounded-lg px-4 py-3 text-brand-brown-dark focus:ring-2 focus:ring-brand-gold/50 outline-none" placeholder="official@email.com" />
+                                    <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Email Address</label>
+                                    <div className="relative">
+                                        <input type="email" className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-brand-brown-dark focus:ring-2 focus:ring-brand-gold/50 outline-none transition-all" placeholder="official@email.com" />
+                                        <Mail className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
+                                    </div>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-brand-brown mb-1">Partnership Type</label>
-                                    <select className="w-full bg-brand-sand/30 border border-gray-200 rounded-lg px-4 py-3 text-brand-brown-dark focus:ring-2 focus:ring-brand-gold/50 outline-none">
-                                        <option>Sponsorship</option>
-                                        <option>CSR Project</option>
-                                        <option>Academic Collaboration</option>
-                                        <option>Other</option>
-                                    </select>
+                                    <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Partnership Type</label>
+                                    <div className="relative">
+                                        <select className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:ring-2 focus:ring-brand-gold/50 outline-none transition-all appearance-none cursor-pointer">
+                                            <option>Sponsorship</option>
+                                            <option>CSR Project</option>
+                                            <option>Academic Collaboration</option>
+                                            <option>Other</option>
+                                        </select>
+                                        <div className="absolute right-4 top-4 w-2 h-2 border-r-2 border-b-2 border-gray-400 transform rotate-45 pointer-events-none"></div>
+                                    </div>
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-brand-brown mb-1">Proposal / Message</label>
-                                <textarea rows="4" className="w-full bg-brand-sand/30 border border-gray-200 rounded-lg px-4 py-3 text-brand-brown-dark focus:ring-2 focus:ring-brand-gold/50 outline-none" placeholder="Briefly describe how you would like to partner with us..."></textarea>
+                                <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Proposal / Message</label>
+                                <textarea rows="5" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:ring-2 focus:ring-brand-gold/50 outline-none transition-all resize-none" placeholder="Briefly describe how you would like to partner with us..."></textarea>
                             </div>
 
-                            <button type="button" className="w-full py-4 bg-brand-brown-dark text-white font-agency text-xl rounded-xl hover:bg-brand-gold transition-colors shadow-lg">
+                            <button type="button" className="w-full py-4 bg-brand-brown-dark text-white font-agency text-xl rounded-xl hover:bg-brand-gold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                                 Submit Inquiry
                             </button>
                         </form>
