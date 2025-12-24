@@ -91,23 +91,23 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 bg-white font-lato shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+        <div className="flex justify-between items-center h-24">
 
           {/* =========================================
-              LEFT SIDE: Navigation (Desktop) & Menu (Mobile)
+              LEFT SIDE: Menu (Mobile) & Navigation (Desktop)
              ========================================= */}
-          <div className="flex items-center gap-6"> 
+          <div className="flex items-center"> 
 
-            {/* Mobile Menu Trigger */}
+            {/* Mobile Menu Trigger (Visible lg:hidden) */}
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className={`lg:hidden p-3 rounded-full ${ICON_BG_COLOR} text-white focus:outline-none hover:bg-[#d17600] transition-colors`}
+              className={`lg:hidden p-3 rounded-full ${ICON_BG_COLOR} text-white focus:outline-none hover:bg-[#d17600] transition-colors mr-4`}
               aria-expanded={isSidebarOpen}
             >
-              <Menu className="h-4 w-4" aria-hidden="true" />
+              <Menu className="h-5 w-5" aria-hidden="true" />
             </button>
 
-            {/* Desktop Navigation (Moved to Left) */}
+            {/* Desktop Navigation (Hidden lg:flex) */}
             <nav className="hidden lg:flex items-center space-x-6">
               {navItems.map((item) => {
                 const isActive = pathname === item.href || (item.children && pathname.startsWith(item.href));
@@ -154,13 +154,13 @@ export default function Header() {
           </div>
 
           {/* =========================================
-              RIGHT SIDE: Logo (Both Mobile & Desktop)
+              RIGHT SIDE: Logo (Always Visible)
              ========================================= */}
-          <Link href="/" className="flex items-right">
+          <Link href="/" className="flex items-center">
             <Image 
               src="/headerlogo.svg" 
               alt="Al-Asad Education Foundation Logo" 
-              className="h-16 w-auto object-contain max-h-full" 
+              className="h-20 w-auto object-contain max-h-full" 
               width={200}
               height={80}
               priority 
@@ -182,7 +182,7 @@ export default function Header() {
 
       {/* Sidebar Panel */}
       <div 
-        className={`fixed top-0 left-0 w-72 max-w-[80%] h-full bg-[#432e16] text-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed top-0 left-0 w-72 max-w-[75%] h-full bg-[#432e16] text-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="flex flex-col h-full">
 
