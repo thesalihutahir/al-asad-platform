@@ -22,7 +22,7 @@ export default function UploadPhotosPage() {
         const selectedFiles = Array.from(e.target.files);
         if (selectedFiles.length > 0) {
             setFiles(prev => [...prev, ...selectedFiles]);
-            
+
             // Create previews
             const newPreviews = selectedFiles.map(file => URL.createObjectURL(file));
             setPreviews(prev => [...prev, ...newPreviews]);
@@ -46,9 +46,9 @@ export default function UploadPhotosPage() {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6 max-w-6xl mx-auto pb-12">
-            
-            {/* Header */}
-            <div className="flex justify-between items-center gap-4 sticky top-0 bg-gray-50 z-20 py-4 border-b border-gray-200">
+
+            {/* Header - Adjusted for Mobile Responsiveness */}
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 sticky top-0 bg-gray-50 z-20 py-4 border-b border-gray-200">
                 <div className="flex items-center gap-4">
                     <Link href="/admin/gallery" className="p-2 hover:bg-gray-200 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600" /></Link>
                     <div>
@@ -56,19 +56,19 @@ export default function UploadPhotosPage() {
                         <p className="font-lato text-sm text-gray-500">Add memories to the gallery.</p>
                     </div>
                 </div>
-                <div className="flex gap-3">
-                    <button type="button" className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100">Cancel</button>
-                    <button type="submit" disabled={files.length === 0} className={`flex items-center gap-2 px-6 py-2.5 font-bold rounded-xl shadow-md text-white ${files.length > 0 ? 'bg-brand-gold hover:bg-brand-brown-dark' : 'bg-gray-300 cursor-not-allowed'}`}>
+                <div className="flex gap-3 w-full md:w-auto">
+                    <button type="button" className="flex-1 md:flex-none px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 text-center justify-center">Cancel</button>
+                    <button type="submit" disabled={files.length === 0} className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 font-bold rounded-xl shadow-md text-white ${files.length > 0 ? 'bg-brand-gold hover:bg-brand-brown-dark' : 'bg-gray-300 cursor-not-allowed'}`}>
                         <Save className="w-4 h-4" /> Upload {files.length > 0 ? `(${files.length})` : ''}
                     </button>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
+
                 {/* LEFT: Upload & Album Settings */}
                 <div className="space-y-6">
-                    
+
                     {/* Album Selector */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                         <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
