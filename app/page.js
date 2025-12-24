@@ -44,8 +44,8 @@ export default function HomePage() {
                 <section className="w-full relative bg-white h-[60vh] md:h-[80vh] min-h-[500px]">
                     <div className="relative w-full h-full">
                         <Image
-                            src="/home-main-hero.webp"
-                            alt="Al-Asad Foundation Hero"
+                            src="/images/heroes/home-main-hero.webp"
+                            alt="Al-Asad Education Foundation"
                             fill
                             className="object-cover object-top"
                             priority
@@ -90,25 +90,25 @@ Al-Asad Education Foundation
                         <div className="grid grid-cols-4 gap-4 md:gap-12 justify-items-center">
                             <Link href="/programs" className="flex flex-col items-center group cursor-pointer">
                                 <div className="w-14 h-14 md:w-20 md:h-20 relative mb-3 transition-transform group-hover:scale-110">
-                                    <Image src="/programsicon.svg" alt="Programs" fill className="object-contain drop-shadow-sm" />
+                                    <Image src="/images/menu/nav-programs-icon.webp" alt="Programs" fill className="object-contain drop-shadow-sm" />
                                 </div>
                                 <span className="font-agency text-sm md:text-lg text-brand-brown-dark tracking-wide group-hover:text-brand-gold transition-colors">Programs</span>
                             </Link>
                             <Link href="/media" className="flex flex-col items-center group cursor-pointer">
                                 <div className="w-14 h-14 md:w-20 md:h-20 relative mb-3 transition-transform group-hover:scale-110">
-                                    <Image src="/mediaicon.svg" alt="Media" fill className="object-contain drop-shadow-sm" />
+                                    <Image src="/images/menu/nav-media-icon.webp" alt="Media" fill className="object-contain drop-shadow-sm" />
                                 </div>
                                 <span className="font-agency text-sm md:text-lg text-brand-brown-dark tracking-wide group-hover:text-brand-gold transition-colors">Media</span>
                             </Link>
                             <Link href="/blogs" className="flex flex-col items-center group cursor-pointer">
                                 <div className="w-14 h-14 md:w-20 md:h-20 relative mb-3 transition-transform group-hover:scale-110">
-                                    <Image src="/blogsicon.svg" alt="Blogs" fill className="object-contain drop-shadow-sm" />
+                                    <Image src="/images/menu/nav-blogs-icon.webp" alt="Blogs" fill className="object-contain drop-shadow-sm" />
                                 </div>
                                 <span className="font-agency text-sm md:text-lg text-brand-brown-dark tracking-wide group-hover:text-brand-gold transition-colors">Blogs</span>
                             </Link>
                             <Link href="/about" className="flex flex-col items-center group cursor-pointer">
                                 <div className="w-14 h-14 md:w-20 md:h-20 relative mb-3 transition-transform group-hover:scale-110">
-                                    <Image src="/abouticon.svg" alt="About" fill className="object-contain drop-shadow-sm" />
+                                    <Image src="/images/menu/nav-about-icon.webp" alt="About" fill className="object-contain drop-shadow-sm" />
                                 </div>
                                 <span className="font-agency text-sm md:text-lg text-brand-brown-dark tracking-wide group-hover:text-brand-gold transition-colors">About</span>
                             </Link>
