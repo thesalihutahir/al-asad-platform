@@ -44,7 +44,7 @@ export default function HomePage() {
                 <section className="w-full relative bg-white h-[60vh] md:h-[80vh] min-h-[500px]">
                     <div className="relative w-full h-full">
                         <Image
-                            src="/sheikhhero.webp"
+                            src="/home-main-hero.webp"
                             alt="Al-Asad Foundation Hero"
                             fill
                             className="object-cover object-top"
