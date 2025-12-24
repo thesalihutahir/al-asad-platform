@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Play, ArrowRight, Calendar, Clock, Download, ChevronRight } from 'lucide-react'; // Using Lucide icons for consistency
+import { Play, ArrowRight, Calendar, Clock, Download, ChevronRight } from 'lucide-react'; 
 
 export default function HomePage() {
     // State to handle Video Facade
@@ -50,31 +50,33 @@ export default function HomePage() {
                             className="object-cover object-top"
                             priority
                         />
-                        {/* Perfected Gradient Overlay */}
-<div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent md:bg-gradient-to-r md:from-black/90 md:via-black/50 md:to-transparent"></div>
+                        
+                        {/* Perfected Gradient Overlay - FIXED NESTING */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent md:bg-gradient-to-r md:from-black/90 md:via-black/50 md:to-transparent"></div>
 
-                    <div className="absolute inset-0 flex items-end md:items-center justify-center md:justify-start px-6 md:px-16 lg:px-24 pb-12 md:pb-0 z-10">
-                        <div className="text-center md:text-left max-w-3xl">
-                            <p className="font-lato text-white md:text-brand-gold text-sm md:text-xl font-bold uppercase tracking-widest mb-2 drop-shadow-md">
-                                Welcome to Al-Asad Education Foundation
-                            </p>
-                            <h1 className="font-agency text-4xl md:text-7xl lg:text-8xl text-brand-brown-dark md:text-white leading-none drop-shadow-md mb-6">
-                                Where Education <br />
-                                <span className="text-brand-gold md:text-brand-gold">Creates Impact</span>
-                            </h1>
-                            <div className="hidden md:flex gap-4 mt-6">
-                                <Link
-                                    href="/get-involved/donate"
-                                    className="px-8 py-3 bg-brand-gold text-white font-agency text-xl rounded-full shadow-lg hover:bg-white hover:text-brand-brown-dark transition-all"
-                                >
-                                    Donate Now
-                                </Link>
-                                <Link
-                                    href="/about"
-                                    className="px-8 py-3 bg-white/10 backdrop-blur-md border border-white text-white font-agency text-xl rounded-full hover:bg-white hover:text-brand-brown-dark transition-all"
-                                >
-                                    Learn More
-                                </Link>
+                        <div className="absolute inset-0 flex items-end md:items-center justify-center md:justify-start px-6 md:px-16 lg:px-24 pb-12 md:pb-0 z-10">
+                            <div className="text-center md:text-left max-w-3xl">
+                                <p className="font-lato text-white md:text-brand-gold text-sm md:text-xl font-bold uppercase tracking-widest mb-2 drop-shadow-md">
+                                    Welcome to Al-Asad Education Foundation
+                                </p>
+                                <h1 className="font-agency text-4xl md:text-7xl lg:text-8xl text-brand-brown-dark md:text-white leading-none drop-shadow-md mb-6">
+                                    Where Education <br />
+                                    <span className="text-brand-gold md:text-brand-gold">Creates Impact</span>
+                                </h1>
+                                <div className="hidden md:flex gap-4 mt-6">
+                                    <Link
+                                        href="/get-involved/donate"
+                                        className="px-8 py-3 bg-brand-gold text-white font-agency text-xl rounded-full shadow-lg hover:bg-white hover:text-brand-brown-dark transition-all"
+                                    >
+                                        Donate Now
+                                    </Link>
+                                    <Link
+                                        href="/about"
+                                        className="px-8 py-3 bg-white/10 backdrop-blur-md border border-white text-white font-agency text-xl rounded-full hover:bg-white hover:text-brand-brown-dark transition-all"
+                                    >
+                                        Learn More
+                                    </Link>
+                                </div>
                             </div>
                         </div>
                     </div>
