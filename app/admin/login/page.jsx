@@ -49,16 +49,16 @@ export default function AdminLoginPage() {
         <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8f5f0] relative overflow-hidden px-4">
             
             {/* Background Pattern */}
-            <div className="absolute inset-0 z-0 opacity-10">
-                <Image src="/overlay.jpg" alt="Pattern" fill className="object-cover" />
+            <div className="absolute inset-0 z-0 opacity-25">
+                <Image src="/images/chairman/sheikh1.webp" alt="Pattern" fill className="object-cover" />
             </div>
 
             {/* Login Card */}
             <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 md:p-10 relative z-10 border border-[#d17600]/20">
                 
                 {/* Logo Area */}
-                <div className="flex justify-center mb-8">
-                    <div className="relative w-32 h-12">
+                <div className="flex justify-center mb-10">
+                    <div className="relative w-48 h-18">
                         <Image src="/headerlogo.svg" alt="Al-Asad Logo" fill className="object-contain" />
                     </div>
                 </div>
