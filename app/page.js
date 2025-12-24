@@ -44,7 +44,7 @@ export default function HomePage() {
                 <section className="w-full relative bg-white h-[60vh] md:h-[80vh] min-h-[500px]">
                     <div className="relative w-full h-full">
                         <Image
-                            src="/sheikhhero.jpg"
+                            src="/sheikhhero.webp"
                             alt="Al-Asad Foundation Hero"
                             fill
                             className="object-cover object-top"
@@ -57,9 +57,10 @@ export default function HomePage() {
                         <div className="absolute inset-0 flex items-end md:items-center justify-center md:justify-start px-6 md:px-16 lg:px-24 pb-12 md:pb-0 z-10">
                             <div className="text-center md:text-left max-w-3xl">
                                 <p className="font-lato text-white md:text-brand-gold text-sm md:text-xl font-bold uppercase tracking-widest mb-2 drop-shadow-md">
-                                    Welcome to Al-Asad Education Foundation
+                                    Welcome to <br />
+Al-Asad Education Foundation
                                 </p>
-                                <h1 className="font-agency text-4xl md:text-7xl lg:text-8xl text-brand-brown-dark md:text-white leading-none drop-shadow-md mb-6">
+                                <h1 className="font-agency text-4xl md:text-7xl lg:text-8xl text-brand-gold md:text-white leading-none drop-shadow-md mb-6">
                                     Where Education <br />
                                     <span className="text-brand-gold md:text-brand-gold">Creates Impact</span>
                                 </h1>
