@@ -46,7 +46,7 @@ export default function Footer() {
                     {/* Hidden on mobile to match your screenshot */}
                     <div className="hidden md:block md:col-span-5 space-y-6">
                         {/* Larger Grey Logo for Desktop */}
-                        <div className="relative w-32 h-32">
+                        <div className="relative w-100 h-40">
                             <Image 
                                 src="/headerlogo.svg" 
                                 alt="Al-Asad Logo" 
@@ -107,7 +107,7 @@ export default function Footer() {
                 <div className="flex flex-col md:flex-row-reverse md:justify-between md:items-center w-full gap-6">
                     
                     {/* Social Icons (Centered on Mobile, Right on Desktop) */}
-                    <div className="flex justify-center md:justify-end flex-wrap items-center gap-4"> 
+                    <div className="flex justify-center md:justify-end flex-wrap items-center gap-2"> 
                         {socialLinks.map((social) => (
                             <Link key={social.name} href={social.href} target="_blank" rel="noopener noreferrer" className="group p-2 bg-white/5 rounded-full hover:bg-brand-gold transition-all duration-300">
                                 <Image 
@@ -136,7 +136,7 @@ export default function Footer() {
                         <div className="mt-3 text-xs text-gray-600 flex flex-wrap gap-4 justify-center md:justify-start items-center">
                              <Link href="/terms-and-policies" className="hover:text-gray-300 transition-colors">Terms & Policies</Link>
                              <span>•</span>
-                             <Link href="/contact" className="hover:text-gray-300 transition-colors">FAQ</Link>
+                             
                              
                              {/* --- HIDDEN ADMIN LINK (Desktop Only) --- */}
                              <div className="hidden md:flex items-center gap-4">
