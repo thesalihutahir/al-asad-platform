@@ -156,7 +156,7 @@ export default function Header() {
           {/* =========================================
               RIGHT SIDE: Logo (Both Mobile & Desktop)
              ========================================= */}
-          <Link href="/" className="flex items-center">
+          <Link href="/" className="flex items-right">
             <Image 
               src="/headerlogo.svg" 
               alt="Al-Asad Education Foundation Logo" 
