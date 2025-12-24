@@ -47,12 +47,11 @@ export default function HomePage() {
                             src="/sheikhhero.jpg"
                             alt="Al-Asad Foundation Hero"
                             fill
-                            className="object-cover object-top md:object-center"
+                            className="object-cover object-top md:object-cover object-top"
                             priority
                         />
-                        {/* Improved Gradient for Desktop readability */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-transparent/70 via-transparent to-white md:bg-gradient-to-r md:from-black/60 md:to-transparent"></div>
-                    </div>
+                        {/* Perfected Gradient Overlay */}
+<div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent md:bg-gradient-to-r md:from-black/90 md:via-black/50 md:to-transparent"></div>
 
                     <div className="absolute inset-0 flex items-end md:items-center justify-center md:justify-start px-6 md:px-16 lg:px-24 pb-12 md:pb-0 z-10">
                         <div className="text-center md:text-left max-w-3xl">
