@@ -144,11 +144,9 @@ export default function ContactPage() {
                                     For Press & Media
                                 </h2>
                                 <p className="font-lato text-base text-brand-brown mb-2">
-                                    Need logos, brand assets, or interviews? Reach out directly:
+                                    Need logos, brand assets, or interviews? Reach out directly via the above mentioned email.
                                 </p>
-                                <p className="font-lato text-base font-bold text-brand-gold flex items-center gap-2">
-                                    <Mail className="w-4 h-4" /> alasadeducationfoundation@gmail.com
-                                </p>
+                               
                             </div>
                         </div>
 
