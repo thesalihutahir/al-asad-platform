@@ -9,8 +9,6 @@ import {
     Instagram, 
     Twitter, 
     Send, 
-    Phone, 
-    Music, 
     MessageCircle 
 } from "lucide-react";
 
@@ -38,14 +36,8 @@ export default function Footer() {
         { name: "Facebook", icon: Facebook, href: "https://www.facebook.com/share/1D438MVXpQ/" },
         { name: "YouTube", icon: Youtube, href: "https://youtube.com/@alasadeducation" },
         { name: "Instagram", icon: Instagram, href: "https://www.instagram.com/alasad_education_foundation" },
-        // TikTok doesn't exist in Lucide, 'Music' is the standard semantic fallback
-        { name: "TikTok", icon: Music, href: "https://www.tiktok.com/@alasad_tv" }, 
-        // Telegram uses the 'Send' (Paper Plane) icon
         { name: "Telegram", icon: Send, href: "https://t.me/alasadeducation" }, 
-        // X uses 'Twitter' in Lucide library
         { name: "X", icon: Twitter, href: "https://x.com/AsadEducation" }, 
-        // WhatsApp uses 'Phone' or 'MessageCircle'
-        { name: "WhatsApp", icon: Phone, href: "https://whatsapp.com/channel/0029VawdL4n6xCSHyUsMzc2V" }, 
     ];
 
     return (
