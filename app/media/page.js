@@ -147,7 +147,7 @@ export default function MediaPage() {
                                     className="absolute inset-0 w-full h-full relative"
                                 >
                                     <Image 
-                                        src="/hero.jpg" // Video Thumbnail
+                                        src="/images/heroes/media-videos-hero.webp" // Video Thumbnail
                                         alt="Video Thumbnail" 
                                         fill 
                                         className="object-cover opacity-90 group-hover:opacity-100 transition-opacity" 
