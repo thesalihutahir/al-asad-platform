@@ -39,7 +39,7 @@ export default function LegalPage() {
                     </div>
                     <h1 className="font-agency text-4xl md:text-6xl text-brand-brown-dark mb-4">Terms & Policies</h1>
                     <p className="font-lato text-gray-500 text-sm md:text-base bg-gray-50 inline-block px-4 py-1 rounded-full border border-gray-100">
-                        Last Updated: December 2024
+                        Last Updated: December 2025
                     </p>
                 </div>
 
