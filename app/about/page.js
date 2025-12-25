@@ -51,13 +51,14 @@ export default function AboutPage() {
                 <section className="w-full relative bg-white mb-12 md:mb-20">
                     <div className="relative w-full aspect-[2.5/1] md:aspect-[3.5/1] lg:aspect-[4/1]">
                         <Image
-                            src="/hero.jpg" // Placeholder: Foundation Building or Group Photo
+                            src="/images/heroes/about-hero.webp" // Placeholder: Foundation Building or Group Photo
                             alt="About Al-Asad Foundation"
                             fill
                             className="object-cover object-top"
                             priority
                         />
-                        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-white"></div>
+                        {/* Gradient Overlay - FIXED NESTING */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-white via-brand-gold/40 to-transparent "></div>
                     </div>
 
                     <div className="relative -mt-16 md:-mt-32 text-center px-6 z-10 max-w-4xl mx-auto">
