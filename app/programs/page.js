@@ -47,19 +47,19 @@ export default function ProgramsPage() {
                     {/* Hero Image with Gradient Fade */}
                     <div className="relative w-full aspect-[2.5/1] md:aspect-[3/1] lg:aspect-[4/1]">
                         <Image
-                            src="/hero.jpg" 
+                            src="/images/heroes/programs-overview-hero.webp" 
                             alt="Programs Hero"
                             fill
                             className="object-cover object-center"
                             priority
                         />
-                        {/* The Fade Effect: Transparent top -> Solid White bottom */}
-                        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-white/20 to-white"></div>
+                        {/* Gradient Overlay - FIXED NESTING */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent "></div>
                     </div>
 
                     {/* Text Content - Pulled up into the fade area */}
                     <div className="relative -mt-12 md:-mt-24 lg:-mt-32 text-center px-6 z-10">
-                        <h1 className="font-agency text-4xl md:text-6xl lg:text-7xl text-brand-brown-dark mb-3 md:mb-6 drop-shadow-sm">
+                        <h1 className="font-agency text-4xl md:text-6xl lg:text-7xl text-brand-gold mb-3 md:mb-6 drop-shadow-sm">
                             Our Programs
                         </h1>
                         <div className="w-16 md:w-24 h-1 bg-brand-gold mx-auto rounded-full mb-4 md:mb-6"></div>
