@@ -52,7 +52,7 @@ export default function HomePage() {
                         />
                         
                         {/* Perfected Gradient Overlay - FIXED NESTING */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-brand-brown-dark/90 via-brand-brown-dark/40 to-transparent md:bg-gradient-to-r md:from-brand-brown-dark/90 md:via-brand-brown-dark/50 md:to-transparent"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent md:bg-gradient-to-r md:from-black/90 md:via-black/50 md:to-transparent"></div>
 
                         <div className="absolute inset-0 flex items-end md:items-center justify-center md:justify-start px-6 md:px-16 lg:px-24 pb-12 md:pb-0 z-10">
                             <div className="text-center md:text-left max-w-3xl">
