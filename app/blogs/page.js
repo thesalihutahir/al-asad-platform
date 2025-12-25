@@ -83,7 +83,7 @@ export default function BlogsPage() {
                             src="/images/heroes/blogs-overview-hero.webp" // Placeholder
                             alt="Blogs Hero"
                             fill
-                            className="object-cover object-center opacity-80"
+                            className="object-cover object-center"
                             priority
                         />
                         {/* Gradient Overlay - FIXED NESTING */}
