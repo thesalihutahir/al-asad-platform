@@ -5,7 +5,19 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Play, ArrowRight, Calendar, Clock, Download, ChevronRight } from 'lucide-react'; 
+import { 
+    Play, 
+    ArrowRight, 
+    Calendar, 
+    Clock, 
+    Download, 
+    ChevronRight,
+    // New Icons for Menu
+    ClipboardList,
+    MonitorPlay,
+    Newspaper,
+    Users
+} from 'lucide-react'; 
 
 export default function HomePage() {
     // State to handle Video Facade
@@ -51,14 +63,14 @@ export default function HomePage() {
                             priority
                         />
                         
-                        {/* Perfected Gradient Overlay - FIXED NESTING */}
+                        {/* Perfected Gradient Overlay */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent md:bg-gradient-to-r md:from-black/90 md:via-black/50 md:to-transparent"></div>
 
                         <div className="absolute inset-0 flex items-end md:items-center justify-center md:justify-start px-6 md:px-16 lg:px-24 pb-12 md:pb-0 z-10">
                             <div className="text-center md:text-left max-w-3xl">
                                 <p className="font-lato text-white md:text-brand-gold text-sm md:text-xl font-bold uppercase tracking-widest mb-2 drop-shadow-md">
                                     Welcome to <br />
-Al-Asad Education Foundation
+                                    Al-Asad Education Foundation
                                 </p>
                                 <h1 className="font-agency text-4xl md:text-7xl lg:text-8xl text-brand-gold md:text-white leading-none drop-shadow-md mb-6">
                                     Where Education <br />
@@ -83,39 +95,45 @@ Al-Asad Education Foundation
                     </div>
                 </section>
 
-
-                {/* 2. ICON NAVIGATION MENU */}
+                {/* 2. ICON NAVIGATION MENU (Updated with Lucide Icons) */}
                 <section className="py-8 md:py-16 px-6 bg-white relative z-20 -mt-6 md:-mt-0 rounded-t-3xl md:rounded-none">
                     <div className="max-w-5xl mx-auto">
                         <div className="grid grid-cols-4 gap-4 md:gap-12 justify-items-center">
+                            
+                            {/* Programs */}
                             <Link href="/programs" className="flex flex-col items-center group cursor-pointer">
-                                <div className="w-14 h-14 md:w-20 md:h-20 relative mb-3 transition-transform group-hover:scale-110">
-                                    <Image src="/images/menu/nav-programs-icon.webp" alt="Programs" fill className="object-contain drop-shadow-sm" />
+                                <div className="w-14 h-14 md:w-20 md:h-20 rounded-full bg-brand-sand/20 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:bg-brand-gold shadow-sm">
+                                    <ClipboardList className="w-7 h-7 md:w-10 md:h-10 text-brand-brown-dark group-hover:text-white transition-colors" strokeWidth={1.5} />
                                 </div>
                                 <span className="font-agency text-sm md:text-lg text-brand-brown-dark tracking-wide group-hover:text-brand-gold transition-colors">Programs</span>
                             </Link>
+
+                            {/* Media */}
                             <Link href="/media" className="flex flex-col items-center group cursor-pointer">
-                                <div className="w-14 h-14 md:w-20 md:h-20 relative mb-3 transition-transform group-hover:scale-110">
-                                    <Image src="/images/menu/nav-media-icon.webp" alt="Media" fill className="object-contain drop-shadow-sm" />
+                                <div className="w-14 h-14 md:w-20 md:h-20 rounded-full bg-brand-sand/20 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:bg-brand-gold shadow-sm">
+                                    <MonitorPlay className="w-7 h-7 md:w-10 md:h-10 text-brand-brown-dark group-hover:text-white transition-colors" strokeWidth={1.5} />
                                 </div>
                                 <span className="font-agency text-sm md:text-lg text-brand-brown-dark tracking-wide group-hover:text-brand-gold transition-colors">Media</span>
                             </Link>
+
+                            {/* Blogs */}
                             <Link href="/blogs" className="flex flex-col items-center group cursor-pointer">
-                                <div className="w-14 h-14 md:w-20 md:h-20 relative mb-3 transition-transform group-hover:scale-110">
-                                    <Image src="/images/menu/nav-blogs-icon.webp" alt="Blogs" fill className="object-contain drop-shadow-sm" />
+                                <div className="w-14 h-14 md:w-20 md:h-20 rounded-full bg-brand-sand/20 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:bg-brand-gold shadow-sm">
+                                    <Newspaper className="w-7 h-7 md:w-10 md:h-10 text-brand-brown-dark group-hover:text-white transition-colors" strokeWidth={1.5} />
                                 </div>
                                 <span className="font-agency text-sm md:text-lg text-brand-brown-dark tracking-wide group-hover:text-brand-gold transition-colors">Blogs</span>
                             </Link>
+
+                            {/* About */}
                             <Link href="/about" className="flex flex-col items-center group cursor-pointer">
-                                <div className="w-14 h-14 md:w-20 md:h-20 relative mb-3 transition-transform group-hover:scale-110">
-                                    <Image src="/images/menu/nav-about-icon.webp" alt="About" fill className="object-contain drop-shadow-sm" />
+                                <div className="w-14 h-14 md:w-20 md:h-20 rounded-full bg-brand-sand/20 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:bg-brand-gold shadow-sm">
+                                    <Users className="w-7 h-7 md:w-10 md:h-10 text-brand-brown-dark group-hover:text-white transition-colors" strokeWidth={1.5} />
                                 </div>
                                 <span className="font-agency text-sm md:text-lg text-brand-brown-dark tracking-wide group-hover:text-brand-gold transition-colors">About</span>
                             </Link>
                         </div>
                     </div>
                 </section>
-
                 {/* 3. ACTION BUTTONS (Mobile Only - Desktop has them in Hero) */}
                 <section className="md:hidden py-2 px-8 flex justify-center pb-8">
                     <Link
@@ -254,7 +272,7 @@ Al-Asad Education Foundation
                                 <div className="space-y-4">
                                     {latestAudios.map((audio) => (
                                         <div key={audio.id} className="bg-white rounded-2xl p-4 shadow-md border border-gray-100 flex items-center gap-4 transition-all hover:-translate-y-1 hover:shadow-lg group">
-                                            
+
                                             {/* Play Button */}
                                             <div className="flex-shrink-0 w-12 h-12 rounded-full bg-brand-gold text-white flex items-center justify-center shadow-sm cursor-pointer group-hover:bg-brand-brown-dark transition-colors">
                                                 <Play className="w-5 h-5 ml-1 fill-current" />
@@ -270,11 +288,11 @@ Al-Asad Education Foundation
                                                         {audio.duration}
                                                     </span>
                                                 </div>
-                                                
+
                                                 <h3 className="font-agency text-lg text-brand-brown-dark leading-tight truncate group-hover:text-brand-gold transition-colors">
                                                     {audio.title}
                                                 </h3>
-                                                
+
                                                 <div className="flex items-center gap-3 mt-1">
                                                     <p className="text-[10px] text-gray-500 font-lato flex items-center gap-1">
                                                         <Calendar className="w-3 h-3" /> {audio.date}
@@ -292,7 +310,7 @@ Al-Asad Education Foundation
                                             </div>
                                         </div>
                                     ))}
-                                    
+
                                     {/* Desktop Call to Action for Audios */}
                                     <div className="hidden lg:block pt-4">
                                         <Link href="/media/audios" className="block w-full py-3 text-center border-2 border-brand-brown-dark/10 text-brand-brown-dark font-agency text-lg rounded-xl hover:bg-brand-brown-dark hover:text-white transition-colors">
@@ -302,7 +320,6 @@ Al-Asad Education Foundation
                                 </div>
                             </div>
                         </div>
-
                         {/* UPCOMING EVENTS */}
                         <div className="mt-16 md:mt-24">
                             <div className="flex justify-between items-end mb-8">
