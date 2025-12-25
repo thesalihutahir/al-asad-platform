@@ -23,7 +23,7 @@ export default function AboutPage() {
             name: "Sheikh Goni Dr. Muneer Ja'afar Katsina", 
             role: "Founder & Lead Scholar", 
             bio: "A renowned scholar and visionary dedicated to bridging the gap between traditional Islamic sciences and modern educational needs.",
-            image: "/sheikhhero.jpg" 
+            image: "/images/chairman/sheikh1.webp" 
         },
         { 
             id: 2, 
