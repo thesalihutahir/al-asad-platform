@@ -91,7 +91,7 @@ export default function BlogsPage() {
                     </div>
 
                     <div className="relative -mt-16 md:-mt-32 text-center px-6 z-10 max-w-4xl mx-auto">
-                        <h1 className="font-agency text-4xl md:text-6xl lg:text-7xl text-brand-brown-dark mb-4 drop-shadow-md">
+                        <h1 className="font-agency text-4xl md:text-6xl lg:text-7xl text-brand-gold mb-4 drop-shadow-md">
                             Insights & Updates
                         </h1>
                         <div className="w-16 md:w-24 h-1 bg-brand-gold mx-auto rounded-full mb-6"></div>
