@@ -1,15 +1,24 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Clock, User, Tag, ChevronRight, Search, Mail } from 'lucide-react';
+// Firebase Imports
+import { db } from '@/lib/firebase';
+import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { Clock, User, Tag, ChevronRight, Search, Mail, Loader2 } from 'lucide-react';
 
 export default function ArticlesPage() {
 
-    // Mock Data for Article Series (The "Playlists" of text)
+    // --- STATE MANAGEMENT ---
+    const [articles, setArticles] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [visibleCount, setVisibleCount] = useState(5); // Show 5 initially
+    const [searchTerm, setSearchTerm] = useState('');
+
+    // --- STATIC DATA (Series Backend Not Yet Implemented) ---
     const articleSeries = [
         {
             id: 1,
@@ -31,51 +40,50 @@ export default function ArticlesPage() {
         }
     ];
 
-    // Mock Data for Articles
-    const articles = [
-        {
-            id: 1,
-            title: "The Importance of Sincerity (Ikhlas) in Daily Actions",
-            excerpt: "Sincerity is the soul of every deed. Without it, actions are like a body without a soul. In this article, we explore how to cultivate Ikhlas in a distracted world.",
-            category: "Spirituality",
-            author: "Sheikh Muneer",
-            readTime: "5 min read",
-            date: "22 Dec 2024",
-            image: "/hero.jpg"
-        },
-        {
-            id: 2,
-            title: "Balancing Deen and Dunya: A Student's Perspective",
-            excerpt: "How to maintain academic excellence while staying true to your spiritual obligations. Practical tips for university students.",
-            category: "Lifestyle",
-            author: "Dr. Ahmed",
-            readTime: "8 min read",
-            date: "18 Dec 2024",
-            image: "/hero.jpg"
-        },
-        {
-            id: 3,
-            title: "Understanding the Rights of Neighbors in Islam",
-            excerpt: "The Prophet (SAW) emphasized the rights of neighbors so much that the Companions thought they would inherit. Let's revisit these duties.",
-            category: "Community",
-            author: "Ustadh Ali",
-            readTime: "6 min read",
-            date: "10 Dec 2024",
-            image: "/hero.jpg"
-        },
-        {
-            id: 4,
-            title: "The History of Islamic Scholarship in Katsina",
-            excerpt: "Tracing the roots of knowledge in our region and the legacy left behind by great scholars of the past.",
-            category: "History",
-            author: "Research Team",
-            readTime: "12 min read",
-            date: "05 Dec 2024",
-            image: "/hero.jpg"
-        }
-    ];
+    const sidebarTags = ["Spirituality", "Fiqh", "History", "Community", "Lifestyle", "Family"];
 
-    const categories = ["Spirituality", "Fiqh", "History", "Community", "Lifestyle", "Family"];
+    // --- FETCH DATA ---
+    useEffect(() => {
+        const fetchArticles = async () => {
+            try {
+                // Query: Get all posts where category is 'Article', ordered by newest
+                const q = query(
+                    collection(db, "posts"),
+                    where("category", "==", "Article"),
+                    orderBy("createdAt", "desc")
+                );
+
+                const querySnapshot = await getDocs(q);
+                const fetchedArticles = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                setArticles(fetchedArticles);
+            } catch (error) {
+                console.error("Error fetching articles:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchArticles();
+    }, []);
+
+    // --- HELPER FUNCTIONS ---
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
+
+    // Filter articles based on search
+    const filteredArticles = articles.filter(article => 
+        article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        article.excerpt?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const visibleArticles = filteredArticles.slice(0, visibleCount);
 
     return (
         <div className="min-h-screen flex flex-col bg-white font-lato">
@@ -92,7 +100,7 @@ export default function ArticlesPage() {
                             className="object-cover object-center" 
                             priority 
                         />
-                        {/* Gradient Overlay - FIXED NESTING */}
+                        {/* Gradient Overlay */}
                         <div className="absolute inset-0 bg-gradient-to-t from-white via-brand-gold/40 to-transparent "></div>
                     </div>
                     <div className="relative -mt-16 md:-mt-32 text-center px-6 z-10 max-w-4xl mx-auto">
@@ -106,7 +114,7 @@ export default function ArticlesPage() {
                     </div>
                 </section>
 
-                {/* 2. FEATURED SERIES (Horizontal Scroll / Grid) */}
+                {/* 2. FEATURED SERIES (Static for now) */}
                 <section className="px-6 md:px-12 lg:px-24 mb-12 md:mb-20 max-w-7xl mx-auto">
                     <div className="flex justify-between items-end mb-6 border-b border-gray-100 pb-2">
                         <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark">
@@ -137,7 +145,7 @@ export default function ArticlesPage() {
                     </div>
                 </section>
 
-                {/* 3. MAIN CONTENT AREA (Grid Layout for Desktop) */}
+                {/* 3. MAIN CONTENT AREA */}
                 <section className="px-6 md:px-12 lg:px-24 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12">
                     
                     {/* LEFT COLUMN: ARTICLE LIST (Spans 8 cols) */}
@@ -146,66 +154,94 @@ export default function ArticlesPage() {
                             <h3 className="font-agency text-2xl md:text-3xl text-brand-brown-dark">
                                 Latest Reads
                             </h3>
-                            {/* Mobile Search Icon (Hidden on Desktop) */}
+                            {/* Mobile Search Icon */}
                             <button className="lg:hidden p-2 text-gray-400">
                                 <Search className="w-5 h-5" />
                             </button>
                         </div>
 
-                        {articles.map((item) => (
-                            <article key={item.id} className="group flex flex-col md:flex-row gap-6 md:gap-8 border-b border-gray-100 pb-8 last:border-0">
-                                
-                                {/* Image Thumbnail (Hidden on small mobile if desired, but good to have) */}
-                                <div className="relative w-full md:w-1/3 aspect-video md:aspect-[4/3] rounded-xl overflow-hidden flex-shrink-0">
-                                    <Image src={item.image} alt={item.title} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
-                                </div>
-
-                                {/* Content */}
-                                <div className="flex flex-col justify-center">
-                                    {/* Meta */}
-                                    <div className="flex items-center gap-3 mb-2 md:mb-3">
-                                        <span className="text-[10px] md:text-xs font-bold text-white bg-brand-brown px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                            {item.category}
-                                        </span>
-                                        <span className="text-[10px] md:text-xs text-gray-400 flex items-center gap-1">
-                                            <Clock className="w-3 h-3" /> {item.readTime}
-                                        </span>
-                                    </div>
-                                    
-                                    {/* Title */}
-                                    <Link href="#">
-                                        <h2 className="font-agency text-2xl md:text-3xl text-brand-brown-dark leading-tight mb-2 md:mb-3 group-hover:text-brand-gold transition-colors cursor-pointer">
-                                            {item.title}
-                                        </h2>
-                                    </Link>
-                                    
-                                    {/* Excerpt */}
-                                    <p className="font-lato text-sm md:text-base text-gray-600 leading-relaxed mb-4 line-clamp-3">
-                                        {item.excerpt}
-                                    </p>
-                                    
-                                    {/* Footer Meta */}
-                                    <div className="mt-auto flex items-center justify-between">
-                                        <div className="flex items-center gap-2 text-xs text-gray-500 font-bold">
-                                            <User className="w-3 h-3 text-brand-gold" /> {item.author}
+                        {loading ? (
+                            <div className="flex justify-center items-center py-20">
+                                <Loader2 className="w-10 h-10 text-brand-gold animate-spin" />
+                            </div>
+                        ) : visibleArticles.length > 0 ? (
+                            <>
+                                {visibleArticles.map((item) => (
+                                    <article key={item.id} className="group flex flex-col md:flex-row gap-6 md:gap-8 border-b border-gray-100 pb-8 last:border-0">
+                                        
+                                        {/* Image Thumbnail */}
+                                        <div className="relative w-full md:w-1/3 aspect-video md:aspect-[4/3] rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
+                                            <Image 
+                                                src={item.coverImage || "/hero.jpg"} 
+                                                alt={item.title} 
+                                                fill 
+                                                className="object-cover transition-transform duration-700 group-hover:scale-105" 
+                                            />
                                         </div>
-                                        <div className="flex items-center text-brand-gold font-bold text-xs uppercase tracking-widest cursor-pointer group-hover:underline underline-offset-4">
-                                            Read <ChevronRight className="w-4 h-4" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </article>
-                        ))}
 
-                        {/* Pagination / Load More */}
-                        <div className="pt-8 text-center">
-                            <button className="px-8 py-3 border-2 border-brand-sand text-brand-brown-dark rounded-full font-agency text-lg hover:bg-brand-brown-dark hover:text-white transition-colors">
-                                Load More Articles
-                            </button>
-                        </div>
+                                        {/* Content */}
+                                        <div className="flex flex-col justify-center w-full">
+                                            {/* Meta */}
+                                            <div className="flex items-center gap-3 mb-2 md:mb-3">
+                                                <span className="text-[10px] md:text-xs font-bold text-white bg-brand-brown px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                                    {item.category}
+                                                </span>
+                                                <span className="text-[10px] md:text-xs text-gray-400 flex items-center gap-1">
+                                                    <Clock className="w-3 h-3" /> {item.readTime || '5 min read'}
+                                                </span>
+                                                <span className="text-[10px] md:text-xs text-gray-400 md:hidden">
+                                                    {formatDate(item.date)}
+                                                </span>
+                                            </div>
+                                            
+                                            {/* Title */}
+                                            <Link href={`/blogs/read/${item.id}`}>
+                                                <h2 className="font-agency text-2xl md:text-3xl text-brand-brown-dark leading-tight mb-2 md:mb-3 group-hover:text-brand-gold transition-colors cursor-pointer">
+                                                    {item.title}
+                                                </h2>
+                                            </Link>
+                                            
+                                            {/* Excerpt */}
+                                            <p className="font-lato text-sm md:text-base text-gray-600 leading-relaxed mb-4 line-clamp-3">
+                                                {item.excerpt}
+                                            </p>
+                                            
+                                            {/* Footer Meta */}
+                                            <div className="mt-auto flex items-center justify-between">
+                                                <div className="flex items-center gap-2 text-xs text-gray-500 font-bold">
+                                                    <User className="w-3 h-3 text-brand-gold" /> {item.author}
+                                                </div>
+                                                <Link href={`/blogs/read/${item.id}`}>
+                                                    <div className="flex items-center text-brand-gold font-bold text-xs uppercase tracking-widest cursor-pointer group-hover:underline underline-offset-4">
+                                                        Read <ChevronRight className="w-4 h-4" />
+                                                    </div>
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    </article>
+                                ))}
+
+                                {/* Load More Button */}
+                                {visibleCount < filteredArticles.length && (
+                                    <div className="pt-8 text-center">
+                                        <button 
+                                            onClick={() => setVisibleCount(prev => prev + 5)}
+                                            className="px-8 py-3 border-2 border-brand-sand text-brand-brown-dark rounded-full font-agency text-lg hover:bg-brand-brown-dark hover:text-white transition-colors"
+                                        >
+                                            Load More Articles
+                                        </button>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <div className="text-center py-12 text-gray-400">
+                                <Tag className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                                <p>No articles found matching your criteria.</p>
+                            </div>
+                        )}
                     </div>
 
-                    {/* RIGHT COLUMN: SIDEBAR (Spans 4 cols - Hidden on Mobile, Visible on Desktop) */}
+                    {/* RIGHT COLUMN: SIDEBAR */}
                     <aside className="hidden lg:block lg:col-span-4 space-y-12 pl-8 border-l border-gray-100">
                         
                         {/* Search Widget */}
@@ -214,6 +250,8 @@ export default function ArticlesPage() {
                             <div className="relative">
                                 <input 
                                     type="text" 
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
                                     placeholder="Keywords..." 
                                     className="w-full pl-4 pr-10 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-gold/50 text-sm bg-white"
                                 />
@@ -227,11 +265,14 @@ export default function ArticlesPage() {
                                 Categories
                             </h4>
                             <ul className="space-y-3">
-                                {categories.map((cat, idx) => (
+                                {sidebarTags.map((cat, idx) => (
                                     <li key={idx}>
                                         <Link href="#" className="flex items-center justify-between group">
                                             <span className="text-sm text-gray-600 group-hover:text-brand-gold transition-colors">{cat}</span>
-                                            <span className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full group-hover:bg-brand-gold/10 group-hover:text-brand-gold transition-colors">12</span>
+                                            <span className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full group-hover:bg-brand-gold/10 group-hover:text-brand-gold transition-colors">
+                                                {/* Mock Count */}
+                                                {Math.floor(Math.random() * 20)} 
+                                            </span>
                                         </Link>
                                     </li>
                                 ))}
