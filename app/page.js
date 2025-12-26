@@ -34,15 +34,15 @@ export default function HomePage() {
 
     // Handle Splash Screen Timer
     useEffect(() => {
-        // Start fading out after 2.5 seconds (allowing animation to play)
+        // Start fading out after 2.5 seconds (adjust based on LogoReveal duration)
         const timer1 = setTimeout(() => {
             setFadeOut(true);
         }, 2500);
 
-        // Remove from DOM after 3 seconds
+        // Remove from DOM after 3.2 seconds (allowing for fade out transition)
         const timer2 = setTimeout(() => {
             setShowSplash(false);
-        }, 3000);
+        }, 3200);
 
         return () => {
             clearTimeout(timer1);
@@ -76,12 +76,12 @@ export default function HomePage() {
     return (
         <div className="min-h-screen flex flex-col bg-white font-lato text-brand-brown-dark">
             
-            {/* --- 0. SPLASH SCREEN (With LogoReveal) --- */}
+            {/* --- 0. SPLASH SCREEN (Updated with LogoReveal) --- */}
             {showSplash && (
                 <div 
-                    className={`fixed inset-0 z-[100] bg-brand-brown-dark flex flex-col items-center justify-center transition-opacity duration-700 ease-out ${fadeOut ? 'opacity-0' : 'opacity-100'}`}
+                    className={`fixed inset-0 z-[100] bg-brand-brown-dark flex items-center justify-center transition-opacity duration-700 ease-out ${fadeOut ? 'opacity-0' : 'opacity-100'}`}
                 >
-                    <div className="w-64 md:w-96">
+                    <div className="w-full max-w-md px-6">
                         <LogoReveal />
                     </div>
                 </div>
@@ -132,9 +132,7 @@ export default function HomePage() {
                             </div>
                         </div>
                     </div>
-                </section>
-
-{/* 2. ICON NAVIGATION MENU (Lucide Icons) */}
+                </section>{/* 2. ICON NAVIGATION MENU (Lucide Icons) */}
                 <section className="py-8 md:py-16 px-6 bg-white relative z-20 -mt-6 md:-mt-0 rounded-t-3xl md:rounded-none">
                     <div className="max-w-5xl mx-auto">
                         <div className="grid grid-cols-4 gap-3 md:gap-12 justify-items-center">
@@ -245,7 +243,7 @@ export default function HomePage() {
                             {/* LEFT: LATEST VIDEO (Takes 2 Cols on Desktop) */}
                             <div className="lg:col-span-2 flex flex-col">
                                 <div className="flex justify-between items-end mb-6">
-                                    <h2 className="font-agency text-2xl md:text-5xl text-brand-brown-dark">Latest Video</h2>
+                                    <h2 className="font-agency text-3xl md:text-5xl text-brand-brown-dark">Latest Video</h2>
                                 </div>
 
                                 <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 flex-grow flex flex-col">
@@ -305,7 +303,7 @@ export default function HomePage() {
                             {/* RIGHT: LATEST AUDIOS (Takes 1 Col on Desktop) */}
                             <div className="lg:col-span-1">
                                 <div className="flex justify-between items-end mb-6 mt-8 lg:mt-0">
-                                    <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark">Latest Audios</h2>
+                                    <h2 className="font-agency text-3xl md:text-4xl text-brand-brown-dark">Latest Audios</h2>
                                     <Link href="/media/audios" className="text-xs md:text-sm font-bold text-brand-gold uppercase tracking-widest hover:underline">View Library</Link>
                                 </div>
 
@@ -361,7 +359,7 @@ export default function HomePage() {
                             </div>
                         </div>
 
-{/* UPCOMING EVENTS */}
+                        {/* UPCOMING EVENTS */}
                         <div className="mt-16 md:mt-24">
                             <div className="flex justify-between items-end mb-8">
                                 <h2 className="font-agency text-2xl md:text-5xl text-brand-brown-dark">Upcoming Events</h2>
@@ -482,7 +480,6 @@ export default function HomePage() {
                         </div>
                     </div>
                 </section>
-
 
                 {/* 7. ARABIC QUOTE */}
                 <section className="py-20 px-6 text-center bg-white">
