@@ -5,45 +5,27 @@ import Link from 'next/link';
 import Image from 'next/image';
 // Firebase
 import { db } from '@/lib/firebase';
-import { collection, query, orderBy, onSnapshot, deleteDoc, doc, addDoc, serverTimestamp } from 'firebase/firestore';
-// UploadThing
-import { UploadButton } from '@/lib/uploadthing';
+import { collection, query, orderBy, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 
 import { 
     PlusCircle, 
     Search, 
-    Filter, 
     Edit, 
     Trash2, 
-    ExternalLink, 
     PlayCircle, 
     ListVideo, 
     LayoutList, 
     MoreVertical, 
-    Loader2, 
-    X, 
-    Image as ImageIcon, 
-    UploadCloud 
+    Loader2
 } from 'lucide-react';
 
 export default function ManageVideosPage() {
 
-    // State for Tabs
     const [activeTab, setActiveTab] = useState('videos'); 
     const [isLoading, setIsLoading] = useState(true);
 
-    // Data State
     const [videos, setVideos] = useState([]);
     const [playlists, setPlaylists] = useState([]);
-
-    // --- PLAYLIST MODAL STATE ---
-    const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
-    const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
-    const [newPlaylist, setNewPlaylist] = useState({
-        title: '',
-        category: 'General',
-        cover: '' // Stores the UploadThing URL
-    });
 
     // 1. FETCH VIDEOS & PLAYLISTS
     useEffect(() => {
@@ -66,40 +48,7 @@ export default function ManageVideosPage() {
         };
     }, []);
 
-    // 2. HANDLE CREATE PLAYLIST (Now uses Modal)
-    const handleSavePlaylist = async (e) => {
-        e.preventDefault();
-        setIsCreatingPlaylist(true);
-        
-        try {
-            if(!newPlaylist.title) {
-                alert("Please enter a playlist title.");
-                setIsCreatingPlaylist(false);
-                return;
-            }
-
-            await addDoc(collection(db, "video_playlists"), {
-                ...newPlaylist,
-                count: 0, 
-                status: "Active",
-                // Use uploaded cover or fallback to hero if user didn't upload
-                cover: newPlaylist.cover || "/hero.jpg", 
-                createdAt: serverTimestamp()
-            });
-
-            alert("Playlist created successfully!");
-            setIsPlaylistModalOpen(false); // Close Modal
-            setNewPlaylist({ title: '', category: 'General', cover: '' }); // Reset Form
-
-        } catch (error) {
-            console.error("Error creating playlist:", error);
-            alert("Failed to create playlist.");
-        } finally {
-            setIsCreatingPlaylist(false);
-        }
-    };
-
-    // 3. HANDLE DELETE
+    // 2. HANDLE DELETE
     const handleDelete = async (id, type) => {
         if (!confirm(`Are you sure you want to delete this ${type}? This cannot be undone.`)) return;
 
@@ -116,7 +65,7 @@ export default function ManageVideosPage() {
     };
 
     return (
-        <div className="space-y-6 relative">
+        <div className="space-y-6">
 
             {/* 1. HEADER & ACTIONS */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -134,13 +83,14 @@ export default function ManageVideosPage() {
                             Upload Video
                         </Link>
                     ) : (
-                        <button 
-                            onClick={() => setIsPlaylistModalOpen(true)}
+                        // CHANGED: Now links to a new page instead of opening a modal
+                        <Link 
+                            href="/admin/videos/playlists/new"
                             className="flex items-center gap-2 px-5 py-2.5 bg-brand-brown-dark text-white rounded-xl text-sm font-bold hover:bg-brand-gold transition-colors shadow-md"
                         >
                             <ListVideo className="w-4 h-4" />
                             Create Playlist
-                        </button>
+                        </Link>
                     )}
                 </div>
             </div>
@@ -179,7 +129,7 @@ export default function ManageVideosPage() {
                     </div>
                 ) : (
                     <>
-                        {/* VIDEOS LIST */}
+                        {/* VIDEOS VIEW */}
                         {activeTab === 'videos' && (
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left">
@@ -208,9 +158,7 @@ export default function ManageVideosPage() {
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4">
-                                                        <span className="text-xs text-brand-brown">{video.playlist || '-'}</span>
-                                                    </td>
+                                                    <td className="px-6 py-4"><span className="text-xs text-brand-brown">{video.playlist || '-'}</span></td>
                                                     <td className="px-6 py-4">
                                                         <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-bold uppercase bg-green-100 text-green-700">
                                                             <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> Live
@@ -227,7 +175,7 @@ export default function ManageVideosPage() {
                             </div>
                         )}
 
-                        {/* PLAYLISTS GRID */}
+                        {/* PLAYLISTS VIEW */}
                         {activeTab === 'playlists' && (
                             <div className="p-6">
                                 {playlists.length === 0 ? (
@@ -240,7 +188,7 @@ export default function ManageVideosPage() {
                                         {playlists.map((list) => (
                                             <div key={list.id} className="group border border-gray-100 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:border-brand-gold/30">
                                                 <div className="relative w-full aspect-video bg-gray-100">
-                                                    <Image src={list.cover || "/hero.jpg"} alt={list.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                    <Image src={list.cover} alt={list.title} fill className="object-cover" />
                                                     <div className="absolute bottom-3 right-3 bg-black/80 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
                                                         <ListVideo className="w-3 h-3" /> {list.count || 0}
                                                     </div>
@@ -261,107 +209,6 @@ export default function ManageVideosPage() {
                     </>
                 )}
             </div>
-
-            {/* --- CREATE PLAYLIST MODAL --- */}
-            {isPlaylistModalOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-                        
-                        {/* Modal Header */}
-                        <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50">
-                            <h3 className="font-agency text-xl text-brand-brown-dark">Create New Playlist</h3>
-                            <button onClick={() => setIsPlaylistModalOpen(false)} className="text-gray-400 hover:text-red-500 transition-colors">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        {/* Modal Body */}
-                        <form onSubmit={handleSavePlaylist} className="p-6 space-y-4">
-                            
-                            {/* Playlist Title */}
-                            <div>
-                                <label className="block text-xs font-bold text-brand-brown mb-1">Playlist Title</label>
-                                <input 
-                                    type="text" 
-                                    required
-                                    value={newPlaylist.title}
-                                    onChange={(e) => setNewPlaylist({...newPlaylist, title: e.target.value})}
-                                    placeholder="e.g. Tafsir 2024" 
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
-                                />
-                            </div>
-
-                            {/* Category */}
-                            <div>
-                                <label className="block text-xs font-bold text-brand-brown mb-1">Category</label>
-                                <select 
-                                    value={newPlaylist.category}
-                                    onChange={(e) => setNewPlaylist({...newPlaylist, category: e.target.value})}
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
-                                >
-                                    <option>General</option>
-                                    <option>Tafsir</option>
-                                    <option>Seerah</option>
-                                    <option>Ramadan</option>
-                                    <option>Event</option>
-                                </select>
-                            </div>
-
-                            {/* Cover Image Upload */}
-                            <div>
-                                <label className="block text-xs font-bold text-brand-brown mb-2">Cover Image</label>
-                                <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center text-center bg-gray-50 hover:bg-white hover:border-brand-gold transition-colors">
-                                    {newPlaylist.cover ? (
-                                        <div className="relative w-full aspect-video rounded-lg overflow-hidden">
-                                            <Image src={newPlaylist.cover} alt="Cover Preview" fill className="object-cover" />
-                                            <button 
-                                                type="button"
-                                                onClick={() => setNewPlaylist({...newPlaylist, cover: ''})}
-                                                className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600"
-                                            >
-                                                <X className="w-3 h-3" />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div className="py-4">
-                                            <ImageIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                                            {/* UPLOADTHING BUTTON */}
-                                            <UploadButton
-                                                endpoint="imageUploader"
-                                                onClientUploadComplete={(res) => {
-                                                    if (res && res[0]) {
-                                                        setNewPlaylist(prev => ({ ...prev, cover: res[0].url }));
-                                                    }
-                                                }}
-                                                onUploadError={(error) => alert(`Error! ${error.message}`)}
-                                                appearance={{
-                                                    button: "bg-brand-brown-dark text-white text-xs px-3 py-2 rounded-lg"
-                                                }}
-                                                content={{ button({ ready }) { return ready ? 'Upload Cover' : 'Loading...' } }}
-                                            />
-                                            <p className="text-[10px] text-gray-400 mt-2">Recommended: 16:9 Aspect Ratio</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Submit Button */}
-                            <div className="pt-2">
-                                <button 
-                                    type="submit" 
-                                    disabled={isCreatingPlaylist}
-                                    className="w-full flex items-center justify-center gap-2 py-3 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-colors shadow-md disabled:opacity-50"
-                                >
-                                    {isCreatingPlaylist ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                                    {isCreatingPlaylist ? 'Creating...' : 'Create Playlist'}
-                                </button>
-                            </div>
-
-                        </form>
-                    </div>
-                </div>
-            )}
-
         </div>
     );
 }
