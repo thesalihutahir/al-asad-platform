@@ -51,7 +51,6 @@ export const AuthContextProvider = ({ children }) => {
   };
 
   // Update Profile Function (For Settings Page)
-  // In the future, you will call this from SettingsPage handleSave()
   const updateUserProfile = async (data) => {
     if (auth.currentUser) {
         await updateProfile(auth.currentUser, {
@@ -69,14 +68,11 @@ export const AuthContextProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{ user, login, logout, updateUserProfile, loading }}>
-      {loading ? (
-        // Optional: A nice loading spinner while checking auth status
-        <div className="h-screen flex items-center justify-center bg-gray-50">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#d17600]"></div>
-        </div>
-      ) : (
-        children
-      )}
+      {/* FIX: We removed the loading spinner block here. 
+          Now the app renders immediately, allowing the Splash Screen 
+          on the Home Page to take over.
+      */}
+      {children}
     </AuthContext.Provider>
   );
 };
