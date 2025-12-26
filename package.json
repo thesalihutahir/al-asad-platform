@@ -2,13 +2,11 @@
   "name": "al-asad-platform",
   "version": "1.0.0",
   "private": true,
-    "scripts": {
+  "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint"
-  },
-
   },
   "dependencies": {
     "@uploadthing/react": "^6.6.0",
