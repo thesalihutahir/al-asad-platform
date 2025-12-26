@@ -6,6 +6,9 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 // Import the real Auth hook
 import { useAuth } from '@/context/AuthContext'; 
+// Import the Logo Animation
+import LogoReveal from '@/components/logo-reveal';
+
 import { 
     LayoutDashboard, 
     FileText, 
@@ -30,12 +33,24 @@ export default function AdminLayout({ children }) {
     const pathname = usePathname();
     const router = useRouter();
 
-    // Get user and logout from AuthContext
-    const { user, logout } = useAuth(); 
+    // Get user, logout AND loading from AuthContext
+    const { user, logout, loading } = useAuth(); 
 
     // Skip the layout for the login page specifically
     if (pathname === '/admin/login') {
         return <>{children}</>;
+    }
+
+    // --- NEW: Loading State with LogoReveal ---
+    // This shows the animation while checking if the admin is logged in
+    if (loading) {
+        return (
+            <div className="h-screen w-full flex items-center justify-center bg-white">
+                <div className="w-full max-w-sm px-10">
+                    <LogoReveal />
+                </div>
+            </div>
+        );
     }
 
     const menuItems = [
