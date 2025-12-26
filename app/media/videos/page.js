@@ -1,96 +1,71 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Play, ListVideo, Clock, Filter } from 'lucide-react';
+// Firebase Imports
+import { db } from '@/lib/firebase';
+import { collection, query, orderBy, getDocs } from 'firebase/firestore';
+import { Play, ListVideo, Clock, Filter, Loader2 } from 'lucide-react';
 
 export default function VideosPage() {
 
-    // Mock Data for Playlists (Series)
-    const playlists = [
-        {
-            id: 'tafsir-2024',
-            title: "Tafsir Surah Al-Baqarah (2024)",
-            count: 24,
-            image: "/hero.jpg", 
-        },
-        {
-            id: 'ramadan-spiritual',
-            title: "Ramadan Spiritual Guide",
-            count: 10,
-            image: "/hero.jpg", 
-        },
-        {
-            id: 'seerah',
-            title: "Seerah: Life of the Prophet (SAW)",
-            count: 15,
-            image: "/hero.jpg", 
-        }
-    ];
+    // --- STATE ---
+    const [videos, setVideos] = useState([]);
+    const [playlists, setPlaylists] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [activeFilter, setActiveFilter] = useState("All Videos");
+    const [visibleCount, setVisibleCount] = useState(6);
 
-    // Mock Data for All Videos
-    const videos = [
-        {
-            id: 1,
-            title: "Tafsir Surah Al-Baqarah: Ayah 255",
-            category: "Tafsir",
-            date: "20 Dec 2024",
-            duration: "45:00",
-            image: "/hero.jpg", 
-            url: "#" 
-        },
-        {
-            id: 2,
-            title: "The Importance of Zakat in Modern Society",
-            category: "Lecture",
-            date: "15 Dec 2024",
-            duration: "32:15",
-            image: "/hero.jpg", 
-            url: "#"
-        },
-        {
-            id: 3,
-            title: "Annual Community Iftar Gathering 2024",
-            category: "Event",
-            date: "10 Mar 2024",
-            duration: "12:50",
-            image: "/hero.jpg", 
-            url: "#"
-        },
-        {
-            id: 4,
-            title: "Preparing for Ramadan: Spiritual Guide",
-            category: "Lecture",
-            date: "01 Mar 2024",
-            duration: "55:00",
-            image: "/hero.jpg", 
-            url: "#"
-        },
-        {
-            id: 5,
-            title: "Understanding Islamic Finance",
-            category: "Workshop",
-            date: "28 Feb 2024",
-            duration: "1:15:00",
-            image: "/hero.jpg", 
-            url: "#"
-        },
-        {
-            id: 6,
-            title: "The Rights of Parents",
-            category: "Khutbah",
-            date: "20 Feb 2024",
-            duration: "28:00",
-            image: "/hero.jpg", 
-            url: "#"
-        }
-    ];
+    const filters = ["All Videos", "Tafsir", "Lecture", "Event Highlight", "Friday Sermon (Khutbah)"];
 
-    // Filter Categories
-    const filters = ["All Videos", "Tafsir", "Lectures", "Events", "Shorts"];
+    // --- FETCH DATA ---
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                // Fetch Videos
+                const qVideos = query(collection(db, "videos"), orderBy("createdAt", "desc"));
+                const videoSnapshot = await getDocs(qVideos);
+                const fetchedVideos = videoSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                setVideos(fetchedVideos);
+
+                // Fetch Playlists
+                const qPlaylists = query(collection(db, "video_playlists"), orderBy("createdAt", "desc"));
+                const playlistSnapshot = await getDocs(qPlaylists);
+                const fetchedPlaylists = playlistSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                setPlaylists(fetchedPlaylists);
+
+            } catch (error) {
+                console.error("Error fetching media:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    // --- HELPER: Format Date ---
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
+
+    // --- FILTER LOGIC ---
+    const filteredVideos = activeFilter === "All Videos" 
+        ? videos 
+        : videos.filter(video => video.category === activeFilter);
+
+    const visibleVideos = filteredVideos.slice(0, visibleCount);
 
     return (
         <div className="min-h-screen flex flex-col bg-white font-lato">
@@ -108,7 +83,7 @@ export default function VideosPage() {
                             className="object-cover object-center"
                             priority
                         />
-                        {/* Gradient Overlay - FIXED NESTING */}
+                        {/* Gradient Overlay */}
                         <div className="absolute inset-0 bg-gradient-to-t from-white via-brand-gold/40 to-transparent "></div>
                     </div>
 
@@ -123,146 +98,166 @@ export default function VideosPage() {
                     </div>
                 </section>
 
-                {/* 2. PLAYLISTS / SERIES SECTION (NEW) */}
-                <section className="px-6 md:px-12 lg:px-24 mb-12">
-                    <div className="flex justify-between items-end mb-6 border-b border-gray-100 pb-2">
-                        <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark">
-                            Featured Series
-                        </h2>
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden md:block">
-                            Curated Playlists
-                        </span>
+                {loading ? (
+                    <div className="flex justify-center items-center py-20">
+                        <Loader2 className="w-10 h-10 text-brand-gold animate-spin" />
                     </div>
+                ) : (
+                    <>
+                        {/* 2. PLAYLISTS / SERIES SECTION */}
+                        {playlists.length > 0 && (
+                            <section className="px-6 md:px-12 lg:px-24 mb-12">
+                                <div className="flex justify-between items-end mb-6 border-b border-gray-100 pb-2">
+                                    <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark">
+                                        Featured Series
+                                    </h2>
+                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden md:block">
+                                        Curated Playlists
+                                    </span>
+                                </div>
 
-                    {/* Mobile: Horizontal Scroll | Desktop: Grid */}
-                    <div className="flex overflow-x-auto gap-4 pb-4 md:grid md:grid-cols-3 md:gap-8 scrollbar-hide snap-x">
-                        {playlists.map((playlist) => (
-                            <div 
-                                key={playlist.id} 
-                                className="snap-center min-w-[260px] md:min-w-0 bg-brand-sand/30 rounded-2xl overflow-hidden cursor-pointer group hover:shadow-lg transition-all"
-                            >
-                                {/* Playlist Thumbnail */}
-                                <div className="relative w-full aspect-[16/10]">
-                                    <Image 
-                                        src={playlist.image} 
-                                        alt={playlist.title} 
-                                        fill 
-                                        className="object-cover transition-transform duration-700 group-hover:scale-105"
-                                    />
-                                    {/* Overlay with Playlist Icon */}
-                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/30 transition-colors">
-                                        <div className="bg-white/20 backdrop-blur-sm p-3 rounded-full">
-                                            <ListVideo className="w-8 h-8 text-white" />
+                                <div className="flex overflow-x-auto gap-4 pb-4 md:grid md:grid-cols-3 md:gap-8 scrollbar-hide snap-x">
+                                    {playlists.map((playlist) => (
+                                        <div 
+                                            key={playlist.id} 
+                                            className="snap-center min-w-[260px] md:min-w-0 bg-brand-sand/30 rounded-2xl overflow-hidden cursor-pointer group hover:shadow-lg transition-all"
+                                        >
+                                            <div className="relative w-full aspect-[16/10] bg-gray-200">
+                                                <Image 
+                                                    src={playlist.cover || "/hero.jpg"} 
+                                                    alt={playlist.title} 
+                                                    fill 
+                                                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                                />
+                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/30 transition-colors">
+                                                    <div className="bg-white/20 backdrop-blur-sm p-3 rounded-full">
+                                                        <ListVideo className="w-8 h-8 text-white" />
+                                                    </div>
+                                                </div>
+                                                <div className="absolute bottom-2 right-2 bg-black/80 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
+                                                    <ListVideo className="w-3 h-3" /> {playlist.count || 0} Videos
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="p-4">
+                                                <h3 className="font-agency text-lg md:text-xl text-brand-brown-dark leading-tight group-hover:text-brand-gold transition-colors line-clamp-1">
+                                                    {playlist.title}
+                                                </h3>
+                                                <p className="text-xs text-gray-500 mt-1 font-bold uppercase tracking-wider">
+                                                    View Full Playlist →
+                                                </p>
+                                            </div>
                                         </div>
-                                    </div>
-                                    {/* Count Badge */}
-                                    <div className="absolute bottom-2 right-2 bg-black/80 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
-                                        <ListVideo className="w-3 h-3" /> {playlist.count} Videos
-                                    </div>
+                                    ))}
                                 </div>
-                                
-                                {/* Playlist Info */}
-                                <div className="p-4">
-                                    <h3 className="font-agency text-lg md:text-xl text-brand-brown-dark leading-tight group-hover:text-brand-gold transition-colors">
-                                        {playlist.title}
-                                    </h3>
-                                    <p className="text-xs text-gray-500 mt-1 font-bold uppercase tracking-wider">
-                                        View Full Playlist →
-                                    </p>
-                                </div>
+                            </section>
+                        )}
+
+                        {/* 3. FILTER BAR */}
+                        <section className="px-6 md:px-12 lg:px-24 mb-8">
+                             <div className="flex items-center gap-2 mb-4 md:hidden">
+                                <Filter className="w-4 h-4 text-brand-brown" />
+                                <span className="text-xs font-bold uppercase tracking-widest text-brand-brown">Filter Content</span>
                             </div>
-                        ))}
-                    </div>
-                </section>
-
-                {/* 3. FILTER BAR */}
-                <section className="px-6 md:px-12 lg:px-24 mb-8">
-                     <div className="flex items-center gap-2 mb-4 md:hidden">
-                        <Filter className="w-4 h-4 text-brand-brown" />
-                        <span className="text-xs font-bold uppercase tracking-widest text-brand-brown">Filter Content</span>
-                    </div>
-                    <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-hide md:justify-center md:flex-wrap">
-                        {filters.map((filter, index) => (
-                            <button 
-                                key={index}
-                                className={`px-5 py-2 md:px-6 md:py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${
-                                    index === 0 
-                                    ? 'bg-brand-gold text-white shadow-md transform md:scale-105' 
-                                    : 'bg-brand-sand text-brand-brown-dark hover:bg-brand-gold/10 hover:text-brand-gold'
-                                }`}
-                            >
-                                {filter}
-                            </button>
-                        ))}
-                    </div>
-                </section>
-
-                {/* 4. ALL VIDEOS GRID */}
-                <section className="px-6 md:px-12 lg:px-24 max-w-7xl mx-auto">
-                     <div className="flex justify-between items-end mb-6 md:mb-8">
-                        <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark">
-                            Recent Uploads
-                        </h2>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                        {videos.map((video) => (
-                            <div key={video.id} className="group block bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 transition-all hover:-translate-y-2 hover:shadow-xl">
-
-                                {/* Thumbnail Container */}
-                                <div className="relative w-full aspect-video bg-gray-900">
-                                    <Image
-                                        src={video.image}
-                                        alt={video.title}
-                                        fill
-                                        className="object-cover opacity-90 group-hover:opacity-100 transition-opacity"
-                                    />
-
-                                    {/* Play Button Overlay */}
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <div className="w-12 h-12 md:w-16 md:h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:bg-brand-gold group-hover:scale-110 transition-all duration-300 shadow-md">
-                                            <Play className="w-5 h-5 md:w-7 md:h-7 text-white fill-current ml-1" />
-                                        </div>
-                                    </div>
-
-                                    {/* Duration Badge */}
-                                    <div className="absolute bottom-3 right-3 bg-black/70 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
-                                        <Clock className="w-3 h-3" /> {video.duration}
-                                    </div>
-                                </div>
-
-                                {/* Content */}
-                                <div className="p-5">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <span className="text-[10px] font-bold text-brand-gold uppercase tracking-widest bg-brand-gold/10 px-2 py-0.5 rounded">
-                                            {video.category}
-                                        </span>
-                                        <span className="text-[10px] text-gray-400 font-lato">
-                                            {video.date}
-                                        </span>
-                                    </div>
-
-                                    <h3 className="font-agency text-xl md:text-2xl text-brand-brown-dark leading-tight mb-3 group-hover:text-brand-gold transition-colors line-clamp-2">
-                                        {video.title}
-                                    </h3>
-
-                                    <div className="flex items-center gap-2 mt-auto">
-                                        <p className="text-xs font-bold text-brand-brown group-hover:underline decoration-brand-gold/50 underline-offset-4">
-                                            Watch Now
-                                        </p>
-                                    </div>
-                                </div>
+                            <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-hide md:justify-center md:flex-wrap">
+                                {filters.map((filter, index) => (
+                                    <button 
+                                        key={index}
+                                        onClick={() => setActiveFilter(filter)}
+                                        className={`px-5 py-2 md:px-6 md:py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${
+                                            activeFilter === filter 
+                                            ? 'bg-brand-gold text-white shadow-md transform md:scale-105' 
+                                            : 'bg-brand-sand text-brand-brown-dark hover:bg-brand-gold/10 hover:text-brand-gold'
+                                        }`}
+                                    >
+                                        {filter}
+                                    </button>
+                                ))}
                             </div>
-                        ))}
-                    </div>
-                </section>
+                        </section>
 
-                {/* 5. LOAD MORE */}
-                <section className="py-12 text-center">
-                    <button className="px-8 py-3 border-2 border-brand-sand text-brand-brown-dark rounded-full font-agency text-lg hover:bg-brand-brown-dark hover:text-white transition-colors uppercase tracking-wide">
-                        Load More Videos
-                    </button>
-                </section>
+                        {/* 4. ALL VIDEOS GRID */}
+                        <section className="px-6 md:px-12 lg:px-24 max-w-7xl mx-auto">
+                             <div className="flex justify-between items-end mb-6 md:mb-8">
+                                <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark">
+                                    Recent Uploads
+                                </h2>
+                            </div>
+
+                            {visibleVideos.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                                    {visibleVideos.map((video) => (
+                                        <a 
+                                            href={video.url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer" 
+                                            key={video.id} 
+                                            className="group block bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 transition-all hover:-translate-y-2 hover:shadow-xl"
+                                        >
+                                            {/* Thumbnail Container */}
+                                            <div className="relative w-full aspect-video bg-gray-900">
+                                                <Image
+                                                    src={video.thumbnail || "/hero.jpg"}
+                                                    alt={video.title}
+                                                    fill
+                                                    className="object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                                                />
+                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                    <div className="w-12 h-12 md:w-16 md:h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:bg-brand-gold group-hover:scale-110 transition-all duration-300 shadow-md">
+                                                        <Play className="w-5 h-5 md:w-7 md:h-7 text-white fill-current ml-1" />
+                                                    </div>
+                                                </div>
+                                                {/* Generic duration since we don't have exact length from simple link */}
+                                                <div className="absolute bottom-3 right-3 bg-black/70 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
+                                                    <Clock className="w-3 h-3" /> Watch
+                                                </div>
+                                            </div>
+
+                                            {/* Content */}
+                                            <div className="p-5">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <span className="text-[10px] font-bold text-brand-gold uppercase tracking-widest bg-brand-gold/10 px-2 py-0.5 rounded">
+                                                        {video.category}
+                                                    </span>
+                                                    <span className="text-[10px] text-gray-400 font-lato">
+                                                        {formatDate(video.date)}
+                                                    </span>
+                                                </div>
+
+                                                <h3 className="font-agency text-xl md:text-2xl text-brand-brown-dark leading-tight mb-3 group-hover:text-brand-gold transition-colors line-clamp-2">
+                                                    {video.title}
+                                                </h3>
+
+                                                <div className="flex items-center gap-2 mt-auto">
+                                                    <p className="text-xs font-bold text-brand-brown group-hover:underline decoration-brand-gold/50 underline-offset-4">
+                                                        Watch Now
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-12 text-gray-400">
+                                    <Play className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                                    <p>No videos found matching your criteria.</p>
+                                </div>
+                            )}
+                        </section>
+
+                        {/* 5. LOAD MORE */}
+                        {visibleCount < filteredVideos.length && (
+                            <section className="py-12 text-center">
+                                <button 
+                                    onClick={() => setVisibleCount(prev => prev + 6)}
+                                    className="px-8 py-3 border-2 border-brand-sand text-brand-brown-dark rounded-full font-agency text-lg hover:bg-brand-brown-dark hover:text-white transition-colors uppercase tracking-wide"
+                                >
+                                    Load More Videos
+                                </button>
+                            </section>
+                        )}
+                    </>
+                )}
 
             </main>
 
