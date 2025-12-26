@@ -3,19 +3,28 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+// Firebase
+import { db } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+// UploadThing
+import { UploadButton } from '@/lib/uploadthing';
+
 import { 
     ArrowLeft, 
     Save, 
     UploadCloud, 
     X, 
     FileText,
-    List,
-    LayoutList
+    LayoutList,
+    Loader2
 } from 'lucide-react';
 
 export default function CreateBlogPage() {
-    
-    // Mock Series (In real app, fetch from API)
+    const router = useRouter();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Mock Series (You can fetch this from Firebase later)
     const availableSeries = [
         { id: 1, title: "Ramadan Preparation Guide" },
         { id: 2, title: "The Fiqh of Prayer (Salat)" }
@@ -25,42 +34,57 @@ export default function CreateBlogPage() {
     const [formData, setFormData] = useState({
         title: '',
         excerpt: '',
-        content: '',
+        content: '', 
         category: 'Article',
-        series: '', // New Field
+        series: '', 
         author: 'Sheikh Goni Dr. Muneer Ja\'afar', 
         readTime: '',
         date: new Date().toISOString().split('T')[0], 
         tags: '',
-        pdfFile: null
+        pdfUrl: '',      // Stores the UploadThing URL
+        pdfName: '',     // Stores the original filename
+        coverImage: ''   // Stores the UploadThing URL
     });
 
-    const [imagePreview, setImagePreview] = useState(null);
-
-    // Handle Input Changes
+    // Handle Text Input Changes
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // Handle Image Upload Preview
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setImagePreview(URL.createObjectURL(file));
-        }
-    };
-
-    // Handle PDF (Simulated)
-    const handlePdfChange = (e) => {
-        const file = e.target.files[0];
-        setFormData(prev => ({ ...prev, pdfFile: file ? file.name : null }));
-    };
-
-    const handleSubmit = (e) => {
+    // Handle Form Submission
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        alert(`Post Saved! \nTitle: ${formData.title} \nSeries: ${formData.series || 'None'}`);
-        console.log(formData);
+        setIsSubmitting(true);
+
+        try {
+            // 1. Validation
+            if (!formData.title || !formData.content) {
+                alert("Please fill in the title and content.");
+                setIsSubmitting(false);
+                return;
+            }
+
+            // 2. Prepare Data for Firestore
+            const postData = {
+                ...formData,
+                createdAt: serverTimestamp(),
+                // Convert tags string to array
+                tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '') 
+            };
+
+            // 3. Save to Firebase
+            await addDoc(collection(db, "posts"), postData);
+
+            alert("Post published successfully!");
+            router.push('/admin/blogs');
+
+        } catch (error) {
+            console.error("Error creating post:", error);
+            alert("Failed to create post. Check console for details.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -81,9 +105,13 @@ export default function CreateBlogPage() {
                     <button type="button" className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 transition-colors">
                         Save Draft
                     </button>
-                    <button type="submit" className="flex items-center gap-2 px-6 py-2.5 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-colors shadow-md">
-                        <Save className="w-4 h-4" />
-                        Publish Post
+                    <button 
+                        type="submit" 
+                        disabled={isSubmitting}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        {isSubmitting ? 'Publishing...' : 'Publish Post'}
                     </button>
                 </div>
             </div>
@@ -123,20 +151,13 @@ export default function CreateBlogPage() {
                         ></textarea>
                     </div>
 
-                    {/* Main Content (Rich Text Placeholder) */}
+                    {/* Main Content */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 min-h-[500px] flex flex-col">
                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                             Main Content
                         </label>
-                        <div className="border-b border-gray-100 pb-2 mb-4 flex gap-2">
-                            {/* Toolbar Simulation */}
-                            <button type="button" className="p-1.5 hover:bg-gray-100 rounded font-bold">B</button>
-                            <button type="button" className="p-1.5 hover:bg-gray-100 rounded italic">I</button>
-                            <button type="button" className="p-1.5 hover:bg-gray-100 rounded underline">U</button>
-                            <div className="w-px h-6 bg-gray-200 mx-1"></div>
-                            <button type="button" className="p-1.5 hover:bg-gray-100 rounded">H1</button>
-                            <button type="button" className="p-1.5 hover:bg-gray-100 rounded">H2</button>
-                            <button type="button" className="p-1.5 hover:bg-gray-100 rounded">Quote</button>
+                        <div className="border-b border-gray-100 pb-2 mb-4 flex gap-2 text-gray-400 text-sm">
+                            <span>Markdown Supported</span>
                         </div>
                         <textarea 
                             name="content"
@@ -156,23 +177,40 @@ export default function CreateBlogPage() {
                                 </div>
                                 <div className="flex-grow">
                                     <h3 className="font-bold text-blue-800 text-sm">Upload Research PDF</h3>
-                                    <p className="text-xs text-blue-600">This file will be available for download on the post.</p>
+                                    <p className="text-xs text-blue-600">Max size 16MB. This file will be downloadable.</p>
                                 </div>
                                 <div className="relative">
-                                    <input 
-                                        type="file" 
-                                        accept=".pdf" 
-                                        onChange={handlePdfChange}
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    {/* UPLOADTHING BUTTON FOR PDF */}
+                                    <UploadButton
+                                        endpoint="pdfUploader"
+                                        onClientUploadComplete={(res) => {
+                                            if(res && res[0]) {
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    pdfUrl: res[0].url,
+                                                    pdfName: res[0].name
+                                                }));
+                                                alert("PDF Uploaded Successfully");
+                                            }
+                                        }}
+                                        onUploadError={(error) => {
+                                            alert(`ERROR! ${error.message}`);
+                                        }}
+                                        appearance={{
+                                            button: "bg-blue-600 text-white text-xs px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors ut-uploading:cursor-not-allowed"
+                                        }}
+                                        content={{
+                                            button({ ready }) {
+                                                if (ready) return 'Select PDF';
+                                                return 'Loading...';
+                                            }
+                                        }}
                                     />
-                                    <button type="button" className="px-4 py-2 bg-white text-blue-600 text-xs font-bold rounded-lg shadow-sm border border-blue-200">
-                                        {formData.pdfFile ? 'Change File' : 'Select PDF'}
-                                    </button>
                                 </div>
                             </div>
-                            {formData.pdfFile && (
-                                <p className="mt-2 text-xs font-bold text-green-600 text-center">
-                                    Selected: {formData.pdfFile}
+                            {formData.pdfName && (
+                                <p className="mt-4 text-xs font-bold text-green-700 text-center bg-green-100 py-2 rounded-lg border border-green-200">
+                                    ✓ Attached: {formData.pdfName}
                                 </p>
                             )}
                         </div>
@@ -187,7 +225,7 @@ export default function CreateBlogPage() {
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
                         <h3 className="font-agency text-xl text-brand-brown-dark border-b border-gray-100 pb-2">Publishing</h3>
                         
-                        {/* Series Selection (NEW) */}
+                        {/* Series Selection */}
                         <div className="bg-brand-sand/20 p-4 rounded-xl border border-brand-gold/20 mb-4">
                             <label className="flex items-center gap-2 text-xs font-bold text-brand-brown-dark uppercase tracking-wider mb-2">
                                 <LayoutList className="w-4 h-4" /> Add to Series
@@ -203,9 +241,6 @@ export default function CreateBlogPage() {
                                     <option key={s.id} value={s.title}>{s.title}</option>
                                 ))}
                             </select>
-                            <p className="text-[10px] text-gray-500 mt-1">
-                                Group this article (e.g. "Part 1") into a larger collection.
-                            </p>
                         </div>
 
                         <div>
@@ -262,28 +297,46 @@ export default function CreateBlogPage() {
                         <h3 className="font-agency text-xl text-brand-brown-dark border-b border-gray-100 pb-2">Featured Image</h3>
                         
                         <div className="relative w-full aspect-video bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center overflow-hidden group hover:border-brand-gold transition-colors">
-                            {imagePreview ? (
+                            {formData.coverImage ? (
                                 <>
-                                    <Image src={imagePreview} alt="Preview" fill className="object-cover" />
+                                    <Image src={formData.coverImage} alt="Preview" fill className="object-cover" />
                                     <button 
                                         type="button"
-                                        onClick={() => setImagePreview(null)}
-                                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600"
+                                        onClick={() => setFormData(prev => ({ ...prev, coverImage: '' }))}
+                                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600 z-10"
                                     >
                                         <X className="w-4 h-4" />
                                     </button>
                                 </>
                             ) : (
-                                <>
-                                    <UploadCloud className="w-8 h-8 text-gray-400 mb-2 group-hover:text-brand-gold" />
-                                    <p className="text-xs text-gray-500 text-center px-4">Click to upload cover image</p>
-                                    <input 
-                                        type="file" 
-                                        accept="image/*"
-                                        onChange={handleImageChange}
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                                <div className="flex flex-col items-center justify-center p-4 w-full h-full">
+                                    <UploadCloud className="w-8 h-8 text-gray-400 mb-2" />
+                                    {/* UPLOADTHING BUTTON FOR IMAGE */}
+                                    <UploadButton
+                                        endpoint="imageUploader"
+                                        onClientUploadComplete={(res) => {
+                                            if(res && res[0]) {
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    coverImage: res[0].url
+                                                }));
+                                            }
+                                        }}
+                                        onUploadError={(error) => {
+                                            alert(`ERROR! ${error.message}`);
+                                        }}
+                                        appearance={{
+                                            button: "bg-transparent text-gray-500 text-xs hover:text-brand-gold ut-uploading:text-brand-gold font-bold",
+                                            allowedContent: "hidden" // Hide the "Image (4MB)" text to keep UI clean
+                                        }}
+                                        content={{
+                                            button({ ready }) {
+                                                if (ready) return 'Click to Upload Cover';
+                                                return 'Loading Uploader...';
+                                            }
+                                        }}
                                     />
-                                </>
+                                </div>
                             )}
                         </div>
                     </div>
