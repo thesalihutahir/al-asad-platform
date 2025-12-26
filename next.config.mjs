@@ -13,7 +13,7 @@ const nextConfig = {
         ],
     },
     
-    // Ignore peer dependency warnings for other frameworks in UploadThing
+    // Fix for UploadThing dependency resolution
     webpack: (config) => {
         config.resolve.alias = {
             ...config.resolve.alias,
@@ -26,10 +26,8 @@ const nextConfig = {
         return config;
     },
     
-    // Ignore linting/typescript errors during build to ensure deployment succeeds
-    eslint: {
-        ignoreDuringBuilds: true,
-    },
+    // We removed the 'eslint' block here to fix the warning.
+    // We kept 'typescript' because the logs didn't complain about it.
     typescript: {
         ignoreBuildErrors: true,
     }
