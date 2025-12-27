@@ -1,21 +1,20 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 // Firebase
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, orderBy, getDocs } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 import { 
     ArrowLeft, 
     Save, 
-    UploadCloud, 
     Music, 
     CheckCircle, 
-    Loader2,
-    Trash2,
+    Loader2, 
+    Trash2, 
     ListMusic
 } from 'lucide-react';
 
@@ -23,14 +22,12 @@ export default function UploadAudioPage() {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+    const [isLoadingSeries, setIsLoadingSeries] = useState(true);
 
-    // Mock Series
-    const availableSeries = [
-        { id: 1, title: "Tafsir Surah Yasin (Complete)" },
-        { id: 2, title: "Ramadan Daily Reminders" },
-        { id: 3, title: "Kitab At-Taharah (Purification)" }
-    ];
+    // Dynamic Series State
+    const [availableSeries, setAvailableSeries] = useState([]);
 
+    // Form State
     const [formData, setFormData] = useState({
         title: '',
         speaker: 'Sheikh Goni Dr. Muneer Ja\'afar',
@@ -43,6 +40,27 @@ export default function UploadAudioPage() {
     // File State
     const [audioFile, setAudioFile] = useState(null);
     const [audioPreviewUrl, setAudioPreviewUrl] = useState(null);
+
+    // 1. Fetch Series on Mount
+    useEffect(() => {
+        const fetchSeries = async () => {
+            try {
+                const q = query(collection(db, "audio_series"), orderBy("createdAt", "desc"));
+                const snapshot = await getDocs(q);
+                const seriesList = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                setAvailableSeries(seriesList);
+            } catch (error) {
+                console.error("Error fetching series:", error);
+            } finally {
+                setIsLoadingSeries(false);
+            }
+        };
+
+        fetchSeries();
+    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -74,16 +92,18 @@ export default function UploadAudioPage() {
     };
 
     const removeFile = () => {
-        setAudioFile(null);
-        setAudioPreviewUrl(null);
-        setUploadProgress(0);
+        if(confirm("Are you sure you want to remove this audio?")) {
+            setAudioFile(null);
+            setAudioPreviewUrl(null);
+            setUploadProgress(0);
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         
         if (!audioFile) {
-            alert("Please select an audio file.");
+            alert("Please select an audio file first.");
             return;
         }
         if (!formData.title) {
@@ -95,7 +115,6 @@ export default function UploadAudioPage() {
 
         try {
             // 1. Upload File to Firebase Storage
-            // Path: audios/[timestamp]_[filename]
             const storageRef = ref(storage, `audios/${Date.now()}_${audioFile.name}`);
             const uploadTask = uploadBytesResumable(storageRef, audioFile);
 
@@ -254,7 +273,7 @@ export default function UploadAudioPage() {
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
                         <h3 className="font-agency text-xl text-brand-brown-dark border-b border-gray-100 pb-2">Audio Details</h3>
 
-                        {/* Series Selection */}
+                        {/* Series Selection (Dynamic) */}
                         <div className="bg-brand-sand/20 p-4 rounded-xl border border-brand-gold/20">
                             <label className="flex items-center gap-2 text-xs font-bold text-brand-brown-dark uppercase tracking-wider mb-2">
                                 <ListMusic className="w-4 h-4" /> Add to Series (Playlist)
@@ -266,9 +285,13 @@ export default function UploadAudioPage() {
                                 className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer"
                             >
                                 <option value="">Select a Series (Optional)</option>
-                                {availableSeries.map(s => (
-                                    <option key={s.id} value={s.title}>{s.title}</option>
-                                ))}
+                                {isLoadingSeries ? (
+                                    <option disabled>Loading...</option>
+                                ) : (
+                                    availableSeries.map(s => (
+                                        <option key={s.id} value={s.title}>{s.title}</option>
+                                    ))
+                                )}
                             </select>
                             <p className="text-[10px] text-gray-500 mt-1">
                                 Group this track with others (e.g., "Tafsir Part 1" goes into "Tafsir Series").
