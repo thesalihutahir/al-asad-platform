@@ -8,40 +8,47 @@ import { useRouter, useParams } from 'next/navigation';
 import { db, storage } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+// Utilities
+import { compressImage } from '@/utils/compressImage';
+import Loader from '@/components/Loader';
 
 import { 
     ArrowLeft, 
     Save, 
     X, 
-    FileText,
-    LayoutList,
-    Loader2,
+    FileText, 
+    LayoutList, 
     UploadCloud,
-    CheckCircle
+    CheckCircle,
+    Globe
 } from 'lucide-react';
 
 export default function EditBlogPage() {
     const router = useRouter();
-    const params = useParams(); // Get ID from URL
+    const params = useParams(); 
     const postId = params.id;
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSavingDraft, setIsSavingDraft] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [uploadProgress, setUploadProgress] = useState(0);
 
     // Data State
-    const [availableSeries, setAvailableSeries] = useState([]);
-    
+    const [allSeries, setAllSeries] = useState([]);
+    const [filteredSeries, setFilteredSeries] = useState([]);
+
     const [formData, setFormData] = useState({
         title: '',
         excerpt: '',
         content: '', 
         category: 'Article',
+        language: 'English', // New Field
         series: '', 
         author: '', 
         readTime: '',
         date: '', 
         tags: '',
+        status: 'Published',
         coverImage: '',
         pdfUrl: '',
         pdfName: ''
@@ -59,7 +66,8 @@ export default function EditBlogPage() {
                 // Fetch Series List
                 const qSeries = query(collection(db, "blog_series"), orderBy("createdAt", "desc"));
                 const seriesSnapshot = await getDocs(qSeries);
-                setAvailableSeries(seriesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                const seriesList = seriesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setAllSeries(seriesList);
 
                 // Fetch Post Data
                 if (postId) {
@@ -70,7 +78,8 @@ export default function EditBlogPage() {
                         const data = docSnap.data();
                         setFormData({
                             ...data,
-                            tags: Array.isArray(data.tags) ? data.tags.join(', ') : data.tags || ''
+                            tags: Array.isArray(data.tags) ? data.tags.join(', ') : data.tags || '',
+                            language: data.language || 'English' // Default fallback
                         });
                         if (data.coverImage) setCoverPreview(data.coverImage);
                     } else {
@@ -88,17 +97,35 @@ export default function EditBlogPage() {
         fetchData();
     }, [postId, router]);
 
+    // 2. Filter Series
+    useEffect(() => {
+        const filtered = allSeries.filter(series => {
+            const catMatch = series.category === formData.category;
+            // Strict language filter if series has language field, else loose match
+            const langMatch = series.language ? series.language === formData.language : true;
+            return catMatch && langMatch;
+        });
+        setFilteredSeries(filtered);
+    }, [formData.category, formData.language, allSeries]);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // Handle New Cover Image
-    const handleCoverChange = (e) => {
+    // Handle New Cover Image (With Compression)
+    const handleCoverChange = async (e) => {
         const file = e.target.files[0];
         if (file) {
-            setNewCoverFile(file);
-            setCoverPreview(URL.createObjectURL(file));
+            try {
+                const compressed = await compressImage(file);
+                setNewCoverFile(compressed);
+                setCoverPreview(URL.createObjectURL(compressed));
+            } catch (error) {
+                console.error("Compression failed", error);
+                setNewCoverFile(file);
+                setCoverPreview(URL.createObjectURL(file));
+            }
         }
     };
 
@@ -106,6 +133,10 @@ export default function EditBlogPage() {
     const handlePdfChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            if (file.size > 20 * 1024 * 1024) {
+                alert("PDF too large (Max 20MB)");
+                return;
+            }
             setNewPdfFile(file);
         }
     };
@@ -122,9 +153,11 @@ export default function EditBlogPage() {
     };
 
     // Handle Update
-    const handleUpdate = async (e) => {
-        e.preventDefault();
-        setIsSubmitting(true);
+    const handleUpdate = async (e, status = 'Published') => {
+        if(e) e.preventDefault();
+        
+        if (status === 'Published') setIsSubmitting(true);
+        else setIsSavingDraft(true);
 
         try {
             let finalCoverUrl = formData.coverImage;
@@ -135,7 +168,7 @@ export default function EditBlogPage() {
             if (newCoverFile) {
                 const coverRef = ref(storage, `blog_covers/${Date.now()}_${newCoverFile.name}`);
                 const coverTask = uploadBytesResumable(coverRef, newCoverFile);
-                
+
                 coverTask.on('state_changed', (snapshot) => {
                     const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
                     setUploadProgress(progress);
@@ -157,6 +190,7 @@ export default function EditBlogPage() {
             const docRef = doc(db, "posts", postId);
             await updateDoc(docRef, {
                 ...formData,
+                status: status,
                 coverImage: finalCoverUrl,
                 pdfUrl: finalPdfUrl,
                 pdfName: finalPdfName,
@@ -164,7 +198,7 @@ export default function EditBlogPage() {
                 tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '')
             });
 
-            alert("Post updated successfully!");
+            alert(`Post ${status === 'Draft' ? 'saved as draft' : 'updated'} successfully!`);
             router.push('/admin/blogs');
 
         } catch (error) {
@@ -172,19 +206,16 @@ export default function EditBlogPage() {
             alert("Failed to update post.");
         } finally {
             setIsSubmitting(false);
+            setIsSavingDraft(false);
         }
     };
 
     if (isLoading) {
-        return (
-            <div className="flex h-[50vh] items-center justify-center">
-                <Loader2 className="w-8 h-8 text-brand-gold animate-spin" />
-            </div>
-        );
+        return <Loader size="lg" className="h-[50vh]" />;
     }
 
     return (
-        <form onSubmit={handleUpdate} className="space-y-6 max-w-6xl mx-auto pb-12">
+        <form className="space-y-6 max-w-6xl mx-auto pb-12">
 
             {/* HEADER */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-0 bg-gray-50 z-20 py-4 border-b border-gray-200">
@@ -198,23 +229,26 @@ export default function EditBlogPage() {
                     </div>
                 </div>
                 <div className="flex gap-3">
-                    <Link href="/admin/blogs">
-                        <button type="button" className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 transition-colors">
-                            Cancel
-                        </button>
-                    </Link>
                     <button 
-                        type="submit" 
-                        disabled={isSubmitting}
+                        type="button" 
+                        onClick={(e) => handleUpdate(e, 'Draft')}
+                        disabled={isSavingDraft || isSubmitting}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 transition-colors disabled:opacity-50"
+                    >
+                        {isSavingDraft && <Loader size="xs" />} Save Draft
+                    </button>
+                    <button 
+                        type="button" 
+                        onClick={(e) => handleUpdate(e, 'Published')}
+                        disabled={isSubmitting || isSavingDraft}
                         className="flex items-center gap-2 px-6 py-2.5 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-colors shadow-md disabled:opacity-50"
                     >
-                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        {isSubmitting ? 'Saving...' : 'Save Changes'}
+                        {isSubmitting ? <Loader size="xs" /> : <Save className="w-4 h-4" />}
+                        {isSubmitting ? 'Saving...' : 'Update Post'}
                     </button>
                 </div>
             </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
                 {/* LEFT: CONTENT */}
                 <div className="lg:col-span-2 space-y-6">
@@ -278,20 +312,23 @@ export default function EditBlogPage() {
                 <div className="space-y-6">
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
                         <h3 className="font-agency text-xl text-brand-brown-dark border-b border-gray-100 pb-2">Publishing</h3>
-                        
-                        <div className="bg-brand-sand/20 p-4 rounded-xl border border-brand-gold/20 mb-4">
-                            <label className="flex items-center gap-2 text-xs font-bold text-brand-brown-dark uppercase tracking-wider mb-2">
-                                <LayoutList className="w-4 h-4" /> Series
-                            </label>
-                            <select 
-                                name="series"
-                                value={formData.series}
-                                onChange={handleChange}
-                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
-                            >
-                                <option value="">None</option>
-                                {availableSeries.map(s => <option key={s.id} value={s.title}>{s.title}</option>)}
-                            </select>
+
+                        {/* Language Selection */}
+                        <div>
+                            <label className="block text-xs font-bold text-brand-brown mb-1">Language</label>
+                            <div className="relative">
+                                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <select 
+                                    name="language"
+                                    value={formData.language}
+                                    onChange={handleChange}
+                                    className="w-full bg-white border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer"
+                                >
+                                    <option value="English">English</option>
+                                    <option value="Hausa">Hausa</option>
+                                    <option value="Arabic">Arabic</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div>
@@ -300,6 +337,26 @@ export default function EditBlogPage() {
                                 <option value="Article">Article</option>
                                 <option value="News">News</option>
                                 <option value="Research">Research</option>
+                            </select>
+                        </div>
+
+                        {/* Series Selection (Filtered) */}
+                        <div className="bg-brand-sand/20 p-4 rounded-xl border border-brand-gold/20 mb-4">
+                            <label className="flex items-center gap-2 text-xs font-bold text-brand-brown-dark uppercase tracking-wider mb-2">
+                                <LayoutList className="w-4 h-4" /> Series
+                            </label>
+                            <select 
+                                name="series"
+                                value={formData.series}
+                                onChange={handleChange}
+                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer"
+                            >
+                                <option value="">None</option>
+                                {filteredSeries.length > 0 ? (
+                                    filteredSeries.map(s => <option key={s.id} value={s.title}>{s.title}</option>)
+                                ) : (
+                                    <option disabled>No matches found</option>
+                                )}
                             </select>
                         </div>
 
