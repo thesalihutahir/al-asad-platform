@@ -17,7 +17,6 @@ import {
     ScrollText,
     LayoutList,
     Loader2,
-    MoreVertical
 } from 'lucide-react';
 
 export default function ManageBlogsPage() {
@@ -192,8 +191,11 @@ export default function ManageBlogsPage() {
                                                             </div>
                                                             <div>
                                                                 <h3 className="font-bold text-brand-brown-dark text-sm line-clamp-1 max-w-[200px]">{post.title}</h3>
+                                                                {post.status === 'Draft' && (
+                                                                    <span className="text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded font-bold">Draft</span>
+                                                                )}
                                                                 {post.pdfName && (
-                                                                    <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">PDF Attached</span>
+                                                                    <span className="ml-1 text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">PDF</span>
                                                                 )}
                                                             </div>
                                                         </div>
@@ -216,6 +218,9 @@ export default function ManageBlogsPage() {
                                                         }`}>
                                                             {post.category}
                                                         </span>
+                                                        {post.language && (
+                                                            <span className="ml-1 text-[10px] text-gray-400">({post.language})</span>
+                                                        )}
                                                     </td>
                                                     <td className="px-6 py-4 text-sm text-gray-600">
                                                         {post.author}
@@ -225,17 +230,21 @@ export default function ManageBlogsPage() {
                                                     </td>
                                                     <td className="px-6 py-4 text-right">
                                                         <div className="flex justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
-                                                            <Link href={`/news/${post.id}`} target="_blank">
+                                                            
+                                                            {/* View Live Button (Fixed Link) */}
+                                                            <Link href={`/blogs/read/${post.id}`} target="_blank">
                                                                 <button className="p-2 text-gray-400 hover:text-brand-brown-dark hover:bg-gray-100 rounded-lg transition-colors" title="View Live">
                                                                     <Eye className="w-4 h-4" />
                                                                 </button>
                                                             </Link>
-                                                            {/* Edit Button Links to Dynamic Page */}
+
+                                                            {/* Edit Button (Fixed Link) */}
                                                             <Link href={`/admin/blogs/edit/${post.id}`}>
                                                                 <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit Post">
                                                                     <Edit className="w-4 h-4" />
                                                                 </button>
                                                             </Link>
+
                                                             <button 
                                                                 onClick={() => handleDelete(post.id, 'post')} 
                                                                 className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" 
@@ -271,7 +280,9 @@ export default function ManageBlogsPage() {
                                                 </div>
                                                 <div className="flex-grow">
                                                     <div className="flex justify-between items-start">
-                                                        <span className="text-[10px] font-bold text-brand-gold uppercase tracking-wider mb-1 block">{item.category}</span>
+                                                        <span className="text-[10px] font-bold text-brand-gold uppercase tracking-wider mb-1 block">
+                                                            {item.category} ({item.language || 'English'})
+                                                        </span>
                                                         <button onClick={() => handleDelete(item.id, 'series')} className="text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
                                                     </div>
                                                     <h3 className="font-agency text-lg text-brand-brown-dark leading-tight mb-2 line-clamp-2">{item.title}</h3>
