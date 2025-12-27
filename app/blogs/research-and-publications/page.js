@@ -17,7 +17,7 @@ export default function ResearchPage() {
     const [featuredPaper, setFeaturedPaper] = useState(null);
     const [listPapers, setListPapers] = useState([]); // Papers excluding the featured one
     const [loading, setLoading] = useState(true);
-    
+
     // Search & Filter State
     const [searchTerm, setSearchTerm] = useState('');
     const [activeFilter, setActiveFilter] = useState('All Papers');
@@ -69,7 +69,7 @@ export default function ResearchPage() {
     const filteredList = listPapers.filter(item => {
         const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                               item.excerpt?.toLowerCase().includes(searchTerm.toLowerCase());
-        
+
         const matchesFilter = activeFilter === 'All Papers' || 
                               (item.tags && item.tags.some(tag => tag.toLowerCase() === activeFilter.toLowerCase()));
 
@@ -125,7 +125,7 @@ export default function ResearchPage() {
                                     <div className="relative w-full lg:w-2/5 min-h-[250px] bg-brand-sand/30 flex items-center justify-center p-8">
                                         <div className="relative w-3/4 aspect-[3/4] bg-white shadow-2xl rounded-tr-3xl rounded-bl-3xl border border-gray-200 transform group-hover:-rotate-2 transition-transform duration-500 overflow-hidden">
                                             <Image 
-                                                src={featuredPaper.coverImage || "/hero.jpg"} 
+                                                src={featuredPaper.coverImage || "/fallback.webp"} 
                                                 alt="Paper Cover" 
                                                 fill 
                                                 className="object-cover opacity-80" 
@@ -163,11 +163,11 @@ export default function ResearchPage() {
                                         <div className="mt-auto flex flex-wrap items-center justify-between gap-4">
                                             <div className="flex items-center gap-2">
                                                 <div className="w-8 h-8 rounded-full bg-gray-200 relative overflow-hidden">
-                                                     <Image src="/hero.jpg" alt="Author" fill className="object-cover" />
+                                                     <Image src="/fallback.webp" alt="Author" fill className="object-cover" />
                                                 </div>
-                                                <span className="text-xs md:text-sm font-bold text-brand-brown-dark">{featuredPaper.author}</span>
+                                                <span className="text-xs md:text-sm font-bold text-brand-brown-dark">{featuredPaper.author || "Sheikh Muneer"}</span>
                                             </div>
-                                            
+
                                             {featuredPaper.pdfUrl ? (
                                                 <a 
                                                     href={featuredPaper.pdfUrl} 
@@ -215,7 +215,7 @@ export default function ResearchPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                                     {filteredList.map((item) => (
                                         <div key={item.id} className="bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-xl hover:border-brand-gold/30 transition-all p-6 md:p-8 flex flex-col h-full group">
-                                            
+
                                             {/* Header: Category & Date */}
                                             <div className="flex justify-between items-start mb-4">
                                                 <span className="text-[10px] font-bold text-brand-brown-dark bg-brand-sand px-2 py-1 rounded uppercase tracking-wider">
@@ -248,11 +248,11 @@ export default function ResearchPage() {
                                             <div className="pt-4 border-t border-gray-50 flex items-center justify-between mt-auto">
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-6 h-6 rounded-full bg-gray-200 relative overflow-hidden">
-                                                         <Image src="/hero.jpg" alt="Author" fill className="object-cover" />
+                                                         <Image src="/fallback.webp" alt="Author" fill className="object-cover" />
                                                     </div>
-                                                    <span className="text-xs font-bold text-gray-700">{item.author}</span>
+                                                    <span className="text-xs font-bold text-gray-700">{item.author || "Al-Asad Scholar"}</span>
                                                 </div>
-                                                
+
                                                 {item.pdfUrl ? (
                                                     <a 
                                                         href={item.pdfUrl} 
