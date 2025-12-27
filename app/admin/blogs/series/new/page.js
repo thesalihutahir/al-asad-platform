@@ -8,14 +8,17 @@ import { useRouter } from 'next/navigation';
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+// Utilities
+import { compressImage } from '@/utils/compressImage';
+import Loader from '@/components/Loader';
 
 import { 
     ArrowLeft, 
     Save, 
-    LayoutList, 
     X, 
     Image as ImageIcon, 
-    Loader2
+    UploadCloud,
+    Globe
 } from 'lucide-react';
 
 export default function CreateBlogSeriesPage() {
@@ -25,9 +28,10 @@ export default function CreateBlogSeriesPage() {
 
     const [formData, setFormData] = useState({
         title: '',
-        category: 'Article',
+        category: 'Article', // Default to Article
+        language: 'English', // New Field for Filtering
         description: '',
-        cover: '' // Firebase URL
+        cover: ''
     });
 
     const [imageFile, setImageFile] = useState(null);
@@ -38,15 +42,20 @@ export default function CreateBlogSeriesPage() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleImageChange = (e) => {
+    const handleImageChange = async (e) => {
         const file = e.target.files[0];
         if (file) {
-            if (file.size > 5 * 1024 * 1024) { 
-                alert("Image size must be less than 5MB");
-                return;
+            try {
+                // Compress Image
+                const compressed = await compressImage(file);
+                setImageFile(compressed);
+                setImagePreview(URL.createObjectURL(compressed));
+            } catch (error) {
+                console.error("Compression failed", error);
+                // Fallback
+                setImageFile(file);
+                setImagePreview(URL.createObjectURL(file));
             }
-            setImageFile(file);
-            setImagePreview(URL.createObjectURL(file));
         }
     };
 
@@ -57,7 +66,7 @@ export default function CreateBlogSeriesPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!formData.title) {
             alert("Please enter a Series Title.");
             return;
@@ -66,26 +75,20 @@ export default function CreateBlogSeriesPage() {
         setIsSubmitting(true);
 
         try {
-            let coverUrl = "/fallback.webp"; // Default
+            let coverUrl = "/fallback.webp"; 
 
             // 1. Upload Cover Image (if selected)
             if (imageFile) {
                 const storageRef = ref(storage, `blog_series_covers/${Date.now()}_${imageFile.name}`);
                 const uploadTask = uploadBytesResumable(storageRef, imageFile);
 
-                await new Promise((resolve, reject) => {
-                    uploadTask.on('state_changed',
-                        (snapshot) => {
-                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                            setUploadProgress(progress);
-                        },
-                        (error) => reject(error),
-                        async () => {
-                            coverUrl = await getDownloadURL(uploadTask.snapshot.ref);
-                            resolve();
-                        }
-                    );
+                uploadTask.on('state_changed', (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    setUploadProgress(progress);
                 });
+
+                await uploadTask;
+                coverUrl = await getDownloadURL(uploadTask.snapshot.ref);
             }
 
             // 2. Save Series Metadata
@@ -118,12 +121,12 @@ export default function CreateBlogSeriesPage() {
                 </Link>
                 <div>
                     <h1 className="font-agency text-3xl text-brand-brown-dark">Create Blog Series</h1>
-                    <p className="font-lato text-sm text-gray-500">Group articles into a sequence.</p>
+                    <p className="font-lato text-sm text-gray-500">Group articles or research into a sequence.</p>
                 </div>
             </div>
 
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
-                
+
                 {/* Title */}
                 <div>
                     <label className="block text-xs font-bold text-brand-brown mb-1">Series Title</label>
@@ -137,6 +140,24 @@ export default function CreateBlogSeriesPage() {
                     />
                 </div>
 
+                {/* Language Selection (Crucial for filtering) */}
+                <div>
+                    <label className="block text-xs font-bold text-brand-brown mb-1">Language</label>
+                    <div className="relative">
+                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <select 
+                            name="language"
+                            value={formData.language}
+                            onChange={handleChange}
+                            className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer"
+                        >
+                            <option value="English">English</option>
+                            <option value="Hausa">Hausa</option>
+                            <option value="Arabic">Arabic</option>
+                        </select>
+                    </div>
+                </div>
+
                 {/* Category */}
                 <div>
                     <label className="block text-xs font-bold text-brand-brown mb-1">Category</label>
@@ -144,11 +165,24 @@ export default function CreateBlogSeriesPage() {
                         name="category"
                         value={formData.category}
                         onChange={handleChange}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
+                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer"
                     >
                         <option value="Article">Article Series</option>
+                        <option value="News">News & Updates</option>
                         <option value="Research">Research Collection</option>
                     </select>
+                </div>
+
+                {/* Description */}
+                <div>
+                    <label className="block text-xs font-bold text-brand-brown mb-1">Description (Optional)</label>
+                    <textarea 
+                        name="description"
+                        value={formData.description}
+                        onChange={handleChange}
+                        rows="2"
+                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
+                    ></textarea>
                 </div>
 
                 {/* Cover Image Upload */}
@@ -169,14 +203,14 @@ export default function CreateBlogSeriesPage() {
                                 </button>
                                 {isSubmitting && (
                                     <div className="absolute inset-x-0 bottom-0 bg-black/60 text-white text-[10px] text-center py-1">
-                                        Uploading: {Math.round(uploadProgress)}%
+                                        {Math.round(uploadProgress)}%
                                     </div>
                                 )}
                             </div>
                         ) : (
                             <div className="py-4 relative w-full">
                                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm text-gray-400">
-                                    <ImageIcon className="w-6 h-6" />
+                                    <UploadCloud className="w-6 h-6" />
                                 </div>
                                 <p className="text-sm text-gray-500 font-bold">Click to Upload Cover</p>
                                 <p className="text-[10px] text-gray-400 mt-1">Recommended: Landscape (16:9)</p>
@@ -203,7 +237,7 @@ export default function CreateBlogSeriesPage() {
                         disabled={isSubmitting}
                         className="flex-1 flex items-center justify-center gap-2 py-3 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-colors shadow-md disabled:opacity-50"
                     >
-                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        {isSubmitting ? <Loader size="xs" /> : <Save className="w-4 h-4" />}
                         {isSubmitting ? 'Creating...' : 'Create Series'}
                     </button>
                 </div>
