@@ -66,6 +66,14 @@ export default function GalleryPage() {
         return album ? album.title : 'Event Highlight';
     };
 
+    // Helper: Format Date
+    const formatDate = (timestamp) => {
+        if (!timestamp) return '2024';
+        // Handle Firestore Timestamp or Date String
+        const date = timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp);
+        return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+    };
+
     return (
         <div className="min-h-screen flex flex-col bg-white font-lato">
             <Header />
@@ -123,18 +131,18 @@ export default function GalleryPage() {
                                                 {/* Background Stack Cards */}
                                                 <div className="absolute top-0 left-2 right-2 bottom-2 bg-gray-200 rounded-2xl transform translate-y-2 translate-x-1 group-hover:translate-x-2 group-hover:translate-y-3 transition-transform duration-300"></div>
                                                 <div className="absolute top-1 left-1 right-1 bottom-1 bg-gray-300 rounded-2xl transform translate-y-1 translate-x-0.5 group-hover:translate-x-1 group-hover:translate-y-1.5 transition-transform duration-300"></div>
-                                                
+
                                                 {/* Main Cover Image */}
                                                 <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-md group-hover:shadow-xl transition-shadow border-2 border-white bg-gray-100">
                                                     <Image
-                                                        src={album.cover || "/hero.jpg"}
+                                                        src={album.cover || "/fallback.webp"}
                                                         alt={album.title}
                                                         fill
                                                         className="object-cover transition-transform duration-700 group-hover:scale-110"
                                                     />
                                                     {/* Overlay */}
                                                     <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
-                                                    
+
                                                     {/* Icon Badge */}
                                                     <div className="absolute top-2 right-2 bg-white/90 backdrop-blur rounded-lg p-1.5 text-brand-brown-dark">
                                                         <FolderOpen className="w-4 h-4" />
@@ -152,7 +160,7 @@ export default function GalleryPage() {
                                                 {album.title}
                                             </h3>
                                             <p className="text-[10px] md:text-xs text-gray-400 mt-1 uppercase tracking-wide flex items-center gap-1">
-                                                <Calendar className="w-3 h-3" /> {album.date}
+                                                <Calendar className="w-3 h-3" /> {formatDate(album.createdAt)}
                                             </p>
                                         </div>
                                     ))}
@@ -171,7 +179,7 @@ export default function GalleryPage() {
                                     {photos.map((photo, index) => {
                                         // Assign a cyclical aspect ratio for the masonry look
                                         const aspectRatio = aspectRatios[index % aspectRatios.length];
-                                        
+
                                         return (
                                             <div key={photo.id} className="relative w-full break-inside-avoid rounded-2xl overflow-hidden shadow-md group cursor-zoom-in bg-gray-200">
                                                 {/* Aspect Ratio Controlled by Class */}
