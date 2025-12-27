@@ -12,12 +12,9 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { 
     ArrowLeft, 
     Save, 
-    ListMusic, 
-    X,
-    Image as ImageIcon,
-    Loader2,
-    CheckCircle,
-    Trash2
+    X, 
+    Image as ImageIcon, 
+    Loader2
 } from 'lucide-react';
 
 export default function CreateSeriesPage() {
@@ -68,7 +65,7 @@ export default function CreateSeriesPage() {
         setIsSubmitting(true);
 
         try {
-            let coverUrl = "/hero.jpg"; // Default fallback
+            let coverUrl = "/fallback.webp"; // UPDATED FALLBACK
 
             // 1. Upload Cover Image (if selected)
             if (imageFile) {
