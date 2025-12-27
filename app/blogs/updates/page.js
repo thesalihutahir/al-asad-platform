@@ -28,6 +28,7 @@ export default function UpdatesPage() {
                 const q = query(
                     collection(db, "posts"),
                     where("category", "==", "News"),
+                    where("status", "==", "Published"), // Only show published
                     orderBy("createdAt", "desc")
                 );
 
@@ -127,9 +128,11 @@ export default function UpdatesPage() {
                                             <Calendar className="w-4 h-4" />
                                             <span className="text-sm font-bold">{getDateParts(featured.date).full}</span>
                                         </div>
-                                        <h2 className="font-agency text-3xl md:text-5xl leading-tight mb-4">
-                                            {featured.title}
-                                        </h2>
+                                        <Link href={`/blogs/read/${featured.id}`}>
+                                            <h2 className="font-agency text-3xl md:text-5xl leading-tight mb-4 hover:text-brand-gold transition-colors cursor-pointer">
+                                                {featured.title}
+                                            </h2>
+                                        </Link>
                                         <p className="font-lato text-white/80 text-sm md:text-lg mb-8 leading-relaxed line-clamp-3">
                                             {featured.excerpt}
                                         </p>
