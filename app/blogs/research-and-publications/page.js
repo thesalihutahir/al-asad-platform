@@ -8,12 +8,13 @@ import Footer from '@/components/Footer';
 // Firebase Imports
 import { db } from '@/lib/firebase';
 import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
-import { FileText, Download, Search, User, Calendar, BookOpen, Filter, Loader2 } from 'lucide-react';
+import { FileText, Download, Search, User, Calendar, BookOpen, Filter, Loader2, Layers } from 'lucide-react';
 
 export default function ResearchPage() {
 
     // --- STATE ---
     const [papers, setPapers] = useState([]);
+    const [series, setSeries] = useState([]); // Dynamic Research Series
     const [featuredPaper, setFeaturedPaper] = useState(null);
     const [listPapers, setListPapers] = useState([]); // Papers excluding the featured one
     const [loading, setLoading] = useState(true);
@@ -26,35 +27,49 @@ export default function ResearchPage() {
 
     // --- FETCH DATA ---
     useEffect(() => {
-        const fetchResearch = async () => {
+        const fetchData = async () => {
             try {
-                // Query: Get all posts where category is 'Research', ordered by newest
-                const q = query(
+                // 1. Fetch Research Papers
+                const qPapers = query(
                     collection(db, "posts"),
                     where("category", "==", "Research"),
                     orderBy("createdAt", "desc")
                 );
-
-                const querySnapshot = await getDocs(q);
-                const fetchedPapers = querySnapshot.docs.map(doc => ({
+                const papersSnapshot = await getDocs(qPapers);
+                const fetchedPapers = papersSnapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 }));
 
                 setPapers(fetchedPapers);
 
+                // Set Featured & List
                 if (fetchedPapers.length > 0) {
-                    setFeaturedPaper(fetchedPapers[0]); // Newest is Featured
-                    setListPapers(fetchedPapers.slice(1)); // Rest go to list
+                    setFeaturedPaper(fetchedPapers[0]); 
+                    setListPapers(fetchedPapers.slice(1)); 
                 }
+
+                // 2. Fetch Research Series
+                const qSeries = query(
+                    collection(db, "blog_series"),
+                    where("category", "==", "Research"), 
+                    orderBy("createdAt", "desc")
+                );
+                const seriesSnapshot = await getDocs(qSeries);
+                const fetchedSeries = seriesSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                setSeries(fetchedSeries);
+
             } catch (error) {
-                console.error("Error fetching research papers:", error);
+                console.error("Error fetching research data:", error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchResearch();
+        fetchData();
     }, []);
 
     // --- HELPER: Format Date ---
@@ -64,8 +79,12 @@ export default function ResearchPage() {
         return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }); // e.g. Oct 2024
     };
 
+    // --- HELPER: Count Papers in Series ---
+    const getSeriesCount = (seriesTitle) => {
+        return papers.filter(p => p.series === seriesTitle).length;
+    };
+
     // --- FILTER LOGIC ---
-    // Filters based on Search Term AND Selected Filter (checking Tags)
     const filteredList = listPapers.filter(item => {
         const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                               item.excerpt?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -91,7 +110,6 @@ export default function ResearchPage() {
                             className="object-cover object-center" 
                             priority 
                         />
-                        {/* Gradient Overlay */}
                         <div className="absolute inset-0 bg-gradient-to-t from-white via-brand-gold/40 to-transparent "></div>
                     </div>
                     <div className="relative -mt-16 md:-mt-32 text-center px-6 z-10 max-w-4xl mx-auto">
@@ -111,7 +129,45 @@ export default function ResearchPage() {
                     </div>
                 ) : (
                     <>
-                        {/* 2. FEATURED PAPER (Banner) */}
+                        {/* 2. DYNAMIC SERIES SECTION */}
+                        {series.length > 0 && (
+                            <section className="px-6 md:px-12 lg:px-24 mb-12 md:mb-20 max-w-7xl mx-auto">
+                                <div className="flex justify-between items-end mb-6 border-b border-gray-100 pb-2">
+                                    <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark">
+                                        Research Collections
+                                    </h2>
+                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden md:block">
+                                        Thematic Compilations
+                                    </span>
+                                </div>
+
+                                <div className="flex overflow-x-auto gap-4 pb-4 md:grid md:grid-cols-3 md:gap-8 scrollbar-hide snap-x">
+                                    {series.map((item) => (
+                                        <div key={item.id} className="snap-center min-w-[220px] md:min-w-0 group cursor-pointer">
+                                            <div className="relative w-full aspect-[16/9] rounded-xl overflow-hidden mb-3 bg-gray-100 border border-gray-200">
+                                                <Image 
+                                                    src={item.cover || "/fallback.webp"} 
+                                                    alt={item.title} 
+                                                    fill 
+                                                    className="object-cover transition-transform duration-700 group-hover:scale-110" 
+                                                />
+                                                <div className="absolute inset-0 bg-brand-brown-dark/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <span className="text-white text-xs font-bold border border-white px-3 py-1 rounded uppercase tracking-wider">Browse Collection</span>
+                                                </div>
+                                                <div className="absolute bottom-2 right-2 bg-white/90 text-brand-brown-dark text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 shadow-sm">
+                                                    <Layers className="w-3 h-3" /> {getSeriesCount(item.title)} Papers
+                                                </div>
+                                            </div>
+                                            <h3 className="font-agency text-lg md:text-xl text-brand-brown-dark leading-tight group-hover:text-brand-gold transition-colors">
+                                                {item.title}
+                                            </h3>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+
+                        {/* 3. FEATURED PAPER (Banner) */}
                         {featuredPaper && (
                             <section className="px-6 md:px-12 lg:px-24 mb-16 md:mb-20 max-w-7xl mx-auto">
                                 <div className="flex justify-between items-end mb-6 border-b border-gray-100 pb-2">
@@ -185,8 +241,7 @@ export default function ResearchPage() {
                                 </div>
                             </section>
                         )}
-
-                        {/* 3. FILTER BAR */}
+{/* 4. FILTER BAR */}
                         <section className="px-6 md:px-12 lg:px-24 mb-8 max-w-7xl mx-auto">
                              <div className="flex items-center gap-2 mb-4 md:hidden">
                                 <Filter className="w-4 h-4 text-brand-brown" />
@@ -209,7 +264,7 @@ export default function ResearchPage() {
                             </div>
                         </section>
 
-                        {/* 4. PAPERS LIST */}
+                        {/* 5. PAPERS LIST */}
                         <section className="px-6 md:px-12 lg:px-24 max-w-7xl mx-auto mb-12">
                             {filteredList.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
@@ -223,7 +278,6 @@ export default function ResearchPage() {
                                                 </span>
                                                 <div className="flex items-center gap-3">
                                                     <span className="text-[10px] text-gray-400 font-bold flex items-center gap-1">
-                                                        {/* Use generic PDF text if page count not known */}
                                                         <BookOpen className="w-3 h-3" /> {item.readTime || 'PDF'}
                                                     </span>
                                                     <div className="p-1.5 bg-green-50 rounded-md text-green-600">
@@ -276,7 +330,7 @@ export default function ResearchPage() {
                             )}
                         </section>
 
-                        {/* 5. SEARCH / ARCHIVE */}
+                        {/* 6. SEARCH / ARCHIVE */}
                         <section className="px-6 md:px-12 lg:px-24 mb-8 max-w-2xl mx-auto text-center">
                             <div className="relative">
                                 <input 
