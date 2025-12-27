@@ -18,25 +18,26 @@ export default function ArticlesPage() {
     const [visibleCount, setVisibleCount] = useState(5); // Show 5 initially
     const [searchTerm, setSearchTerm] = useState('');
 
-    // --- STATIC DATA (Series Backend Not Yet Implemented) ---
+    // --- STATIC DATA (Series Backend Coming Soon) ---
+    // Keeping this static for layout stability until we build the full Series relationship logic
     const articleSeries = [
         {
             id: 1,
             title: "The Fiqh of Prayer (Salat)",
             parts: 4,
-            image: "/hero.jpg",
+            image: "/fallback.webp",
         },
         {
             id: 2,
             title: "Ramadan Preparation Guide",
             parts: 6,
-            image: "/hero.jpg",
+            image: "/fallback.webp",
         },
         {
             id: 3,
             title: "Islamic Finance Basics",
             parts: 3,
-            image: "/hero.jpg",
+            image: "/fallback.webp",
         }
     ];
 
@@ -89,7 +90,7 @@ export default function ArticlesPage() {
         <div className="min-h-screen flex flex-col bg-white font-lato">
             <Header />
             <main className="flex-grow pb-16">
-                
+
                 {/* 1. HERO SECTION */}
                 <section className="w-full relative bg-white mb-8 md:mb-16">
                     <div className="relative w-full aspect-[2.5/1] md:aspect-[3.5/1] lg:aspect-[4/1]">
@@ -147,7 +148,7 @@ export default function ArticlesPage() {
 
                 {/* 3. MAIN CONTENT AREA */}
                 <section className="px-6 md:px-12 lg:px-24 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12">
-                    
+
                     {/* LEFT COLUMN: ARTICLE LIST (Spans 8 cols) */}
                     <div className="lg:col-span-8 space-y-8 md:space-y-12">
                         <div className="flex items-center justify-between mb-4 md:mb-0">
@@ -168,11 +169,11 @@ export default function ArticlesPage() {
                             <>
                                 {visibleArticles.map((item) => (
                                     <article key={item.id} className="group flex flex-col md:flex-row gap-6 md:gap-8 border-b border-gray-100 pb-8 last:border-0">
-                                        
+
                                         {/* Image Thumbnail */}
                                         <div className="relative w-full md:w-1/3 aspect-video md:aspect-[4/3] rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
                                             <Image 
-                                                src={item.coverImage || "/hero.jpg"} 
+                                                src={item.coverImage || "/fallback.webp"} 
                                                 alt={item.title} 
                                                 fill 
                                                 className="object-cover transition-transform duration-700 group-hover:scale-105" 
@@ -193,23 +194,23 @@ export default function ArticlesPage() {
                                                     {formatDate(item.date)}
                                                 </span>
                                             </div>
-                                            
+
                                             {/* Title */}
                                             <Link href={`/blogs/read/${item.id}`}>
                                                 <h2 className="font-agency text-2xl md:text-3xl text-brand-brown-dark leading-tight mb-2 md:mb-3 group-hover:text-brand-gold transition-colors cursor-pointer">
                                                     {item.title}
                                                 </h2>
                                             </Link>
-                                            
+
                                             {/* Excerpt */}
                                             <p className="font-lato text-sm md:text-base text-gray-600 leading-relaxed mb-4 line-clamp-3">
                                                 {item.excerpt}
                                             </p>
-                                            
+
                                             {/* Footer Meta */}
                                             <div className="mt-auto flex items-center justify-between">
                                                 <div className="flex items-center gap-2 text-xs text-gray-500 font-bold">
-                                                    <User className="w-3 h-3 text-brand-gold" /> {item.author}
+                                                    <User className="w-3 h-3 text-brand-gold" /> {item.author || "Sheikh Muneer"}
                                                 </div>
                                                 <Link href={`/blogs/read/${item.id}`}>
                                                     <div className="flex items-center text-brand-gold font-bold text-xs uppercase tracking-widest cursor-pointer group-hover:underline underline-offset-4">
@@ -243,7 +244,7 @@ export default function ArticlesPage() {
 
                     {/* RIGHT COLUMN: SIDEBAR */}
                     <aside className="hidden lg:block lg:col-span-4 space-y-12 pl-8 border-l border-gray-100">
-                        
+
                         {/* Search Widget */}
                         <div className="bg-gray-50 p-6 rounded-2xl">
                             <h4 className="font-agency text-xl text-brand-brown-dark mb-4">Search Articles</h4>
@@ -293,18 +294,6 @@ export default function ArticlesPage() {
                             <button className="w-full py-2 bg-brand-gold text-white font-bold text-sm rounded-lg uppercase tracking-wide hover:bg-white hover:text-brand-brown-dark transition-colors">
                                 Subscribe
                             </button>
-                        </div>
-
-                        {/* Popular Tags */}
-                        <div>
-                            <h4 className="font-agency text-xl text-brand-brown-dark mb-4">Popular Tags</h4>
-                            <div className="flex flex-wrap gap-2">
-                                {['Prayer', 'Zakat', 'Youth', 'Marriage', 'Quran', 'History'].map(tag => (
-                                    <span key={tag} className="text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full hover:bg-brand-gold hover:text-white transition-colors cursor-pointer">
-                                        #{tag}
-                                    </span>
-                                ))}
-                            </div>
                         </div>
 
                     </aside>
