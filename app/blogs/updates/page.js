@@ -64,10 +64,9 @@ export default function UpdatesPage() {
     };
 
     // --- HELPER: Get Display Category ---
-    // Uses the first Tag if available (e.g. "Event"), otherwise defaults to Category ("News")
     const getDisplayCategory = (item) => {
-        if (item.tags && item.tags.length > 0) return item.tags[0];
-        return item.category;
+        if (item.tags && item.tags.length > 0) return item.tags[0]; // Use first tag if available
+        return item.category; // Default to "News"
     };
 
     return (
@@ -112,7 +111,7 @@ export default function UpdatesPage() {
                                     {/* Image Side */}
                                     <div className="relative w-full md:w-1/2 aspect-video md:aspect-auto bg-gray-800">
                                         <Image 
-                                            src={featured.coverImage || "/hero.jpg"} 
+                                            src={featured.coverImage || "/fallback.webp"} 
                                             alt={featured.title} 
                                             fill 
                                             className="object-cover transition-transform duration-700 group-hover:scale-105" 
@@ -149,7 +148,7 @@ export default function UpdatesPage() {
                                     <Clock className="w-5 h-5 text-brand-brown-dark" />
                                     <h3 className="font-agency text-2xl text-brand-brown-dark">Recent Activity</h3>
                                 </div>
-                                
+
                                 {/* Desktop Year Filter */}
                                 <div className="hidden md:flex gap-2">
                                     {years.map((year, idx) => (
@@ -158,7 +157,7 @@ export default function UpdatesPage() {
                                         </button>
                                     ))}
                                 </div>
-                                
+
                                 {/* Mobile Filter Icon */}
                                 <button className="md:hidden text-gray-400">
                                     <Filter className="w-5 h-5" />
@@ -176,7 +175,7 @@ export default function UpdatesPage() {
 
                                         return (
                                             <Link href={`/blogs/read/${item.id}`} key={item.id} className="bg-white rounded-2xl p-6 flex flex-row md:flex-col gap-5 items-start shadow-md border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all group h-full">
-                                                
+
                                                 {/* Date Box */}
                                                 <div className="flex-shrink-0 w-16 md:w-full md:flex md:items-center md:justify-between md:border-b md:border-gray-100 md:pb-4 md:mb-2">
                                                     <div className="bg-brand-sand/50 rounded-xl flex flex-col items-center justify-center py-2 px-1 md:px-4 md:py-3 text-brand-brown-dark md:flex-row md:gap-2">
@@ -215,7 +214,7 @@ export default function UpdatesPage() {
                             )}
                         </section>
 
-                        {/* 5. CTA / SUBSCRIBE */}
+                        {/* 5. CTA */}
                         <section className="px-6 md:px-12 lg:px-24 mb-8 max-w-4xl mx-auto text-center">
                             <p className="text-sm text-gray-400 mb-4">Don't miss out on important announcements.</p>
                             <button className="px-8 py-3 border border-brand-brown-dark/20 rounded-full text-brand-brown-dark font-agency hover:bg-brand-brown-dark hover:text-white transition-colors">
