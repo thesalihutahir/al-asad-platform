@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 // Firebase Imports
@@ -14,58 +13,43 @@ export default function AudiosPage() {
 
     // --- STATE ---
     const [audios, setAudios] = useState([]);
+    const [series, setSeries] = useState([]); // Real Series Data
     const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState("All Audios");
     const [visibleCount, setVisibleCount] = useState(6);
-
-    // Mock Data for Audio Series (Series backend coming soon)
-    const audioSeries = [
-        {
-            id: 'tafsir-yasin',
-            title: "Tafsir Surah Yasin (Complete)",
-            count: 12,
-            image: "/hero.jpg", 
-        },
-        {
-            id: 'ramadan-reminders',
-            title: "Ramadan Daily Reminders",
-            count: 29,
-            image: "/hero.jpg", 
-        },
-        {
-            id: 'kitab-taharah',
-            title: "Kitab At-Taharah (Purification)",
-            count: 8,
-            image: "/hero.jpg", 
-        }
-    ];
 
     const filters = ["All Audios", "Friday Sermon", "Tafsir Series", "Fiqh Class", "General Lecture", "Seerah"];
 
     // --- FETCH DATA ---
     useEffect(() => {
-        const fetchAudios = async () => {
+        const fetchData = async () => {
             try {
-                const q = query(
-                    collection(db, "audios"),
-                    orderBy("createdAt", "desc")
-                );
-                
-                const querySnapshot = await getDocs(q);
-                const fetchedAudios = querySnapshot.docs.map(doc => ({
+                // 1. Fetch Audios
+                const qAudios = query(collection(db, "audios"), orderBy("createdAt", "desc"));
+                const audiosSnapshot = await getDocs(qAudios);
+                const fetchedAudios = audiosSnapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 }));
-
                 setAudios(fetchedAudios);
+
+                // 2. Fetch Audio Series
+                const qSeries = query(collection(db, "audio_series"), orderBy("createdAt", "desc"));
+                const seriesSnapshot = await getDocs(qSeries);
+                const fetchedSeries = seriesSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                setSeries(fetchedSeries);
+
             } catch (error) {
-                console.error("Error fetching audios:", error);
+                console.error("Error fetching audio data:", error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchAudios();
+        fetchData();
     }, []);
 
     // --- HELPER: Format Date ---
@@ -73,6 +57,17 @@ export default function AudiosPage() {
         if (!dateString) return '';
         const date = new Date(dateString);
         return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
+
+    // --- HELPER: Get Count for Series ---
+    // (Optional: If you want to count dynamically based on actual uploaded audios instead of the 'count' field in series)
+    const getRealCount = (seriesTitle, storedCount) => {
+        // If you want to rely on the manual count saved in the series doc, just return storedCount.
+        // If you want to count actual files in the 'audios' collection matching the series name:
+        if (audios.length > 0) {
+            return audios.filter(a => a.series === seriesTitle).length;
+        }
+        return storedCount || 0;
     };
 
     // --- FILTER LOGIC ---
@@ -98,7 +93,6 @@ export default function AudiosPage() {
                             className="object-cover object-center"
                             priority
                         />
-                        {/* Gradient Overlay */}
                         <div className="absolute inset-0 bg-gradient-to-t from-white via-brand-gold/40 to-transparent "></div>
                     </div>
 
@@ -119,48 +113,50 @@ export default function AudiosPage() {
                     </div>
                 ) : (
                     <>
-                        {/* 2. AUDIO SERIES (PLAYLISTS) - Static for now */}
-                        <section className="px-6 md:px-12 lg:px-24 mb-12">
-                            <div className="flex justify-between items-end mb-6 border-b border-gray-100 pb-2">
-                                <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark">
-                                    Featured Series
-                                </h2>
-                                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden md:block">
-                                    Complete Sets
-                                </span>
-                            </div>
+                        {/* 2. AUDIO SERIES (Real Data) */}
+                        {series.length > 0 && (
+                            <section className="px-6 md:px-12 lg:px-24 mb-12">
+                                <div className="flex justify-between items-end mb-6 border-b border-gray-100 pb-2">
+                                    <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark">
+                                        Featured Series
+                                    </h2>
+                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden md:block">
+                                        Complete Sets
+                                    </span>
+                                </div>
 
-                            <div className="flex overflow-x-auto gap-4 pb-4 md:grid md:grid-cols-3 md:gap-8 scrollbar-hide snap-x">
-                                {audioSeries.map((series) => (
-                                    <div 
-                                        key={series.id} 
-                                        className="snap-center min-w-[160px] md:min-w-0 bg-brand-sand/30 rounded-2xl overflow-hidden cursor-pointer group hover:shadow-lg transition-all"
-                                    >
-                                        <div className="relative w-full aspect-square bg-gray-200">
-                                            <Image 
-                                                src={series.image} 
-                                                alt={series.title} 
-                                                fill 
-                                                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                                            />
-                                            <div className="absolute inset-0 bg-brand-brown-dark/40 flex items-center justify-center group-hover:bg-brand-brown-dark/30 transition-colors">
-                                                <div className="bg-white/20 backdrop-blur-sm p-3 rounded-full">
-                                                    <ListMusic className="w-8 h-8 text-white" />
+                                <div className="flex overflow-x-auto gap-4 pb-4 md:grid md:grid-cols-3 md:gap-8 scrollbar-hide snap-x">
+                                    {series.map((item) => (
+                                        <div 
+                                            key={item.id} 
+                                            className="snap-center min-w-[160px] md:min-w-0 bg-brand-sand/30 rounded-2xl overflow-hidden cursor-pointer group hover:shadow-lg transition-all"
+                                        >
+                                            <div className="relative w-full aspect-square bg-gray-200">
+                                                <Image 
+                                                    src={item.cover || "/fallback.webp"} 
+                                                    alt={item.title} 
+                                                    fill 
+                                                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                                />
+                                                <div className="absolute inset-0 bg-brand-brown-dark/40 flex items-center justify-center group-hover:bg-brand-brown-dark/30 transition-colors">
+                                                    <div className="bg-white/20 backdrop-blur-sm p-3 rounded-full">
+                                                        <ListMusic className="w-8 h-8 text-white" />
+                                                    </div>
                                                 </div>
                                             </div>
+                                            <div className="p-4">
+                                                <h3 className="font-agency text-base md:text-xl text-brand-brown-dark leading-tight group-hover:text-brand-gold transition-colors line-clamp-2 h-10 md:h-auto">
+                                                    {item.title}
+                                                </h3>
+                                                <p className="text-[10px] md:text-xs text-gray-500 mt-2 font-bold uppercase tracking-wider flex items-center gap-1">
+                                                    <Mic className="w-3 h-3" /> {getRealCount(item.title, item.count)} Episodes
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div className="p-4">
-                                            <h3 className="font-agency text-base md:text-xl text-brand-brown-dark leading-tight group-hover:text-brand-gold transition-colors line-clamp-2 h-10 md:h-auto">
-                                                {series.title}
-                                            </h3>
-                                            <p className="text-[10px] md:text-xs text-gray-500 mt-2 font-bold uppercase tracking-wider flex items-center gap-1">
-                                                <Mic className="w-3 h-3" /> {series.count} Episodes
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
 
                         {/* 3. FILTER BAR */}
                         <section className="px-6 md:px-12 lg:px-24 mb-8">
@@ -198,7 +194,7 @@ export default function AudiosPage() {
                                     {visibleAudios.map((audio) => (
                                         <div key={audio.id} className="group bg-white rounded-2xl p-4 md:p-6 shadow-md border border-gray-100 flex items-center gap-4 transition-all hover:-translate-y-1 hover:shadow-lg hover:border-brand-gold/30">
 
-                                            {/* Play Icon (Links to file for now) */}
+                                            {/* Play Icon */}
                                             <a 
                                                 href={audio.audioUrl} 
                                                 target="_blank" 
@@ -215,7 +211,6 @@ export default function AudiosPage() {
                                                         {audio.category}
                                                     </span>
                                                     <span className="text-[10px] md:text-xs text-gray-400 font-lato flex items-center gap-1">
-                                                        {/* Duration not strictly available unless we calculate it, using generic icon for now */}
                                                         <Clock className="w-3 h-3" /> MP3
                                                     </span>
                                                 </div>
