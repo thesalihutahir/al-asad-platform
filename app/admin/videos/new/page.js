@@ -14,7 +14,6 @@ import {
     Youtube, 
     PlayCircle, 
     CheckCircle, 
-    AlertCircle, 
     ListVideo,
     Loader2
 } from 'lucide-react';
@@ -79,8 +78,6 @@ export default function AddVideoPage() {
             setVideoId(id);
             setThumbnail(`https://img.youtube.com/vi/${id}/maxresdefault.jpg`);
             setIsValid(true);
-            
-            // Optional: Auto-fill title if empty (requires YouTube API key, skipping for now to keep it simple/free)
         } else {
             setVideoId(null);
             setThumbnail(null);
