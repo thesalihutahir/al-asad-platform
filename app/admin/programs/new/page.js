@@ -3,18 +3,28 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+// Firebase
+import { db, storage } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+
 import { 
     ArrowLeft, 
     Save, 
     UploadCloud, 
     X,
     MapPin,
-    Users
+    Users,
+    Loader2,
+    Image as ImageIcon
 } from 'lucide-react';
 
 export default function CreateProgramPage() {
-    
-    // Form State
+    const router = useRouter();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+
     const [formData, setFormData] = useState({
         title: '',
         category: 'Education',
@@ -25,6 +35,7 @@ export default function CreateProgramPage() {
         content: '',
     });
 
+    const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
 
     const handleChange = (e) => {
@@ -35,18 +46,64 @@ export default function CreateProgramPage() {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            setImageFile(file);
             setImagePreview(URL.createObjectURL(file));
         }
     };
 
-    const handleSubmit = (e) => {
+    const removeImage = () => {
+        setImageFile(null);
+        setImagePreview(null);
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        alert("Program Saved! (Frontend Demo)");
+        
+        if (!formData.title || !formData.excerpt) {
+            alert("Title and Short Summary are required.");
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        try {
+            let coverUrl = "/fallback.webp"; // Default
+
+            // 1. Upload Cover Image (if selected)
+            if (imageFile) {
+                const storageRef = ref(storage, `program_covers/${Date.now()}_${imageFile.name}`);
+                const uploadTask = uploadBytesResumable(storageRef, imageFile);
+
+                uploadTask.on('state_changed', (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    setUploadProgress(progress);
+                });
+
+                await uploadTask;
+                coverUrl = await getDownloadURL(uploadTask.snapshot.ref);
+            }
+
+            // 2. Save Program Data
+            await addDoc(collection(db, "programs"), {
+                ...formData,
+                coverImage: coverUrl,
+                createdAt: serverTimestamp()
+            });
+
+            alert("Program published successfully!");
+            router.push('/admin/programs');
+
+        } catch (error) {
+            console.error("Error creating program:", error);
+            alert("Failed to create program.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6 max-w-6xl mx-auto pb-12">
-            
+
             {/* 1. HEADER */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-0 bg-gray-50 z-20 py-4 border-b border-gray-200">
                 <div className="flex items-center gap-4">
@@ -59,21 +116,27 @@ export default function CreateProgramPage() {
                     </div>
                 </div>
                 <div className="flex gap-3">
-                    <button type="button" className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 transition-colors">
-                        Save Draft
-                    </button>
-                    <button type="submit" className="flex items-center gap-2 px-6 py-2.5 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-colors shadow-md">
-                        <Save className="w-4 h-4" />
-                        Publish Program
+                    <Link href="/admin/programs">
+                        <button type="button" className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 transition-colors">
+                            Cancel
+                        </button>
+                    </Link>
+                    <button 
+                        type="submit" 
+                        disabled={isSubmitting}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-colors shadow-md disabled:opacity-70"
+                    >
+                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        {isSubmitting ? `Publishing ${Math.round(uploadProgress)}%` : 'Publish Program'}
                     </button>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
+
                 {/* 2. LEFT COLUMN: CONTENT */}
                 <div className="lg:col-span-2 space-y-6">
-                    
+
                     {/* Title */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Program Title</label>
@@ -104,7 +167,7 @@ export default function CreateProgramPage() {
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 min-h-[400px] flex flex-col">
                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Project Details</label>
                         <div className="border-b border-gray-100 pb-2 mb-4 flex gap-2">
-                             <span className="text-xs text-gray-400 italic">Rich Text Editor Toolbar Placeholder</span>
+                             <span className="text-xs text-gray-400 italic">Markdown Supported</span>
                         </div>
                         <textarea 
                             name="content"
@@ -118,11 +181,11 @@ export default function CreateProgramPage() {
 
                 {/* 3. RIGHT COLUMN: DETAILS */}
                 <div className="space-y-6">
-                    
+
                     {/* Status & Category */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
                         <h3 className="font-agency text-xl text-brand-brown-dark border-b border-gray-100 pb-2">Program Specs</h3>
-                        
+
                         <div>
                             <label className="block text-xs font-bold text-brand-brown mb-1">Category</label>
                             <select 
@@ -157,7 +220,7 @@ export default function CreateProgramPage() {
                     {/* Impact Metrics */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
                         <h3 className="font-agency text-xl text-brand-brown-dark border-b border-gray-100 pb-2">Impact Targets</h3>
-                        
+
                         <div>
                             <label className="block text-xs font-bold text-brand-brown mb-1">Target Beneficiaries</label>
                             <div className="relative">
@@ -192,30 +255,30 @@ export default function CreateProgramPage() {
                     {/* Cover Image */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
                         <h3 className="font-agency text-xl text-brand-brown-dark border-b border-gray-100 pb-2">Cover Image</h3>
-                        
+
                         <div className="relative w-full aspect-video bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center overflow-hidden group hover:border-brand-gold transition-colors">
                             {imagePreview ? (
                                 <>
                                     <Image src={imagePreview} alt="Preview" fill className="object-cover" />
                                     <button 
                                         type="button"
-                                        onClick={() => setImagePreview(null)}
+                                        onClick={removeImage}
                                         className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600"
                                     >
                                         <X className="w-4 h-4" />
                                     </button>
                                 </>
                             ) : (
-                                <>
-                                    <UploadCloud className="w-8 h-8 text-gray-400 mb-2 group-hover:text-brand-gold" />
-                                    <p className="text-xs text-gray-500 text-center px-4">Upload program photo</p>
+                                <div className="flex flex-col items-center justify-center p-4 w-full h-full relative">
+                                    <ImageIcon className="w-8 h-8 text-gray-400 mb-2 group-hover:text-brand-gold" />
+                                    <p className="text-xs text-gray-500 text-center px-4 font-bold">Click to Upload</p>
                                     <input 
                                         type="file" 
                                         accept="image/*"
                                         onChange={handleImageChange}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
                                     />
-                                </>
+                                </div>
                             )}
                         </div>
                     </div>
