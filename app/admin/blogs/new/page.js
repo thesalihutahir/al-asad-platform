@@ -1,34 +1,33 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 // Firebase
-import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-// UploadThing
-import { UploadButton } from '@/lib/uploadthing';
+import { db, storage } from '@/lib/firebase';
+import { collection, addDoc, getDocs, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 import { 
     ArrowLeft, 
     Save, 
-    UploadCloud, 
     X, 
     FileText,
     LayoutList,
-    Loader2
+    Loader2,
+    Image as ImageIcon,
+    UploadCloud
 } from 'lucide-react';
 
 export default function CreateBlogPage() {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [isLoadingSeries, setIsLoadingSeries] = useState(true);
 
-    // Mock Series (You can fetch this from Firebase later)
-    const availableSeries = [
-        { id: 1, title: "Ramadan Preparation Guide" },
-        { id: 2, title: "The Fiqh of Prayer (Salat)" }
-    ];
+    // Dynamic Series State
+    const [availableSeries, setAvailableSeries] = useState([]);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -40,16 +39,76 @@ export default function CreateBlogPage() {
         author: 'Sheikh Goni Dr. Muneer Ja\'afar', 
         readTime: '',
         date: new Date().toISOString().split('T')[0], 
-        tags: '',
-        pdfUrl: '',      // Stores the UploadThing URL
-        pdfName: '',     // Stores the original filename
-        coverImage: ''   // Stores the UploadThing URL
+        tags: ''
     });
 
-    // Handle Text Input Changes
+    // File States
+    const [coverFile, setCoverFile] = useState(null);
+    const [coverPreview, setCoverPreview] = useState(null);
+    const [pdfFile, setPdfFile] = useState(null);
+
+    // 1. Fetch Series on Mount
+    useEffect(() => {
+        const fetchSeries = async () => {
+            try {
+                const q = query(collection(db, "blog_series"), orderBy("createdAt", "desc"));
+                const snapshot = await getDocs(q);
+                const seriesList = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                setAvailableSeries(seriesList);
+            } catch (error) {
+                console.error("Error fetching series:", error);
+            } finally {
+                setIsLoadingSeries(false);
+            }
+        };
+
+        fetchSeries();
+    }, []);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    // Handle Cover Image
+    const handleCoverChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (!file.type.startsWith('image/')) {
+                alert("Please upload a valid image file.");
+                return;
+            }
+            setCoverFile(file);
+            setCoverPreview(URL.createObjectURL(file));
+        }
+    };
+
+    // Handle PDF (For Research/Papers)
+    const handlePdfChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.type !== 'application/pdf') {
+                alert("Please upload a PDF file.");
+                return;
+            }
+            if (file.size > 20 * 1024 * 1024) { // 20MB Limit
+                alert("PDF size exceeds 20MB limit.");
+                return;
+            }
+            setPdfFile(file);
+        }
+    };
+
+    const removeCover = () => {
+        setCoverFile(null);
+        setCoverPreview(null);
+    };
+
+    const removePdf = () => {
+        setPdfFile(null);
     };
 
     // Handle Form Submission
@@ -65,16 +124,43 @@ export default function CreateBlogPage() {
                 return;
             }
 
-            // 2. Prepare Data for Firestore
-            const postData = {
-                ...formData,
-                createdAt: serverTimestamp(),
-                // Convert tags string to array
-                tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '') 
-            };
+            let coverUrl = "/fallback.webp"; // Default
+            let pdfUrl = "";
+            let pdfName = "";
 
-            // 3. Save to Firebase
-            await addDoc(collection(db, "posts"), postData);
+            // 2. Upload Cover Image (if selected)
+            if (coverFile) {
+                const coverRef = ref(storage, `blog_covers/${Date.now()}_${coverFile.name}`);
+                const coverTask = uploadBytesResumable(coverRef, coverFile);
+                
+                // Track progress
+                coverTask.on('state_changed', (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    setUploadProgress(progress);
+                });
+
+                await coverTask;
+                coverUrl = await getDownloadURL(coverTask.snapshot.ref);
+            }
+
+            // 3. Upload PDF (if selected & category is Research)
+            if (pdfFile && formData.category === 'Research') {
+                const pdfRef = ref(storage, `blog_pdfs/${Date.now()}_${pdfFile.name}`);
+                const pdfTask = uploadBytesResumable(pdfRef, pdfFile);
+                await pdfTask;
+                pdfUrl = await getDownloadURL(pdfTask.snapshot.ref);
+                pdfName = pdfFile.name;
+            }
+
+            // 4. Save to Firestore
+            await addDoc(collection(db, "posts"), {
+                ...formData,
+                coverImage: coverUrl,
+                pdfUrl: pdfUrl,
+                pdfName: pdfName,
+                createdAt: serverTimestamp(),
+                tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '') 
+            });
 
             alert("Post published successfully!");
             router.push('/admin/blogs');
@@ -89,7 +175,7 @@ export default function CreateBlogPage() {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6 max-w-6xl mx-auto pb-12">
-            
+
             {/* 1. HEADER & ACTIONS */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-0 bg-gray-50 z-20 py-4 border-b border-gray-200">
                 <div className="flex items-center gap-4">
@@ -111,16 +197,15 @@ export default function CreateBlogPage() {
                         className="flex items-center gap-2 px-6 py-2.5 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        {isSubmitting ? 'Publishing...' : 'Publish Post'}
+                        {isSubmitting ? `Publishing ${Math.round(uploadProgress)}%` : 'Publish Post'}
                     </button>
                 </div>
             </div>
+<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
                 {/* 2. LEFT COLUMN: MAIN CONTENT */}
                 <div className="lg:col-span-2 space-y-6">
-                    
+
                     {/* Title */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
@@ -168,7 +253,7 @@ export default function CreateBlogPage() {
                         ></textarea>
                     </div>
 
-                    {/* PDF UPLOAD (Conditional) */}
+                    {/* PDF UPLOAD (Conditional for Research) */}
                     {formData.category === 'Research' && (
                         <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100 border-dashed">
                             <div className="flex items-center gap-4">
@@ -177,42 +262,30 @@ export default function CreateBlogPage() {
                                 </div>
                                 <div className="flex-grow">
                                     <h3 className="font-bold text-blue-800 text-sm">Upload Research PDF</h3>
-                                    <p className="text-xs text-blue-600">Max size 16MB. This file will be downloadable.</p>
+                                    <p className="text-xs text-blue-600">Max size 20MB. This file will be downloadable.</p>
                                 </div>
                                 <div className="relative">
-                                    {/* UPLOADTHING BUTTON FOR PDF */}
-                                    <UploadButton
-                                        endpoint="pdfUploader"
-                                        onClientUploadComplete={(res) => {
-                                            if(res && res[0]) {
-                                                setFormData(prev => ({
-                                                    ...prev,
-                                                    pdfUrl: res[0].url,
-                                                    pdfName: res[0].name
-                                                }));
-                                                alert("PDF Uploaded Successfully");
-                                            }
-                                        }}
-                                        onUploadError={(error) => {
-                                            alert(`ERROR! ${error.message}`);
-                                        }}
-                                        appearance={{
-                                            button: "bg-blue-600 text-white text-xs px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors ut-uploading:cursor-not-allowed"
-                                        }}
-                                        content={{
-                                            button({ ready }) {
-                                                if (ready) return 'Select PDF';
-                                                return 'Loading...';
-                                            }
-                                        }}
-                                    />
+                                    {pdfFile ? (
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs font-bold text-blue-800">{pdfFile.name}</span>
+                                            <button type="button" onClick={removePdf} className="text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <label htmlFor="pdf-upload" className="cursor-pointer bg-blue-600 text-white text-xs px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors">
+                                                Select PDF
+                                            </label>
+                                            <input 
+                                                id="pdf-upload"
+                                                type="file" 
+                                                accept="application/pdf"
+                                                onChange={handlePdfChange}
+                                                className="hidden"
+                                            />
+                                        </>
+                                    )}
                                 </div>
                             </div>
-                            {formData.pdfName && (
-                                <p className="mt-4 text-xs font-bold text-green-700 text-center bg-green-100 py-2 rounded-lg border border-green-200">
-                                    ✓ Attached: {formData.pdfName}
-                                </p>
-                            )}
                         </div>
                     )}
 
@@ -220,11 +293,11 @@ export default function CreateBlogPage() {
 
                 {/* 3. RIGHT COLUMN: METADATA */}
                 <div className="space-y-6">
-                    
+
                     {/* Publishing Details */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
                         <h3 className="font-agency text-xl text-brand-brown-dark border-b border-gray-100 pb-2">Publishing</h3>
-                        
+
                         {/* Series Selection */}
                         <div className="bg-brand-sand/20 p-4 rounded-xl border border-brand-gold/20 mb-4">
                             <label className="flex items-center gap-2 text-xs font-bold text-brand-brown-dark uppercase tracking-wider mb-2">
@@ -237,9 +310,13 @@ export default function CreateBlogPage() {
                                 className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer"
                             >
                                 <option value="">Select a Series (Optional)</option>
-                                {availableSeries.map(s => (
-                                    <option key={s.id} value={s.title}>{s.title}</option>
-                                ))}
+                                {isLoadingSeries ? (
+                                    <option disabled>Loading...</option>
+                                ) : (
+                                    availableSeries.map(s => (
+                                        <option key={s.id} value={s.title}>{s.title}</option>
+                                    ))
+                                )}
                             </select>
                         </div>
 
@@ -275,7 +352,7 @@ export default function CreateBlogPage() {
                                 name="readTime"
                                 value={formData.readTime}
                                 onChange={handleChange}
-                                placeholder="e.g. 5 min read"
+                                placeholder="e.g. 5 min read" 
                                 className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
                             />
                         </div>
@@ -295,46 +372,28 @@ export default function CreateBlogPage() {
                     {/* Featured Image */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
                         <h3 className="font-agency text-xl text-brand-brown-dark border-b border-gray-100 pb-2">Featured Image</h3>
-                        
+
                         <div className="relative w-full aspect-video bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center overflow-hidden group hover:border-brand-gold transition-colors">
-                            {formData.coverImage ? (
+                            {coverPreview ? (
                                 <>
-                                    <Image src={formData.coverImage} alt="Preview" fill className="object-cover" />
+                                    <Image src={coverPreview} alt="Preview" fill className="object-cover" />
                                     <button 
                                         type="button"
-                                        onClick={() => setFormData(prev => ({ ...prev, coverImage: '' }))}
+                                        onClick={removeCover}
                                         className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600 z-10"
                                     >
                                         <X className="w-4 h-4" />
                                     </button>
                                 </>
                             ) : (
-                                <div className="flex flex-col items-center justify-center p-4 w-full h-full">
+                                <div className="flex flex-col items-center justify-center p-4 w-full h-full relative">
                                     <UploadCloud className="w-8 h-8 text-gray-400 mb-2" />
-                                    {/* UPLOADTHING BUTTON FOR IMAGE */}
-                                    <UploadButton
-                                        endpoint="imageUploader"
-                                        onClientUploadComplete={(res) => {
-                                            if(res && res[0]) {
-                                                setFormData(prev => ({
-                                                    ...prev,
-                                                    coverImage: res[0].url
-                                                }));
-                                            }
-                                        }}
-                                        onUploadError={(error) => {
-                                            alert(`ERROR! ${error.message}`);
-                                        }}
-                                        appearance={{
-                                            button: "bg-transparent text-gray-500 text-xs hover:text-brand-gold ut-uploading:text-brand-gold font-bold",
-                                            allowedContent: "hidden" // Hide the "Image (4MB)" text to keep UI clean
-                                        }}
-                                        content={{
-                                            button({ ready }) {
-                                                if (ready) return 'Click to Upload Cover';
-                                                return 'Loading Uploader...';
-                                            }
-                                        }}
+                                    <p className="text-xs text-gray-500 font-bold mb-1">Click to Upload</p>
+                                    <input 
+                                        type="file" 
+                                        accept="image/*"
+                                        onChange={handleCoverChange}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                     />
                                 </div>
                             )}
@@ -344,7 +403,7 @@ export default function CreateBlogPage() {
                     {/* Tags */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
                         <h3 className="font-agency text-xl text-brand-brown-dark border-b border-gray-100 pb-2">Tags</h3>
-                        
+
                         <div>
                             <label className="block text-xs font-bold text-brand-brown mb-1">Comma Separated</label>
                             <input 
