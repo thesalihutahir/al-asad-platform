@@ -10,15 +10,14 @@ import { collection, onSnapshot, deleteDoc, doc, query, orderBy } from 'firebase
 import { 
     PlusCircle, 
     Search, 
-    Filter, 
     Edit, 
     Trash2, 
     Eye, 
-    MoreHorizontal,
     BookOpen,
     ScrollText,
     LayoutList,
-    Loader2
+    Loader2,
+    MoreVertical
 } from 'lucide-react';
 
 export default function ManageBlogsPage() {
@@ -29,28 +28,38 @@ export default function ManageBlogsPage() {
 
     // Data State
     const [posts, setPosts] = useState([]);
-    const [articleSeries, setArticleSeries] = useState([]); // Placeholder for Series
+    const [series, setSeries] = useState([]);
 
     // 1. FETCH DATA FROM FIREBASE (Real-time Listener)
     useEffect(() => {
         setIsLoading(true);
-        // Query: Get all posts ordered by newest first
-        const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
+        // Query: Get all posts
+        const qPosts = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+        const unsubPosts = onSnapshot(qPosts, (snapshot) => {
             const postsData = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
             setPosts(postsData);
-            setIsLoading(false);
-        }, (error) => {
-            console.error("Error fetching posts:", error);
+        });
+
+        // Query: Get all series
+        const qSeries = query(collection(db, "blog_series"), orderBy("createdAt", "desc"));
+        const unsubSeries = onSnapshot(qSeries, (snapshot) => {
+            const seriesData = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setSeries(seriesData);
             setIsLoading(false);
         });
 
-        // Cleanup subscription on unmount
-        return () => unsubscribe();
+        // Cleanup subscriptions
+        return () => {
+            unsubPosts();
+            unsubSeries();
+        };
     }, []);
 
     // 2. HANDLE DELETE
@@ -60,15 +69,19 @@ export default function ManageBlogsPage() {
         try {
             if (type === 'post') {
                 await deleteDoc(doc(db, "posts", id));
-                // No need to manually update state, onSnapshot handles it automatically!
             } else {
-                // Handle Series Deletion (Future feature)
-                console.log("Delete series:", id);
+                await deleteDoc(doc(db, "blog_series", id));
             }
         } catch (error) {
             console.error("Error deleting document:", error);
             alert("Failed to delete. Check console.");
         }
+    };
+
+    // Helper: Count posts in a series
+    const getSeriesCount = (seriesTitle) => {
+        if (!posts) return 0;
+        return posts.filter(p => p.series === seriesTitle).length;
     };
 
     return (
@@ -90,20 +103,20 @@ export default function ManageBlogsPage() {
                             Create New Post
                         </Link>
                     ) : (
-                        <button 
-                            onClick={() => alert("Open Create Series Modal (Coming Soon)")}
+                        <Link 
+                            href="/admin/blogs/series/new"
                             className="flex items-center gap-2 px-5 py-2.5 bg-brand-brown-dark text-white rounded-xl text-sm font-bold hover:bg-brand-gold transition-colors shadow-md"
                         >
                             <BookOpen className="w-4 h-4" />
                             Create Series
-                        </button>
+                        </Link>
                     )}
                 </div>
             </div>
 
             {/* 2. TABS & FILTERS */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-2 rounded-xl border border-gray-100 shadow-sm">
-                
+
                 {/* Tab Switcher */}
                 <div className="flex bg-gray-100 p-1 rounded-lg">
                     <button 
@@ -141,7 +154,7 @@ export default function ManageBlogsPage() {
 
             {/* 3. CONTENT AREA */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[300px]">
-                
+
                 {isLoading ? (
                     <div className="flex items-center justify-center h-64">
                         <Loader2 className="w-8 h-8 text-brand-gold animate-spin" />
@@ -175,13 +188,7 @@ export default function ManageBlogsPage() {
                                                     <td className="px-6 py-4">
                                                         <div className="flex items-center gap-4">
                                                             <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 border border-gray-200">
-                                                                {post.coverImage ? (
-                                                                    <Image src={post.coverImage} alt={post.title} fill className="object-cover" />
-                                                                ) : (
-                                                                    <div className="w-full h-full flex items-center justify-center bg-brand-sand">
-                                                                        <BookOpen className="w-5 h-5 text-gray-300" />
-                                                                    </div>
-                                                                )}
+                                                                <Image src={post.coverImage || "/fallback.webp"} alt={post.title} fill className="object-cover" />
                                                             </div>
                                                             <div>
                                                                 <h3 className="font-bold text-brand-brown-dark text-sm line-clamp-1 max-w-[200px]">{post.title}</h3>
@@ -218,17 +225,17 @@ export default function ManageBlogsPage() {
                                                     </td>
                                                     <td className="px-6 py-4 text-right">
                                                         <div className="flex justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
-                                                            {/* View Button (Placeholder) */}
-                                                            <button className="p-2 text-gray-400 hover:text-brand-brown-dark hover:bg-gray-100 rounded-lg transition-colors" title="View">
-                                                                <Eye className="w-4 h-4" />
-                                                            </button>
-                                                            {/* Edit Button (Placeholder - connects to dynamic route) */}
+                                                            <Link href={`/news/${post.id}`} target="_blank">
+                                                                <button className="p-2 text-gray-400 hover:text-brand-brown-dark hover:bg-gray-100 rounded-lg transition-colors" title="View Live">
+                                                                    <Eye className="w-4 h-4" />
+                                                                </button>
+                                                            </Link>
+                                                            {/* Edit Button Links to Dynamic Page */}
                                                             <Link href={`/admin/blogs/edit/${post.id}`}>
-                                                                <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+                                                                <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit Post">
                                                                     <Edit className="w-4 h-4" />
                                                                 </button>
                                                             </Link>
-                                                            {/* Delete Button */}
                                                             <button 
                                                                 onClick={() => handleDelete(post.id, 'post')} 
                                                                 className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" 
@@ -246,12 +253,36 @@ export default function ManageBlogsPage() {
                             </div>
                         )}
 
-                        {/* --- SERIES VIEW (Static for now) --- */}
+                        {/* --- SERIES VIEW --- */}
                         {activeTab === 'series' && (
-                            <div className="p-12 text-center text-gray-400">
-                                <LayoutList className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                <h3 className="font-agency text-xl">Series Management</h3>
-                                <p className="text-sm">This feature will allow grouping articles together.</p>
+                            <div className="p-6">
+                                {series.length === 0 ? (
+                                    <div className="text-center py-12 text-gray-400">
+                                        <LayoutList className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                                        <p>No series created yet. Click "Create Series" to start.</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        {series.map((item) => (
+                                            <div key={item.id} className="group border border-gray-100 rounded-2xl p-4 flex gap-4 hover:shadow-lg transition-all bg-white relative">
+                                                <div className="relative w-20 h-28 flex-shrink-0 shadow-md transform group-hover:-rotate-2 transition-transform">
+                                                    <Image src={item.cover || "/fallback.webp"} alt={item.title} fill className="object-cover rounded" />
+                                                    <div className="absolute top-1 -right-1 w-full h-full bg-gray-200 rounded -z-10 border border-gray-300"></div>
+                                                </div>
+                                                <div className="flex-grow">
+                                                    <div className="flex justify-between items-start">
+                                                        <span className="text-[10px] font-bold text-brand-gold uppercase tracking-wider mb-1 block">{item.category}</span>
+                                                        <button onClick={() => handleDelete(item.id, 'series')} className="text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                                                    </div>
+                                                    <h3 className="font-agency text-lg text-brand-brown-dark leading-tight mb-2 line-clamp-2">{item.title}</h3>
+                                                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full font-bold flex items-center gap-1 w-fit">
+                                                        <ScrollText className="w-3 h-3" /> {getSeriesCount(item.title)} Posts
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </>
