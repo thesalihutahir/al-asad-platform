@@ -65,7 +65,7 @@ export default function CreatePlaylistPage() {
         setIsSubmitting(true);
 
         try {
-            let coverUrl = "/hero.jpg"; // Default fallback
+            let coverUrl = "/fallback.webp"; // UPDATED FALLBACK
 
             // 1. Upload Cover Image (if selected)
             if (imageFile) {
@@ -98,7 +98,7 @@ export default function CreatePlaylistPage() {
             });
 
             alert("Playlist created successfully!");
-            router.push('/admin/videos'); // Redirect back to list
+            router.push('/admin/videos'); 
 
         } catch (error) {
             console.error("Error creating playlist:", error);
