@@ -24,21 +24,27 @@ export default function BlogsPage() {
             title: 'Articles',
             description: 'Reflections on faith, society, and personal growth.',
             link: '/blogs/articles',
-            icon: PenTool 
+            icon: PenTool,
+            bg: "bg-blue-50",
+            text: "text-blue-600"
         },
         {
             id: 'updates',
             title: 'News & Updates',
             description: 'Latest happenings, events, and foundation announcements.',
             link: '/blogs/updates',
-            icon: Newspaper
+            icon: Newspaper,
+            bg: "bg-orange-50",
+            text: "text-orange-600"
         },
         {
             id: 'research',
             title: 'Research & Papers',
             description: 'Scholarly publications and academic discourses.',
             link: '/blogs/research-and-publications',
-            icon: ScrollText
+            icon: ScrollText,
+            bg: "bg-purple-50",
+            text: "text-purple-600"
         }
     ];
 
@@ -52,7 +58,7 @@ export default function BlogsPage() {
                     orderBy("createdAt", "desc"), 
                     limit(4)
                 );
-                
+
                 const querySnapshot = await getDocs(q);
                 const posts = querySnapshot.docs.map(doc => ({
                     id: doc.id,
@@ -73,7 +79,7 @@ export default function BlogsPage() {
         fetchPosts();
     }, []);
 
-    // Helper: Format Date nicely (e.g. "2024-12-25" -> "Dec 25, 2024")
+    // Helper: Format Date
     const formatDate = (dateString) => {
         if (!dateString) return '';
         const date = new Date(dateString);
@@ -122,7 +128,7 @@ export default function BlogsPage() {
                                     href={cat.link}
                                     className="flex md:flex-col md:items-center md:text-center items-center p-4 md:p-8 bg-brand-sand/40 rounded-xl md:rounded-3xl border border-transparent hover:border-brand-gold/30 hover:bg-brand-sand transition-all group"
                                 >
-                                    <div className="w-12 h-12 md:w-16 md:h-16 flex-shrink-0 bg-white rounded-full flex items-center justify-center shadow-sm text-brand-gold group-hover:scale-110 transition-transform mb-0 md:mb-4">
+                                    <div className={`w-12 h-12 md:w-16 md:h-16 flex-shrink-0 bg-white rounded-full flex items-center justify-center shadow-sm ${cat.text} group-hover:scale-110 transition-transform mb-0 md:mb-4`}>
                                         <Icon className="w-6 h-6 md:w-8 md:h-8" />
                                     </div>
                                     <div className="ml-4 md:ml-0">
@@ -161,7 +167,7 @@ export default function BlogsPage() {
                                         {/* Image Side */}
                                         <div className="relative w-full lg:w-3/5 aspect-video rounded-2xl overflow-hidden shadow-lg bg-gray-100">
                                             <Image
-                                                src={featuredPost.coverImage || "/hero.jpg"} // Fallback image
+                                                src={featuredPost.coverImage || "/fallback.webp"}
                                                 alt={featuredPost.title}
                                                 fill
                                                 className="object-cover transition-transform duration-700 group-hover:scale-105"
@@ -203,11 +209,11 @@ export default function BlogsPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
                                     {recentPostsList.map((item) => (
                                         <Link href={`/blogs/read/${item.id}`} key={item.id} className="group flex md:flex-col gap-4 items-start md:bg-white md:rounded-2xl md:overflow-hidden md:shadow-md md:hover:shadow-xl md:border md:border-gray-100 transition-all">
-                                            
+
                                             {/* Thumbnail */}
                                             <div className="relative w-24 h-24 md:w-full md:h-48 flex-shrink-0 rounded-lg md:rounded-none overflow-hidden bg-brand-sand">
                                                 <Image 
-                                                    src={item.coverImage || "/hero.jpg"} 
+                                                    src={item.coverImage || "/fallback.webp"} 
                                                     alt={item.title} 
                                                     fill 
                                                     className="object-cover transition-transform duration-500 group-hover:scale-110" 
@@ -233,7 +239,7 @@ export default function BlogsPage() {
                                 </div>
                             </section>
                         )}
-                        
+
                         {/* Fallback if no posts exist yet */}
                         {!loading && !featuredPost && (
                             <div className="text-center py-12">
