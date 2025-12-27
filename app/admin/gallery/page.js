@@ -4,10 +4,9 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 // Firebase
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, deleteDoc, doc, addDoc, serverTimestamp } from 'firebase/firestore';
-// UploadThing
-import { UploadButton } from '@/lib/uploadthing';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 import { 
     PlusCircle, 
@@ -15,12 +14,11 @@ import {
     Trash2, 
     Image as ImageIcon, 
     Folder, 
-    MoreVertical, 
-    Edit,
-    FolderPlus,
-    Loader2,
-    X,
-    Calendar
+    FolderPlus, 
+    Loader2, 
+    X, 
+    Calendar,
+    UploadCloud
 } from 'lucide-react';
 
 export default function ManageGalleryPage() {
@@ -35,18 +33,22 @@ export default function ManageGalleryPage() {
     // --- CREATE ALBUM MODAL STATE ---
     const [isAlbumModalOpen, setIsAlbumModalOpen] = useState(false);
     const [isCreatingAlbum, setIsCreatingAlbum] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    
     const [newAlbum, setNewAlbum] = useState({
         title: '',
         date: new Date().toISOString().split('T')[0],
         cover: ''
     });
+    const [albumCoverFile, setAlbumCoverFile] = useState(null);
+    const [coverPreview, setCoverPreview] = useState(null);
 
     // 1. FETCH DATA (Real-time)
     useEffect(() => {
         setIsLoading(true);
 
-        // Fetch Photos
-        const qPhotos = query(collection(db, "gallery_photos"), orderBy("createdAt", "desc"));
+        // Fetch Photos (Assuming stored in 'gallery' collection from the previous step)
+        const qPhotos = query(collection(db, "gallery"), orderBy("createdAt", "desc"));
         const unsubPhotos = onSnapshot(qPhotos, (snapshot) => {
             setPhotos(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         });
@@ -64,27 +66,55 @@ export default function ManageGalleryPage() {
         };
     }, []);
 
+    // Handle Cover File Selection
+    const handleCoverChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setAlbumCoverFile(file);
+            setCoverPreview(URL.createObjectURL(file));
+        }
+    };
+
     // 2. HANDLE CREATE ALBUM
     const handleSaveAlbum = async (e) => {
         e.preventDefault();
+        
+        if (!newAlbum.title) {
+            alert("Please enter an album title.");
+            return;
+        }
+
         setIsCreatingAlbum(true);
 
         try {
-            if (!newAlbum.title) {
-                alert("Please enter an album title.");
-                setIsCreatingAlbum(false);
-                return;
+            let coverUrl = "/fallback.webp";
+
+            // Upload Cover if selected
+            if (albumCoverFile) {
+                const storageRef = ref(storage, `album_covers/${Date.now()}_${albumCoverFile.name}`);
+                const uploadTask = uploadBytesResumable(storageRef, albumCoverFile);
+
+                uploadTask.on('state_changed', (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    setUploadProgress(progress);
+                });
+
+                await uploadTask;
+                coverUrl = await getDownloadURL(uploadTask.snapshot.ref);
             }
 
             await addDoc(collection(db, "gallery_albums"), {
                 ...newAlbum,
-                cover: newAlbum.cover || "/hero.jpg",
+                cover: coverUrl,
                 createdAt: serverTimestamp()
             });
 
             alert("Album created successfully!");
             setIsAlbumModalOpen(false);
             setNewAlbum({ title: '', date: new Date().toISOString().split('T')[0], cover: '' });
+            setAlbumCoverFile(null);
+            setCoverPreview(null);
+            setUploadProgress(0);
 
         } catch (error) {
             console.error("Error creating album:", error);
@@ -100,7 +130,7 @@ export default function ManageGalleryPage() {
 
         try {
             if (type === 'photo') {
-                await deleteDoc(doc(db, "gallery_photos", id));
+                await deleteDoc(doc(db, "gallery", id)); // Changed from gallery_photos to gallery based on previous file
             } else {
                 await deleteDoc(doc(db, "gallery_albums", id));
             }
@@ -110,15 +140,10 @@ export default function ManageGalleryPage() {
         }
     };
 
-    // Helper: Count photos in an album
+    // Helper: Count photos (Logic would need adjustment if photos have albumId)
+    // For now, this is visual only as photos are currently flat
     const getPhotoCount = (albumId) => {
-        return photos.filter(p => p.albumId === albumId).length;
-    };
-
-    // Helper: Get Album Name by ID
-    const getAlbumName = (albumId) => {
-        const album = albums.find(a => a.id === albumId);
-        return album ? album.title : "Uncategorized";
+        return photos.filter(p => p.albumId === albumId).length; 
     };
 
     return (
@@ -133,7 +158,7 @@ export default function ManageGalleryPage() {
                 <div className="flex gap-3">
                     {activeTab === 'photos' ? (
                         <Link 
-                            href="/admin/gallery/new" 
+                            href="/admin/gallery" // Redirects to the upload page we built earlier
                             className="flex items-center gap-2 px-5 py-2.5 bg-brand-gold text-white rounded-xl text-sm font-bold hover:bg-brand-brown-dark transition-colors shadow-md"
                         >
                             <PlusCircle className="w-4 h-4" />
@@ -183,7 +208,7 @@ export default function ManageGalleryPage() {
 
             {/* 3. CONTENT */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[300px]">
-                
+
                 {isLoading ? (
                     <div className="flex items-center justify-center h-64">
                         <Loader2 className="w-8 h-8 text-brand-gold animate-spin" />
@@ -202,12 +227,9 @@ export default function ManageGalleryPage() {
                                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                         {photos.map((photo) => (
                                             <div key={photo.id} className="group relative aspect-square rounded-xl overflow-hidden bg-gray-100 cursor-pointer border border-gray-200">
-                                                <Image src={photo.url} alt={photo.name} fill className="object-cover transition-transform duration-500 group-hover:scale-110" />
-                                                
-                                                {/* Overlay */}
+                                                <Image src={photo.url} alt="Gallery Photo" fill className="object-cover transition-transform duration-500 group-hover:scale-110" />
                                                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-                                                    <p className="text-white text-xs font-bold truncate">{getAlbumName(photo.albumId)}</p>
-                                                    <p className="text-white/70 text-[10px] truncate">{photo.name}</p>
+                                                    <p className="text-white/70 text-[10px] truncate">{photo.caption}</p>
                                                     <button 
                                                         onClick={(e) => { e.stopPropagation(); handleDelete(photo.id, 'photo'); }}
                                                         className="absolute top-2 right-2 bg-white/20 backdrop-blur p-1.5 rounded-full hover:bg-red-500 text-white transition-colors"
@@ -234,29 +256,24 @@ export default function ManageGalleryPage() {
                                     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
                                         {albums.map((album) => (
                                             <div key={album.id} className="group cursor-pointer">
-                                                {/* Folder Visual */}
                                                 <div className="relative w-full aspect-[4/3] mb-3">
                                                     {/* Stack Effect */}
                                                     <div className="absolute top-0 left-2 right-2 bottom-2 bg-gray-200 rounded-xl transform translate-y-2 group-hover:translate-y-3 transition-transform"></div>
                                                     <div className="absolute top-1 left-1 right-1 bottom-1 bg-gray-300 rounded-xl transform translate-y-1 group-hover:translate-y-1.5 transition-transform"></div>
-                                                    
+
                                                     {/* Cover */}
                                                     <div className="relative w-full h-full rounded-xl overflow-hidden shadow-sm border border-gray-200 bg-white group-hover:border-brand-gold/50 transition-colors">
-                                                        <Image src={album.cover} alt={album.title} fill className="object-cover" />
+                                                        <Image src={album.cover || "/fallback.webp"} alt={album.title} fill className="object-cover" />
                                                         
-                                                        {/* Actions Overlay */}
+                                                        {/* Actions */}
                                                         <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <button onClick={(e) => {e.stopPropagation(); handleDelete(album.id, 'album')}} className="bg-white p-1.5 rounded-lg shadow text-gray-500 hover:text-red-600"><Trash2 className="w-3 h-3" /></button>
-                                                        </div>
-                                                        
-                                                        {/* Count Badge */}
-                                                        <div className="absolute bottom-2 left-2 bg-black/70 text-white text-[10px] font-bold px-2 py-1 rounded backdrop-blur-sm flex items-center gap-1">
-                                                            <ImageIcon className="w-3 h-3" /> {getPhotoCount(album.id)}
+                                                            <button onClick={(e) => {e.stopPropagation(); handleDelete(album.id, 'album')}} className="bg-white p-1.5 rounded-lg shadow text-gray-500 hover:text-red-600">
+                                                                <Trash2 className="w-3 h-3" />
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>
 
-                                                {/* Info */}
                                                 <h3 className="font-agency text-lg text-brand-brown-dark leading-tight group-hover:text-brand-gold transition-colors truncate">
                                                     {album.title}
                                                 </h3>
@@ -303,27 +320,37 @@ export default function ManageGalleryPage() {
                                     className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
                                 />
                             </div>
+                            
+                            {/* Album Cover Upload */}
                             <div>
                                 <label className="block text-xs font-bold text-brand-brown mb-2">Cover Photo</label>
-                                <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center text-center bg-gray-50 hover:bg-white hover:border-brand-gold transition-colors">
-                                    {newAlbum.cover ? (
-                                        <div className="relative w-full aspect-video rounded-lg overflow-hidden">
-                                            <Image src={newAlbum.cover} alt="Cover" fill className="object-cover" />
-                                            <button type="button" onClick={() => setNewAlbum({...newAlbum, cover: ''})} className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full"><X className="w-3 h-3" /></button>
-                                        </div>
+                                <div className="relative w-full aspect-video bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center overflow-hidden hover:border-brand-gold transition-colors">
+                                    {coverPreview ? (
+                                        <>
+                                            <Image src={coverPreview} alt="Preview" fill className="object-cover" />
+                                            <button 
+                                                type="button" 
+                                                onClick={() => { setAlbumCoverFile(null); setCoverPreview(null); }}
+                                                className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-md z-10"
+                                            >
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </>
                                     ) : (
-                                        <UploadButton
-                                            endpoint="imageUploader"
-                                            onClientUploadComplete={(res) => {
-                                                if (res && res[0]) setNewAlbum(prev => ({ ...prev, cover: res[0].url }));
-                                            }}
-                                            onUploadError={(error) => alert(`Error! ${error.message}`)}
-                                            appearance={{ button: "bg-brand-brown-dark text-white text-xs px-3 py-2 rounded-lg" }}
-                                            content={{ button({ ready }) { return ready ? 'Upload Cover' : '...' } }}
-                                        />
+                                        <>
+                                            <UploadCloud className="w-8 h-8 text-gray-400 mb-2" />
+                                            <p className="text-xs text-gray-500">Click to Upload Cover</p>
+                                            <input 
+                                                type="file" 
+                                                accept="image/*" 
+                                                onChange={handleCoverChange}
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                            />
+                                        </>
                                     )}
                                 </div>
                             </div>
+
                             <div className="pt-2">
                                 <button 
                                     type="submit" 
@@ -331,7 +358,7 @@ export default function ManageGalleryPage() {
                                     className="w-full flex items-center justify-center gap-2 py-3 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-colors shadow-md disabled:opacity-50"
                                 >
                                     {isCreatingAlbum ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderPlus className="w-4 h-4" />}
-                                    {isCreatingAlbum ? 'Creating...' : 'Create Album'}
+                                    {isCreatingAlbum ? `Creating ${Math.round(uploadProgress)}%` : 'Create Album'}
                                 </button>
                             </div>
                         </form>
