@@ -4,10 +4,9 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 // Firebase
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-// UploadThing
-import { UploadButton } from '@/lib/uploadthing';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 import { 
     ArrowLeft, 
@@ -15,24 +14,23 @@ import {
     UploadCloud, 
     Music, 
     CheckCircle, 
-    X,
-    ListMusic,
     Loader2,
-    Trash2
+    Trash2,
+    ListMusic
 } from 'lucide-react';
 
 export default function UploadAudioPage() {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
 
-    // Mock Series (You can fetch this from Firebase later)
+    // Mock Series
     const availableSeries = [
         { id: 1, title: "Tafsir Surah Yasin (Complete)" },
         { id: 2, title: "Ramadan Daily Reminders" },
         { id: 3, title: "Kitab At-Taharah (Purification)" }
     ];
 
-    // Form State
     const [formData, setFormData] = useState({
         title: '',
         speaker: 'Sheikh Goni Dr. Muneer Ja\'afar',
@@ -40,58 +38,101 @@ export default function UploadAudioPage() {
         series: '', 
         date: new Date().toISOString().split('T')[0],
         description: '',
-        audioUrl: '',    // From UploadThing
-        fileName: '',    // Original filename
-        fileSize: ''     // Size string
     });
+
+    // File State
+    const [audioFile, setAudioFile] = useState(null);
+    const [audioPreviewUrl, setAudioPreviewUrl] = useState(null);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // Remove file to allow re-upload
-    const removeFile = () => {
-        if(confirm("Are you sure you want to remove this audio?")) {
-            setFormData(prev => ({ ...prev, audioUrl: '', fileName: '', fileSize: '' }));
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Check file type
+            if (!file.type.startsWith('audio/')) {
+                alert("Please upload a valid audio file.");
+                return;
+            }
+            // Check file size (e.g., max 50MB)
+            if (file.size > 50 * 1024 * 1024) {
+                alert("File size exceeds 50MB limit.");
+                return;
+            }
+
+            setAudioFile(file);
+            setAudioPreviewUrl(URL.createObjectURL(file)); // Local preview
+            
+            // Auto-fill title if empty
+            if (!formData.title) {
+                setFormData(prev => ({ ...prev, title: file.name.replace(/\.[^/.]+$/, "") }));
+            }
         }
+    };
+
+    const removeFile = () => {
+        setAudioFile(null);
+        setAudioPreviewUrl(null);
+        setUploadProgress(0);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        if (!audioFile) {
+            alert("Please select an audio file.");
+            return;
+        }
+        if (!formData.title) {
+            alert("Please enter a title.");
+            return;
+        }
+
         setIsSubmitting(true);
 
         try {
-            // Validation
-            if (!formData.audioUrl) {
-                alert("Please upload an audio file first.");
-                setIsSubmitting(false);
-                return;
-            }
-            if (!formData.title) {
-                alert("Please enter a title.");
-                setIsSubmitting(false);
-                return;
-            }
+            // 1. Upload File to Firebase Storage
+            // Path: audios/[timestamp]_[filename]
+            const storageRef = ref(storage, `audios/${Date.now()}_${audioFile.name}`);
+            const uploadTask = uploadBytesResumable(storageRef, audioFile);
 
-            // Prepare Data
-            const audioData = {
-                ...formData,
-                createdAt: serverTimestamp(),
-                plays: 0,
-                downloads: 0
-            };
+            uploadTask.on('state_changed', 
+                (snapshot) => {
+                    // Track Progress
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    setUploadProgress(progress);
+                }, 
+                (error) => {
+                    console.error("Upload failed:", error);
+                    alert("Upload failed. Please try again.");
+                    setIsSubmitting(false);
+                }, 
+                async () => {
+                    // Upload Complete
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    
+                    // 2. Save Metadata to Firestore
+                    await addDoc(collection(db, "audios"), {
+                        ...formData,
+                        audioUrl: downloadURL,
+                        fileName: audioFile.name,
+                        fileSize: (audioFile.size / (1024 * 1024)).toFixed(2) + " MB",
+                        createdAt: serverTimestamp(),
+                        plays: 0,
+                        downloads: 0
+                    });
 
-            // Save to Firestore
-            await addDoc(collection(db, "audios"), audioData);
-
-            alert("Audio published successfully!");
-            router.push('/admin/audios');
+                    alert("Audio published successfully!");
+                    router.push('/admin/audios');
+                }
+            );
 
         } catch (error) {
             console.error("Error saving audio:", error);
-            alert("Failed to save audio. Check console.");
-        } finally {
+            alert("Failed to save audio.");
             setIsSubmitting(false);
         }
     };
@@ -118,15 +159,15 @@ export default function UploadAudioPage() {
                     </Link>
                     <button 
                         type="submit"
-                        disabled={isSubmitting || !formData.audioUrl} 
+                        disabled={isSubmitting || !audioFile} 
                         className={`flex items-center gap-2 px-6 py-2.5 font-bold rounded-xl transition-colors shadow-md ${
-                            formData.audioUrl 
+                            audioFile 
                             ? 'bg-brand-gold text-white hover:bg-brand-brown-dark' 
                             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                         }`}
                     >
                         {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        {isSubmitting ? 'Publishing...' : 'Upload & Publish'}
+                        {isSubmitting ? 'Uploading...' : 'Upload & Publish'}
                     </button>
                 </div>
             </div>
@@ -137,80 +178,70 @@ export default function UploadAudioPage() {
                 <div className="space-y-6">
 
                     <div className={`relative border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center text-center transition-colors min-h-[320px] ${
-                        formData.audioUrl ? 'bg-green-50 border-green-300' : 'bg-white border-gray-300 hover:border-brand-gold hover:bg-brand-sand/10'
+                        audioFile ? 'bg-green-50 border-green-300' : 'bg-white border-gray-300 hover:border-brand-gold hover:bg-brand-sand/10'
                     }`}>
 
-                        {formData.audioUrl ? (
+                        {audioFile ? (
                             // File Selected State
                             <div className="w-full">
                                 <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <CheckCircle className="w-10 h-10" />
                                 </div>
-                                <h3 className="font-bold text-brand-brown-dark text-lg truncate px-4">{formData.fileName}</h3>
-                                <p className="text-sm text-gray-500 mb-6">{formData.fileSize}</p>
+                                <h3 className="font-bold text-brand-brown-dark text-lg truncate px-4">{audioFile.name}</h3>
+                                <p className="text-sm text-gray-500 mb-6">{(audioFile.size / (1024 * 1024)).toFixed(2)} MB</p>
 
-                                <button 
-                                    type="button" 
-                                    onClick={removeFile}
-                                    className="flex items-center justify-center gap-2 text-red-500 text-sm font-bold hover:bg-red-50 px-4 py-2 rounded-lg mx-auto transition-colors"
-                                >
-                                    <Trash2 className="w-4 h-4" /> Remove File
-                                </button>
+                                {/* Progress Bar */}
+                                {isSubmitting && (
+                                    <div className="w-full max-w-xs mx-auto mb-4">
+                                        <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                                            <div 
+                                                className="h-full bg-brand-gold transition-all duration-300"
+                                                style={{ width: `${uploadProgress}%` }}
+                                            ></div>
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-1">{Math.round(uploadProgress)}% Uploaded</p>
+                                    </div>
+                                )}
+
+                                {!isSubmitting && (
+                                    <button 
+                                        type="button" 
+                                        onClick={removeFile}
+                                        className="flex items-center justify-center gap-2 text-red-500 text-sm font-bold hover:bg-red-50 px-4 py-2 rounded-lg mx-auto transition-colors"
+                                    >
+                                        <Trash2 className="w-4 h-4" /> Remove File
+                                    </button>
+                                )}
                             </div>
                         ) : (
-                            // Empty State (UploadThing Button)
-                            <div className="flex flex-col items-center w-full">
+                            // Empty State
+                            <div className="flex flex-col items-center w-full relative">
                                 <div className="w-20 h-20 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mb-4">
                                     <Music className="w-10 h-10" />
                                 </div>
                                 <h3 className="font-bold text-gray-700 text-lg mb-1">Click to Upload MP3</h3>
                                 <p className="text-sm text-gray-400 max-w-xs mx-auto mb-6">
-                                    Supported formats: MP3, WAV, AAC. <br/> Max size: 32MB.
+                                    Supported formats: MP3, WAV, AAC. <br/> Max size: 50MB.
                                 </p>
-                                
-                                <UploadButton
-                                    endpoint="mediaUploader"
-                                    onClientUploadComplete={(res) => {
-                                        if (res && res[0]) {
-                                            setFormData(prev => ({
-                                                ...prev,
-                                                audioUrl: res[0].url,
-                                                fileName: res[0].name,
-                                                fileSize: (res[0].size / (1024 * 1024)).toFixed(2) + " MB"
-                                            }));
-                                            // Auto-fill title if empty
-                                            if (!formData.title) {
-                                                setFormData(prev => ({ ...prev, title: res[0].name.replace(/\.[^/.]+$/, "") }));
-                                            }
-                                            alert("Audio uploaded successfully!");
-                                        }
-                                    }}
-                                    onUploadError={(error) => {
-                                        alert(`ERROR! ${error.message}`);
-                                    }}
-                                    appearance={{
-                                        button: "bg-brand-brown-dark text-white px-6 py-3 rounded-xl font-bold hover:bg-brand-gold transition-colors ut-uploading:cursor-not-allowed"
-                                    }}
-                                    content={{
-                                        button({ ready }) {
-                                            if (ready) return 'Select Audio File';
-                                            return 'Loading Uploader...';
-                                        }
-                                    }}
+                                <input 
+                                    type="file" 
+                                    accept="audio/*"
+                                    onChange={handleFileChange}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                 />
                             </div>
                         )}
                     </div>
 
                     {/* Audio Player Preview */}
-                    {formData.audioUrl && (
+                    {audioPreviewUrl && (
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                             <h3 className="font-agency text-xl text-brand-brown-dark mb-4 flex items-center gap-2">
                                 <Music className="w-5 h-5 text-brand-gold" />
                                 File Preview
                             </h3>
-                            <audio controls className="w-full rounded-lg" key={formData.audioUrl}>
-                                <source src={formData.audioUrl} />
+                            <audio controls className="w-full rounded-lg" key={audioPreviewUrl}>
+                                <source src={audioPreviewUrl} />
                                 Your browser does not support the audio element.
                             </audio>
                         </div>
