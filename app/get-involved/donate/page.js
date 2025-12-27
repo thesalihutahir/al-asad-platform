@@ -1,194 +1,265 @@
 "use client";
 
-import React, { useState } from 'react';
-import Image from 'next/image';
+import React, { useState, useEffect } from 'react';
+import { Heart, DollarSign, Banknote, Users, CheckCircle, Loader2, Target, Wallet } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Copy, Check, CreditCard, GraduationCap, Utensils, Mic, Lock } from 'lucide-react';
+// Firebase
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import Link from 'next/link';
 
 export default function DonatePage() {
-    
-    // State to handle "Copy to Clipboard" feedback
-    const [copiedId, setCopiedId] = useState(null);
+    // Data State
+    const [projects, setProjects] = useState([]);
+    const [loadingProjects, setLoadingProjects] = useState(true);
 
-    const handleCopy = (text, id) => {
-        navigator.clipboard.writeText(text);
-        setCopiedId(id);
-        setTimeout(() => setCopiedId(null), 2000); // Reset after 2 seconds
+    // Form State
+    const [selectedProject, setSelectedProject] = useState(null);
+    const [selectedAmount, setSelectedAmount] = useState(5000);
+    const [customAmount, setCustomAmount] = useState('');
+    const [isRecurring, setIsRecurring] = useState(false);
+    const [loadingPayment, setLoadingPayment] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
+
+    // Static presets for quick selection
+    const PRESET_AMOUNTS = [1000, 2500, 5000, 10000, 20000, 50000];
+
+    // 1. Fetch Projects from Firebase
+    useEffect(() => {
+        const fetchProjects = async () => {
+            try {
+                const q = query(
+                    collection(db, "donation_projects"),
+                    where("status", "==", "Active"),
+                    orderBy("createdAt", "desc")
+                );
+                const snapshot = await getDocs(q);
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                setProjects(data);
+                
+                // Select the first project by default if available
+                if (data.length > 0) setSelectedProject(data[0]);
+
+            } catch (error) {
+                console.error("Error fetching projects:", error);
+            } finally {
+                setLoadingProjects(false);
+            }
+        };
+
+        fetchProjects();
+    }, []);
+
+    // Handle Amount Logic
+    const handleAmountChange = (amount) => {
+        setSelectedAmount(amount);
+        setCustomAmount('');
     };
 
-    const accounts = [
-        {
-            id: 1,
-            type: "General Donation & Sadaqah",
-            bank: "Jaiz Bank",
-            number: "0000 000 000",
-            name: "Al-Asad Education Foundation",
-            color: "bg-brand-brown-dark",
-            textColor: "text-white",
-            iconColor: "text-brand-gold"
-        },
-        {
-            id: 2,
-            type: "Zakat Fund",
-            bank: "Jaiz Bank",
-            number: "1111 111 111",
-            name: "Al-Asad Zakat",
-            color: "bg-brand-gold",
-            textColor: "text-white",
-            iconColor: "text-white"
+    const handleCustomChange = (e) => {
+        const value = e.target.value;
+        setCustomAmount(value);
+        setSelectedAmount(parseInt(value) || 0);
+    };
+
+    // Simulate Payment
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        
+        if(selectedAmount < 100) {
+            alert("Minimum donation amount is ₦100");
+            return;
         }
-    ];
+
+        setLoadingPayment(true);
+        setIsSuccess(false);
+
+        // --- Simulated Payment Gateway Interaction ---
+        setTimeout(() => {
+            console.log(`Processing ₦${selectedAmount} for ${selectedProject?.title || 'General Fund'} (${isRecurring ? 'Recurring' : 'One-time'})`);
+            setLoadingPayment(false);
+            setIsSuccess(true);
+            // Integration with Paystack/Flutterwave comes here later
+        }, 2000);
+    };
+
+    const currencyCode = '₦';
 
     return (
-        <div className="min-h-screen flex flex-col bg-white font-lato">
+        <div className="min-h-screen flex flex-col bg-gray-50 font-lato">
             <Header />
+            <main className="flex-grow pt-10 pb-20">
+                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
 
-            <main className="flex-grow pb-16">
-
-                {/* 1. HERO SECTION */}
-                <section className="w-full relative bg-white mb-12 md:mb-20">
-                    <div className="relative w-full aspect-[2.5/1] md:aspect-[3.5/1] lg:aspect-[4/1]">
-                        <Image
-                            src="/images/heroes/get-involved-donate-hero.webp" 
-                            alt="Donate Hero"
-                            fill
-                            className="object-cover object-center"
-                            priority
-                        />
-                        {/* Gradient Overlay - FIXED NESTING */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-white via-brand-gold/40 to-transparent "></div>
-                    </div>
-
-                    <div className="relative -mt-16 md:-mt-32 text-center px-6 z-10 max-w-4xl mx-auto">
-                        <h1 className="font-agency text-4xl md:text-6xl lg:text-7xl text-brand-brown-dark mb-4 drop-shadow-md">
-                            Invest in an Eternal Legacy
+                    {/* Header Section */}
+                    <div className="text-center mb-12">
+                        <h1 className="text-4xl sm:text-5xl font-agency text-brand-brown-dark mb-3">
+                            Invest in a Life. Donate Now.
                         </h1>
-                        <div className="w-16 md:w-24 h-1 bg-brand-gold mx-auto rounded-full mb-6"></div>
-                        <p className="font-lato text-brand-brown text-sm md:text-xl max-w-2xl mx-auto leading-relaxed font-medium">
-                            "When a person dies, his deeds come to an end except for three: Sadaqah Jariyah, knowledge from which benefit is gained, or a righteous child who prays for him."
-                        </p>
-                    </div>
-                </section>
-
-                {/* 2. DIRECT BANK TRANSFER (Primary Method) */}
-                <section className="px-6 md:px-12 lg:px-24 mb-16 md:mb-24 max-w-6xl mx-auto">
-                    <div className="text-center mb-8 md:mb-12">
-                        <h2 className="font-agency text-3xl md:text-4xl text-brand-brown-dark mb-3">
-                            Direct Bank Transfer
-                        </h2>
-                        <p className="font-lato text-base md:text-lg text-brand-brown max-w-xl mx-auto">
-                            Please use the account details below for secure transfers.
+                        <p className="text-lg text-brand-brown max-w-2xl mx-auto font-lato">
+                            Your contribution directly funds education, essential resources, and community resilience. Choose a cause below.
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
-                        {accounts.map((acc) => (
-                            <div key={acc.id} className={`${acc.color} ${acc.textColor} p-8 md:p-10 rounded-3xl shadow-xl relative overflow-hidden group transform transition-transform hover:-translate-y-1`}>
-                                {/* Decorative Pattern */}
-                                <div className="absolute top-0 right-0 w-40 h-40 bg-white opacity-10 rounded-full blur-3xl -mr-10 -mt-10"></div>
-                                <div className="absolute bottom-0 left-0 w-32 h-32 bg-black opacity-5 rounded-full blur-2xl -ml-10 -mb-10"></div>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        
+                        {/* LEFT: Project Selection */}
+                        <div className="lg:col-span-2 space-y-6">
+                            
+                            <h2 className="text-2xl font-agency text-brand-brown-dark flex items-center gap-2">
+                                <Target className="w-5 h-5 text-brand-gold" /> Select a Cause
+                            </h2>
 
-                                <div className="relative z-10">
-                                    <h3 className="font-agency text-xl md:text-2xl opacity-90 mb-8 border-b border-white/20 pb-4 inline-block">
-                                        {acc.type}
-                                    </h3>
-
-                                    <div className="flex flex-col gap-6">
-                                        <div>
-                                            <p className="font-lato text-xs opacity-70 uppercase tracking-widest mb-1">Bank Name</p>
-                                            <p className="font-agency text-2xl md:text-3xl tracking-wide">{acc.bank}</p>
-                                        </div>
-
-                                        <div>
-                                            <p className="font-lato text-xs opacity-70 uppercase tracking-widest mb-1">Account Number</p>
-                                            <div className="flex items-center gap-4">
-                                                <p className="font-mono text-3xl md:text-4xl font-bold tracking-widest">{acc.number}</p>
-                                                
-                                                {/* Copy Button */}
-                                                <button 
-                                                    onClick={() => handleCopy(acc.number, acc.id)}
-                                                    className="opacity-70 hover:opacity-100 transition-opacity bg-white/10 hover:bg-white/20 p-2 rounded-lg"
-                                                    title="Copy Account Number"
-                                                >
-                                                    {copiedId === acc.id ? (
-                                                        <Check className="w-6 h-6 text-green-300" />
-                                                    ) : (
-                                                        <Copy className="w-6 h-6" />
-                                                    )}
-                                                </button>
-                                            </div>
-                                            {copiedId === acc.id && (
-                                                <span className="text-xs text-green-300 font-bold mt-1 block animate-pulse">Copied to clipboard!</span>
+                            {loadingProjects ? (
+                                <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin text-brand-gold" /></div>
+                            ) : projects.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {projects.map((project) => (
+                                        <button
+                                            key={project.id}
+                                            onClick={() => setSelectedProject(project)}
+                                            className={`text-left p-5 rounded-2xl border-2 transition-all hover:shadow-md ${
+                                                selectedProject?.id === project.id 
+                                                ? 'border-brand-gold bg-brand-sand/20 ring-1 ring-brand-gold' 
+                                                : 'border-gray-200 bg-white hover:border-brand-gold/50'
+                                            }`}
+                                        >
+                                            <h3 className="font-bold text-brand-brown-dark text-lg mb-1">{project.title}</h3>
+                                            <p className="text-xs text-gray-500 line-clamp-2">{project.description}</p>
+                                            {project.accountNumber && (
+                                                <div className="mt-3 pt-3 border-t border-gray-200/50 flex items-center gap-2 text-xs text-gray-400 font-mono">
+                                                    <Wallet className="w-3 h-3" /> {project.bankName}: {project.accountNumber}
+                                                </div>
                                             )}
-                                        </div>
+                                        </button>
+                                    ))}
+                                    {/* General Fund Option (Always there) */}
+                                    <button
+                                        onClick={() => setSelectedProject({ id: 'general', title: 'General Fund', description: 'Used where needed most.' })}
+                                        className={`text-left p-5 rounded-2xl border-2 transition-all hover:shadow-md ${
+                                            selectedProject?.id === 'general' 
+                                            ? 'border-brand-gold bg-brand-sand/20 ring-1 ring-brand-gold' 
+                                            : 'border-gray-200 bg-white hover:border-brand-gold/50'
+                                        }`}
+                                    >
+                                        <h3 className="font-bold text-brand-brown-dark text-lg mb-1">General Fund</h3>
+                                        <p className="text-xs text-gray-500">Allocated where the need is greatest.</p>
+                                    </button>
+                                </div>
+                            ) : (
+                                <p className="text-gray-500">No specific projects active. Donations go to General Fund.</p>
+                            )}
+                        </div>
 
-                                        <div>
-                                            <p className="font-lato text-xs opacity-70 uppercase tracking-widest mb-1">Account Name</p>
-                                            <p className="font-lato text-sm md:text-lg font-bold">{acc.name}</p>
-                                        </div>
+                        {/* RIGHT: Payment Form */}
+                        <div className="lg:col-span-1">
+                            <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl border border-gray-100 sticky top-24">
+                                
+                                {isSuccess ? (
+                                    <div className="text-center py-8">
+                                        <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4 animate-bounce" />
+                                        <h2 className="text-2xl font-agency text-gray-800">Payment Successful!</h2>
+                                        <p className="text-sm text-gray-600 mt-2">
+                                            May Allah reward you. Your ₦{selectedAmount.toLocaleString()} donation to <strong>{selectedProject?.title}</strong> has been recorded.
+                                        </p>
+                                        <button onClick={() => setIsSuccess(false)} className="mt-6 text-brand-gold font-bold text-sm hover:underline">
+                                            Donate Again
+                                        </button>
                                     </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </section>
+                                ) : (
+                                    <form onSubmit={handleSubmit} className="space-y-6">
+                                        
+                                        {/* Frequency */}
+                                        <div className="flex bg-gray-100 p-1 rounded-xl">
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsRecurring(false)}
+                                                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${!isRecurring ? 'bg-white text-brand-brown-dark shadow-sm' : 'text-gray-500'}`}
+                                            >
+                                                One-Time
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsRecurring(true)}
+                                                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${isRecurring ? 'bg-white text-brand-brown-dark shadow-sm' : 'text-gray-500'}`}
+                                            >
+                                                Monthly
+                                            </button>
+                                        </div>
 
-                {/* 3. ONLINE PAYMENT (Placeholder) */}
-                <section className="px-6 md:px-12 lg:px-24 mb-16 md:mb-24 max-w-2xl mx-auto">
-                    <div className="bg-brand-sand/30 border-2 border-dashed border-brand-brown/20 rounded-3xl p-8 md:p-12 text-center relative overflow-hidden">
-                        <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 text-brand-gold shadow-sm">
-                            <CreditCard className="w-8 h-8 md:w-10 md:h-10" />
+                                        {/* Amount Grid */}
+                                        <div>
+                                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block">Select Amount ({currencyCode})</label>
+                                            <div className="grid grid-cols-3 gap-2 mb-3">
+                                                {PRESET_AMOUNTS.map((amt) => (
+                                                    <button
+                                                        key={amt}
+                                                        type="button"
+                                                        onClick={() => handleAmountChange(amt)}
+                                                        className={`py-2 px-1 rounded-lg text-sm font-bold border transition-colors ${
+                                                            selectedAmount === amt && customAmount === ''
+                                                            ? 'bg-brand-brown-dark text-white border-brand-brown-dark'
+                                                            : 'bg-white text-gray-600 border-gray-200 hover:border-brand-gold'
+                                                        }`}
+                                                    >
+                                                        {amt.toLocaleString()}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">{currencyCode}</span>
+                                                <input
+                                                    type="number"
+                                                    placeholder="Custom Amount"
+                                                    value={customAmount}
+                                                    onChange={handleCustomChange}
+                                                    onFocus={() => setSelectedAmount(0)}
+                                                    className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 font-bold text-gray-700"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Donor Details */}
+                                        <div className="space-y-3">
+                                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block">Your Information</label>
+                                            <div className="relative">
+                                                <Users className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
+                                                <input type="text" placeholder="Full Name (Optional)" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 text-sm" />
+                                            </div>
+                                            <div className="relative">
+                                                <Banknote className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
+                                                <input type="email" placeholder="Email Address *" required className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 text-sm" />
+                                            </div>
+                                        </div>
+
+                                        {/* Submit */}
+                                        <button
+                                            type="submit"
+                                            disabled={loadingPayment || selectedAmount < 100}
+                                            className="w-full py-4 bg-brand-gold text-white font-agency text-xl rounded-xl hover:bg-brand-brown-dark transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:transform-none disabled:cursor-not-allowed"
+                                        >
+                                            {loadingPayment ? (
+                                                <Loader2 className="w-6 h-6 animate-spin" />
+                                            ) : (
+                                                <>
+                                                    <Heart className="w-5 h-5 fill-white" /> Donate {currencyCode}{selectedAmount.toLocaleString()}
+                                                </>
+                                            )}
+                                        </button>
+                                        
+                                        <p className="text-center text-[10px] text-gray-400 flex items-center justify-center gap-1">
+                                            <CheckCircle className="w-3 h-3" /> Secure Payment
+                                        </p>
+                                    </form>
+                                )}
+                            </div>
                         </div>
-                        <h3 className="font-agency text-2xl md:text-3xl text-brand-brown-dark mb-3">
-                            Pay with Card
-                        </h3>
-                        <p className="font-lato text-sm md:text-lg text-brand-brown mb-6 max-w-md mx-auto">
-                            Secure online donation integration via Paystack/Flutterwave is currently in development.
-                        </p>
-                        <div className="inline-flex items-center gap-2 px-6 py-2 bg-gray-200 text-gray-500 font-bold text-xs rounded-full uppercase tracking-wider cursor-not-allowed">
-                            <Lock className="w-3 h-3" /> Coming Soon
-                        </div>
+
                     </div>
-                </section>
-
-                {/* 4. IMPACT BREAKDOWN */}
-                <section className="px-6 md:px-12 lg:px-24 max-w-7xl mx-auto">
-                    <div className="bg-brand-brown-dark text-white rounded-3xl p-10 md:p-16 text-center shadow-2xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-brand-gold opacity-5 rounded-full blur-3xl -mr-20 -mt-20"></div>
-
-                        <h2 className="font-agency text-3xl md:text-5xl mb-12 relative z-10">Where does your donation go?</h2>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-16 relative z-10">
-                            <div className="flex flex-col items-center">
-                                <div className="w-16 h-16 md:w-20 md:h-20 bg-white/10 rounded-full flex items-center justify-center mb-4 md:mb-6 text-brand-gold">
-                                    <GraduationCap className="w-8 h-8 md:w-10 md:h-10" />
-                                </div>
-                                <h3 className="font-agency text-xl md:text-2xl text-brand-gold mb-2">Scholarships</h3>
-                                <p className="font-lato text-sm md:text-base text-white/70 max-w-xs mx-auto">Supporting indigent students with tuition, books, and necessary learning materials.</p>
-                            </div>
-
-                            <div className="flex flex-col items-center">
-                                <div className="w-16 h-16 md:w-20 md:h-20 bg-white/10 rounded-full flex items-center justify-center mb-4 md:mb-6 text-brand-gold">
-                                    <Utensils className="w-8 h-8 md:w-10 md:h-10" />
-                                </div>
-                                <h3 className="font-agency text-xl md:text-2xl text-brand-gold mb-2">Welfare</h3>
-                                <p className="font-lato text-sm md:text-base text-white/70 max-w-xs mx-auto">Feeding programs, Ramadan packages, and emergency relief for vulnerable families.</p>
-                            </div>
-
-                            <div className="flex flex-col items-center">
-                                <div className="w-16 h-16 md:w-20 md:h-20 bg-white/10 rounded-full flex items-center justify-center mb-4 md:mb-6 text-brand-gold">
-                                    <Mic className="w-8 h-8 md:w-10 md:h-10" />
-                                </div>
-                                <h3 className="font-agency text-xl md:text-2xl text-brand-gold mb-2">Dawah</h3>
-                                <p className="font-lato text-sm md:text-base text-white/70 max-w-xs mx-auto">Producing educational content, organizing lectures, and community outreach.</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
+                </div>
             </main>
-
             <Footer />
         </div>
     );
