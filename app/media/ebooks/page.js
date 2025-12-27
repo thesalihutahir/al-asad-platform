@@ -2,71 +2,63 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 // Firebase Imports
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
-import { Book, Download, Library, Filter, ArrowRight, Loader2 } from 'lucide-react';
+import { Book, Download, Library, Filter, Loader2 } from 'lucide-react';
 
 export default function EbooksPage() {
 
     // --- STATE ---
     const [books, setBooks] = useState([]);
+    const [collections, setCollections] = useState([]); // Real Collections Data
     const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState("All Books");
     const [visibleCount, setVisibleCount] = useState(10);
-
-    // Mock Data for Book Collections (Series backend coming soon)
-    const collections = [
-        {
-            id: 'tafsir-volumes',
-            title: "Tafsir Volumes (1-10)",
-            count: 10,
-            image: "/hero.jpg",
-        },
-        {
-            id: 'ramadan-essentials',
-            title: "Ramadan Essentials",
-            count: 5,
-            image: "/hero.jpg", 
-        },
-        {
-            id: 'student-research',
-            title: "Student Research Papers",
-            count: 24,
-            image: "/hero.jpg", 
-        }
-    ];
 
     const filters = ["All Books", "English", "Hausa", "Arabic", "Tafsir", "Fiqh", "History"];
 
     // --- FETCH DATA ---
     useEffect(() => {
-        const fetchBooks = async () => {
+        const fetchData = async () => {
             try {
-                const q = query(
-                    collection(db, "ebooks"),
-                    orderBy("createdAt", "desc")
-                );
-                
-                const querySnapshot = await getDocs(q);
-                const fetchedBooks = querySnapshot.docs.map(doc => ({
+                // 1. Fetch Books
+                const qBooks = query(collection(db, "ebooks"), orderBy("createdAt", "desc"));
+                const booksSnapshot = await getDocs(qBooks);
+                const fetchedBooks = booksSnapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 }));
-
                 setBooks(fetchedBooks);
+
+                // 2. Fetch Collections
+                const qCollections = query(collection(db, "ebook_collections"), orderBy("createdAt", "desc"));
+                const collectionsSnapshot = await getDocs(qCollections);
+                const fetchedCollections = collectionsSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                setCollections(fetchedCollections);
+
             } catch (error) {
-                console.error("Error fetching books:", error);
+                console.error("Error fetching library data:", error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchBooks();
+        fetchData();
     }, []);
+
+    // --- HELPER: Get Book Count per Collection ---
+    const getCollectionBookCount = (collectionTitle, storedCount) => {
+        if (books.length > 0) {
+            return books.filter(b => b.collection === collectionTitle).length;
+        }
+        return storedCount || 0;
+    };
 
     // --- FILTER LOGIC ---
     const filteredBooks = activeFilter === "All Books" 
@@ -94,7 +86,6 @@ export default function EbooksPage() {
                             className="object-cover object-center"
                             priority
                         />
-                        {/* Gradient Overlay */}
                         <div className="absolute inset-0 bg-gradient-to-t from-white via-brand-gold/40 to-transparent "></div>
                     </div>
 
@@ -115,49 +106,51 @@ export default function EbooksPage() {
                     </div>
                 ) : (
                     <>
-                        {/* 2. FEATURED COLLECTIONS (Static for now) */}
-                        <section className="px-6 md:px-12 lg:px-24 mb-12 md:mb-20">
-                            <div className="flex justify-between items-end mb-6 border-b border-gray-100 pb-2">
-                                <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark">
-                                    Featured Collections
-                                </h2>
-                                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden md:block">
-                                    Curated Sets
-                                </span>
-                            </div>
+                        {/* 2. FEATURED COLLECTIONS */}
+                        {collections.length > 0 && (
+                            <section className="px-6 md:px-12 lg:px-24 mb-12 md:mb-20">
+                                <div className="flex justify-between items-end mb-6 border-b border-gray-100 pb-2">
+                                    <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark">
+                                        Featured Collections
+                                    </h2>
+                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden md:block">
+                                        Curated Sets
+                                    </span>
+                                </div>
 
-                            <div className="flex overflow-x-auto gap-4 pb-6 md:grid md:grid-cols-3 md:gap-8 scrollbar-hide snap-x pt-2 pl-2">
-                                {collections.map((col) => (
-                                    <div 
-                                        key={col.id} 
-                                        className="snap-center min-w-[240px] md:min-w-0 bg-brand-sand/20 rounded-2xl p-4 flex items-center gap-4 cursor-pointer group hover:bg-brand-sand/40 transition-colors border border-transparent hover:border-brand-gold/20"
-                                    >
-                                        <div className="relative w-20 h-28 md:w-24 md:h-32 flex-shrink-0 shadow-lg group-hover:shadow-2xl transition-all duration-300 transform group-hover:-translate-y-1 group-hover:rotate-2">
-                                            <Image 
-                                                src={col.image} 
-                                                alt={col.title} 
-                                                fill 
-                                                className="object-cover rounded-md"
-                                            />
-                                            <div className="absolute top-1 -right-1 w-full h-full bg-gray-200 rounded-md -z-10 border border-gray-300"></div>
-                                            <div className="absolute top-2 -right-2 w-full h-full bg-gray-100 rounded-md -z-20 border border-gray-300"></div>
+                                <div className="flex overflow-x-auto gap-4 pb-6 md:grid md:grid-cols-3 md:gap-8 scrollbar-hide snap-x pt-2 pl-2">
+                                    {collections.map((col) => (
+                                        <div 
+                                            key={col.id} 
+                                            className="snap-center min-w-[240px] md:min-w-0 bg-brand-sand/20 rounded-2xl p-4 flex items-center gap-4 cursor-pointer group hover:bg-brand-sand/40 transition-colors border border-transparent hover:border-brand-gold/20"
+                                        >
+                                            <div className="relative w-20 h-28 md:w-24 md:h-32 flex-shrink-0 shadow-lg group-hover:shadow-2xl transition-all duration-300 transform group-hover:-translate-y-1 group-hover:rotate-2">
+                                                <Image 
+                                                    src={col.cover || "/fallback.webp"} 
+                                                    alt={col.title} 
+                                                    fill 
+                                                    className="object-cover rounded-md"
+                                                />
+                                                <div className="absolute top-1 -right-1 w-full h-full bg-gray-200 rounded-md -z-10 border border-gray-300"></div>
+                                                <div className="absolute top-2 -right-2 w-full h-full bg-gray-100 rounded-md -z-20 border border-gray-300"></div>
+                                            </div>
+
+                                            <div>
+                                                <h3 className="font-agency text-xl text-brand-brown-dark leading-tight group-hover:text-brand-gold transition-colors line-clamp-2">
+                                                    {col.title}
+                                                </h3>
+                                                <p className="text-xs text-gray-500 mt-2 font-bold uppercase tracking-wider flex items-center gap-1">
+                                                    <Library className="w-3 h-3" /> {getCollectionBookCount(col.title, col.bookCount)} Books
+                                                </p>
+                                                <span className="text-[10px] text-brand-brown underline mt-2 block opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    View Collection
+                                                </span>
+                                            </div>
                                         </div>
-                                        
-                                        <div>
-                                            <h3 className="font-agency text-xl text-brand-brown-dark leading-tight group-hover:text-brand-gold transition-colors">
-                                                {col.title}
-                                            </h3>
-                                            <p className="text-xs text-gray-500 mt-2 font-bold uppercase tracking-wider flex items-center gap-1">
-                                                <Library className="w-3 h-3" /> {col.count} Books
-                                            </p>
-                                            <span className="text-[10px] text-brand-brown underline mt-2 block opacity-0 group-hover:opacity-100 transition-opacity">
-                                                View Collection
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
 
                         {/* 3. FILTER BAR */}
                         <section className="px-6 md:px-12 lg:px-24 mb-8">
@@ -194,16 +187,16 @@ export default function EbooksPage() {
                                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-8 md:gap-x-8 md:gap-y-12">
                                     {visibleBooks.map((book) => (
                                         <div key={book.id} className="group flex flex-col items-start cursor-pointer">
-                                            
+
                                             {/* Book Cover Card */}
                                             <div className="relative w-full aspect-[2/3] bg-gray-200 rounded-lg md:rounded-xl overflow-hidden shadow-md mb-4 transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-2xl border border-gray-100">
                                                 <Image
-                                                    src={book.coverUrl || "/hero.jpg"}
+                                                    src={book.coverUrl || "/fallback.webp"}
                                                     alt={book.title}
                                                     fill
                                                     className="object-cover"
                                                 />
-                                                
+
                                                 {/* Hover Overlay with Download Icon */}
                                                 <a 
                                                     href={book.pdfUrl} 
@@ -231,10 +224,10 @@ export default function EbooksPage() {
                                             <p className="font-lato text-xs md:text-sm text-gray-500 mb-3 line-clamp-1">
                                                 by {book.author}
                                             </p>
-                                            
+
                                             <div className="mt-auto flex items-center gap-2">
                                                 <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded border border-gray-200">
-                                                    PDF • {book.fileSize || 'Unknown Size'}
+                                                    PDF • {book.fileSize || 'PDF'}
                                                 </span>
                                             </div>
                                         </div>
