@@ -15,8 +15,8 @@ import {
     PlayCircle, 
     ListVideo, 
     LayoutList, 
-    MoreVertical, 
-    Loader2
+    Loader2,
+    Image as ImageIcon
 } from 'lucide-react';
 
 export default function ManageVideosPage() {
@@ -83,7 +83,6 @@ export default function ManageVideosPage() {
                             Upload Video
                         </Link>
                     ) : (
-                        // CHANGED: Now links to a new page instead of opening a modal
                         <Link 
                             href="/admin/videos/playlists/new"
                             className="flex items-center gap-2 px-5 py-2.5 bg-brand-brown-dark text-white rounded-xl text-sm font-bold hover:bg-brand-gold transition-colors shadow-md"
@@ -150,7 +149,7 @@ export default function ManageVideosPage() {
                                                     <td className="px-6 py-4">
                                                         <div className="flex items-center gap-4">
                                                             <div className="relative w-16 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-black">
-                                                                <Image src={video.thumbnail || "/hero.jpg"} alt={video.title} fill className="object-cover opacity-80" />
+                                                                <Image src={video.thumbnail || "/fallback.webp"} alt={video.title} fill className="object-cover opacity-80" />
                                                             </div>
                                                             <div>
                                                                 <h3 className="font-bold text-brand-brown-dark text-sm line-clamp-1 max-w-[200px]">{video.title}</h3>
@@ -188,7 +187,7 @@ export default function ManageVideosPage() {
                                         {playlists.map((list) => (
                                             <div key={list.id} className="group border border-gray-100 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:border-brand-gold/30">
                                                 <div className="relative w-full aspect-video bg-gray-100">
-                                                    <Image src={list.cover} alt={list.title} fill className="object-cover" />
+                                                    <Image src={list.cover || "/fallback.webp"} alt={list.title} fill className="object-cover" />
                                                     <div className="absolute bottom-3 right-3 bg-black/80 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
                                                         <ListVideo className="w-3 h-3" /> {list.count || 0}
                                                     </div>
