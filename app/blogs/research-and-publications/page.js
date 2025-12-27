@@ -14,9 +14,9 @@ export default function ResearchPage() {
 
     // --- STATE ---
     const [papers, setPapers] = useState([]);
-    const [series, setSeries] = useState([]); // Dynamic Research Series
+    const [series, setSeries] = useState([]); 
     const [featuredPaper, setFeaturedPaper] = useState(null);
-    const [listPapers, setListPapers] = useState([]); // Papers excluding the featured one
+    const [listPapers, setListPapers] = useState([]); 
     const [loading, setLoading] = useState(true);
 
     // Search & Filter State
@@ -29,10 +29,11 @@ export default function ResearchPage() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // 1. Fetch Research Papers
+                // 1. Fetch Research Papers (Published only)
                 const qPapers = query(
                     collection(db, "posts"),
                     where("category", "==", "Research"),
+                    where("status", "==", "Published"),
                     orderBy("createdAt", "desc")
                 );
                 const papersSnapshot = await getDocs(qPapers);
@@ -76,7 +77,7 @@ export default function ResearchPage() {
     const formatDate = (dateString) => {
         if (!dateString) return '';
         const date = new Date(dateString);
-        return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }); // e.g. Oct 2024
+        return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }); 
     };
 
     // --- HELPER: Count Papers in Series ---
@@ -89,8 +90,9 @@ export default function ResearchPage() {
         const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                               item.excerpt?.toLowerCase().includes(searchTerm.toLowerCase());
 
+        // Simple tag matching logic (case insensitive)
         const matchesFilter = activeFilter === 'All Papers' || 
-                              (item.tags && item.tags.some(tag => tag.toLowerCase() === activeFilter.toLowerCase()));
+                              (item.tags && item.tags.some(tag => tag.toLowerCase().includes(activeFilter.toLowerCase())));
 
         return matchesSearch && matchesFilter;
     });
@@ -167,7 +169,7 @@ export default function ResearchPage() {
                             </section>
                         )}
 
-                        {/* 3. FEATURED PAPER (Banner) */}
+{/* 3. FEATURED PAPER (Banner) */}
                         {featuredPaper && (
                             <section className="px-6 md:px-12 lg:px-24 mb-16 md:mb-20 max-w-7xl mx-auto">
                                 <div className="flex justify-between items-end mb-6 border-b border-gray-100 pb-2">
@@ -241,7 +243,8 @@ export default function ResearchPage() {
                                 </div>
                             </section>
                         )}
-{/* 4. FILTER BAR */}
+
+                        {/* 4. FILTER BAR */}
                         <section className="px-6 md:px-12 lg:px-24 mb-8 max-w-7xl mx-auto">
                              <div className="flex items-center gap-2 mb-4 md:hidden">
                                 <Filter className="w-4 h-4 text-brand-brown" />
