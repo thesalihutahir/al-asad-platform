@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 // Firebase Imports
@@ -24,7 +23,7 @@ export default function PodcastsPage() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch Episodes
+                // 1. Fetch Episodes
                 const qEpisodes = query(collection(db, "podcasts"), orderBy("createdAt", "desc"));
                 const epSnapshot = await getDocs(qEpisodes);
                 const fetchedEpisodes = epSnapshot.docs.map(doc => ({
@@ -33,11 +32,12 @@ export default function PodcastsPage() {
                 }));
                 setEpisodes(fetchedEpisodes);
 
+                // Set Featured (Newest Episode)
                 if (fetchedEpisodes.length > 0) {
-                    setFeaturedEpisode(fetchedEpisodes[0]); // Newest is Featured
+                    setFeaturedEpisode(fetchedEpisodes[0]); 
                 }
 
-                // Fetch Shows
+                // 2. Fetch Shows
                 const qShows = query(collection(db, "podcast_shows"), orderBy("createdAt", "desc"));
                 const showSnapshot = await getDocs(qShows);
                 const fetchedShows = showSnapshot.docs.map(doc => ({
@@ -64,9 +64,10 @@ export default function PodcastsPage() {
     };
 
     // --- FILTER LOGIC ---
-    // If filter is active, only show episodes belonging to that show
+    // If "All Shows", we skip the first one (featured) to avoid duplication in the grid, 
+    // unless you prefer to show it again. For now, skipping index 0 is a common pattern.
     const listEpisodes = activeFilter === "All Shows" 
-        ? episodes.slice(1) // Exclude featured if "All" is selected (optional design choice)
+        ? episodes.slice(1) 
         : episodes.filter(ep => ep.show === activeFilter);
 
     const visibleEpisodes = listEpisodes.slice(0, visibleCount);
@@ -109,62 +110,64 @@ export default function PodcastsPage() {
                 ) : (
                     <>
                         {/* 2. BROWSE SERIES (SHOWS) */}
-                        <section className="px-6 md:px-12 lg:px-24 mb-12 md:mb-20">
-                            <div className="flex justify-between items-end mb-6 border-b border-gray-100 pb-2">
-                                <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark">
-                                    Shows & Series
-                                </h2>
-                                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden md:block">
-                                    Browse Collections
-                                </span>
-                            </div>
-
-                            <div className="flex overflow-x-auto gap-4 pb-4 md:grid md:grid-cols-4 md:gap-8 scrollbar-hide snap-x">
-                                {/* "All Shows" Card */}
-                                <div 
-                                    onClick={() => setActiveFilter("All Shows")}
-                                    className={`snap-center min-w-[140px] md:min-w-0 group cursor-pointer text-center md:text-left ${activeFilter === "All Shows" ? 'opacity-100' : 'opacity-60 hover:opacity-100'}`}
-                                >
-                                    <div className="relative w-full aspect-square rounded-xl overflow-hidden shadow-md bg-brand-brown-dark flex items-center justify-center text-white">
-                                        <Mic className="w-10 h-10" />
-                                    </div>
-                                    <div className="mt-3">
-                                        <h3 className="font-agency text-base md:text-lg text-brand-brown-dark leading-tight">All Episodes</h3>
-                                    </div>
+                        {shows.length > 0 && (
+                            <section className="px-6 md:px-12 lg:px-24 mb-12 md:mb-20">
+                                <div className="flex justify-between items-end mb-6 border-b border-gray-100 pb-2">
+                                    <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark">
+                                        Shows & Series
+                                    </h2>
+                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden md:block">
+                                        Browse Collections
+                                    </span>
                                 </div>
 
-                                {shows.map((show) => (
+                                <div className="flex overflow-x-auto gap-4 pb-4 md:grid md:grid-cols-4 md:gap-8 scrollbar-hide snap-x">
+                                    {/* "All Shows" Card */}
                                     <div 
-                                        key={show.id} 
-                                        onClick={() => setActiveFilter(show.title)}
-                                        className={`snap-center min-w-[140px] md:min-w-0 group cursor-pointer ${activeFilter === show.title ? 'opacity-100 ring-2 ring-brand-gold rounded-xl p-1' : 'opacity-100'}`}
+                                        onClick={() => setActiveFilter("All Shows")}
+                                        className={`snap-center min-w-[140px] md:min-w-0 group cursor-pointer text-center md:text-left ${activeFilter === "All Shows" ? 'opacity-100' : 'opacity-60 hover:opacity-100'}`}
                                     >
-                                        <div className="relative w-full aspect-square rounded-xl overflow-hidden shadow-md group-hover:shadow-xl transition-all bg-gray-200">
-                                            <Image 
-                                                src={show.cover || "/hero.jpg"} 
-                                                alt={show.title} 
-                                                fill 
-                                                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                                            />
-                                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <div className="bg-white/20 backdrop-blur-sm p-3 rounded-full">
-                                                    <Headphones className="w-6 h-6 text-white" />
-                                                </div>
-                                            </div>
+                                        <div className="relative w-full aspect-square rounded-xl overflow-hidden shadow-md bg-brand-brown-dark flex items-center justify-center text-white">
+                                            <Mic className="w-10 h-10" />
                                         </div>
-                                        
-                                        <div className="mt-3 text-center md:text-left">
-                                            <h3 className="font-agency text-base md:text-lg text-brand-brown-dark leading-tight group-hover:text-brand-gold transition-colors">
-                                                {show.title}
-                                            </h3>
-                                            <p className="text-[10px] md:text-xs text-gray-500 mt-1 uppercase tracking-wide">
-                                                {show.host}
-                                            </p>
+                                        <div className="mt-3">
+                                            <h3 className="font-agency text-base md:text-lg text-brand-brown-dark leading-tight">All Episodes</h3>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        </section>
+
+                                    {shows.map((show) => (
+                                        <div 
+                                            key={show.id} 
+                                            onClick={() => setActiveFilter(show.title)}
+                                            className={`snap-center min-w-[140px] md:min-w-0 group cursor-pointer ${activeFilter === show.title ? 'opacity-100 ring-2 ring-brand-gold rounded-xl p-1' : 'opacity-100'}`}
+                                        >
+                                            <div className="relative w-full aspect-square rounded-xl overflow-hidden shadow-md group-hover:shadow-xl transition-all bg-gray-200">
+                                                <Image 
+                                                    src={show.cover || "/fallback.webp"} 
+                                                    alt={show.title} 
+                                                    fill 
+                                                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                                />
+                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <div className="bg-white/20 backdrop-blur-sm p-3 rounded-full">
+                                                        <Headphones className="w-6 h-6 text-white" />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-3 text-center md:text-left">
+                                                <h3 className="font-agency text-base md:text-lg text-brand-brown-dark leading-tight group-hover:text-brand-gold transition-colors">
+                                                    {show.title}
+                                                </h3>
+                                                <p className="text-[10px] md:text-xs text-gray-500 mt-1 uppercase tracking-wide">
+                                                    {show.host}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
 
                         {/* 3. LATEST EPISODE CARD (FEATURED) */}
                         {featuredEpisode && activeFilter === "All Shows" && (
@@ -181,7 +184,7 @@ export default function PodcastsPage() {
 
                                     {/* Large Art */}
                                     <div className="relative w-32 h-32 md:w-64 md:h-64 flex-shrink-0 rounded-2xl overflow-hidden shadow-2xl border-2 border-brand-gold/20 transform md:-rotate-3 transition-transform hover:rotate-0 bg-black">
-                                        <Image src={featuredEpisode.thumbnail || "/hero.jpg"} alt="Featured Podcast" fill className="object-cover" />
+                                        <Image src={featuredEpisode.thumbnail || "/fallback.webp"} alt="Featured Podcast" fill className="object-cover" />
                                     </div>
 
                                     {/* Text Content */}
@@ -193,7 +196,7 @@ export default function PodcastsPage() {
                                             {featuredEpisode.title}
                                         </h2>
                                         <p className="font-lato text-sm md:text-lg text-white/70 mb-8 max-w-xl mx-auto md:mx-0 leading-relaxed line-clamp-3">
-                                            {featuredEpisode.description}
+                                            {featuredEpisode.description || "Tune in to our latest discussion..."}
                                         </p>
                                         <div className="flex flex-col md:flex-row items-center gap-4">
                                             <a 
@@ -231,7 +234,7 @@ export default function PodcastsPage() {
                                         >
                                             {/* Square Thumbnail */}
                                             <div className="relative w-16 h-16 md:w-24 md:h-24 flex-shrink-0 rounded-xl overflow-hidden bg-brand-sand shadow-inner">
-                                                <Image src={ep.thumbnail || "/hero.jpg"} alt={ep.title} fill className="object-cover transition-transform duration-500 group-hover:scale-110" />
+                                                <Image src={ep.thumbnail || "/fallback.webp"} alt={ep.title} fill className="object-cover transition-transform duration-500 group-hover:scale-110" />
                                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <Play className="w-6 h-6 text-white fill-current" />
                                                 </div>
@@ -244,7 +247,6 @@ export default function PodcastsPage() {
                                                         EP {ep.episodeNumber || '0'}
                                                     </span>
                                                     <span className="text-[10px] md:text-xs text-gray-400 font-lato flex items-center gap-1">
-                                                        {/* Duration not strictly available, using icon */}
                                                         <Clock className="w-3 h-3" /> Audio
                                                     </span>
                                                 </div>
@@ -255,12 +257,12 @@ export default function PodcastsPage() {
                                                 <p className="text-xs md:text-sm text-brand-gold font-bold uppercase tracking-wide flex items-center gap-1">
                                                     <Mic className="w-3 h-3" /> {ep.show}
                                                 </p>
-                                                
+
                                                 <p className="hidden md:block text-xs text-gray-500 mt-2">
                                                     Published: {formatDate(ep.date)}
                                                 </p>
                                             </div>
-                                            
+
                                             {/* Mobile Date */}
                                             <div className="md:hidden flex-shrink-0 flex flex-col items-end">
                                                 <Calendar className="w-4 h-4 text-gray-300 mb-1" />
