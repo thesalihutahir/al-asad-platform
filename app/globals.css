@@ -3,6 +3,14 @@
 @tailwind utilities;
 
 /* --- FONT FACE DEFINITIONS --- */
+/* Traditional Arabic (Arabic Font) */
+@font-face {
+  font-family: 'Traditional Arabic';
+  src: url('/fonts/TradArabicBoldUnicode.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
 
 /* Agency Regular (Heading Font) */
 @font-face {
