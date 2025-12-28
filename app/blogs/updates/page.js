@@ -5,20 +5,22 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import Loader from '@/components/Loader';
 // Firebase Imports
 import { db } from '@/lib/firebase';
 import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
-import { Calendar, ArrowRight, Bell, Clock, Filter, Loader2 } from 'lucide-react';
+import { Calendar, ArrowRight, Bell, Clock, Filter, Globe } from 'lucide-react';
 
 export default function UpdatesPage() {
 
     // --- STATE ---
-    const [featured, setFeatured] = useState(null);
-    const [updates, setUpdates] = useState([]);
+    const [allUpdates, setAllUpdates] = useState([]);
+    const [filteredUpdates, setFilteredUpdates] = useState([]);
     const [loading, setLoading] = useState(true);
-
-    // Static Filters (Visual only for now)
-    const years = ["All", "2024", "2023", "Archive"];
+    
+    // Filters
+    const [activeLang, setActiveLang] = useState('All');
+    const languages = ["All", "English", "Hausa", "Arabic"];
 
     // --- FETCH DATA ---
     useEffect(() => {
@@ -38,10 +40,7 @@ export default function UpdatesPage() {
                     ...doc.data()
                 }));
 
-                if (fetchedNews.length > 0) {
-                    setFeatured(fetchedNews[0]); // Newest is Featured
-                    setUpdates(fetchedNews.slice(1)); // Rest go to grid
-                }
+                setAllUpdates(fetchedNews);
             } catch (error) {
                 console.error("Error fetching news:", error);
             } finally {
@@ -52,23 +51,40 @@ export default function UpdatesPage() {
         fetchUpdates();
     }, []);
 
+    // --- FILTER LOGIC ---
+    useEffect(() => {
+        if (activeLang === 'All') {
+            setFilteredUpdates(allUpdates);
+        } else {
+            setFilteredUpdates(allUpdates.filter(item => item.language === activeLang));
+        }
+    }, [activeLang, allUpdates]);
+
     // --- HELPER: Parse Date for UI (Splits into Day and Month) ---
-    const getDateParts = (dateString) => {
-        if (!dateString) return { day: '00', month: 'OCT', year: '0000', full: '' };
-        const date = new Date(dateString);
-        return {
-            day: date.getDate(),
-            month: date.toLocaleString('default', { month: 'short' }).toUpperCase(),
-            year: date.getFullYear(),
-            full: date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-        };
+    const getDateParts = (dateInput) => {
+        try {
+            if (!dateInput) return { day: '00', month: 'OCT', year: '0000', full: '' };
+            const date = dateInput.toDate ? dateInput.toDate() : new Date(dateInput);
+            return {
+                day: date.getDate(),
+                month: date.toLocaleString('default', { month: 'short' }).toUpperCase(),
+                year: date.getFullYear(),
+                full: date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+            };
+        } catch (e) {
+            return { day: '00', month: '---', year: '----', full: 'Invalid Date' };
+        }
     };
 
     // --- HELPER: Get Display Category ---
     const getDisplayCategory = (item) => {
-        if (item.tags && item.tags.length > 0) return item.tags[0]; // Use first tag if available
-        return item.category; // Default to "News"
+        if (item.language) return item.language;
+        return item.category;
     };
+
+    // Split featured vs grid
+    const featured = filteredUpdates.length > 0 ? filteredUpdates[0] : null;
+    const gridUpdates = filteredUpdates.length > 0 ? filteredUpdates.slice(1) : [];
 
     return (
         <div className="min-h-screen flex flex-col bg-white font-lato">
@@ -101,7 +117,7 @@ export default function UpdatesPage() {
 
                 {loading ? (
                     <div className="flex justify-center items-center py-20">
-                        <Loader2 className="w-10 h-10 text-brand-gold animate-spin" />
+                        <Loader size="md" />
                     </div>
                 ) : (
                     <>
@@ -123,21 +139,21 @@ export default function UpdatesPage() {
                                     </div>
 
                                     {/* Content Side */}
-                                    <div className="p-8 md:p-12 text-white flex flex-col justify-center md:w-1/2">
-                                        <div className="flex items-center gap-2 mb-4 opacity-80">
+                                    <div className="p-8 md:p-12 text-white flex flex-col justify-center md:w-1/2" dir={featured.language === 'Arabic' ? 'rtl' : 'ltr'}>
+                                        <div className="flex items-center gap-2 mb-4 opacity-80" dir="ltr">
                                             <Calendar className="w-4 h-4" />
                                             <span className="text-sm font-bold">{getDateParts(featured.date).full}</span>
                                         </div>
                                         <Link href={`/blogs/read/${featured.id}`}>
-                                            <h2 className="font-agency text-3xl md:text-5xl leading-tight mb-4 hover:text-brand-gold transition-colors cursor-pointer">
+                                            <h2 className={`font-agency text-3xl md:text-5xl leading-tight mb-4 hover:text-brand-gold transition-colors cursor-pointer ${featured.language === 'Arabic' ? 'font-tajawal font-bold' : ''}`}>
                                                 {featured.title}
                                             </h2>
                                         </Link>
-                                        <p className="font-lato text-white/80 text-sm md:text-lg mb-8 leading-relaxed line-clamp-3">
+                                        <p className={`font-lato text-white/80 text-sm md:text-lg mb-8 leading-relaxed line-clamp-3 ${featured.language === 'Arabic' ? 'font-arabic' : ''}`}>
                                             {featured.excerpt}
                                         </p>
                                         <Link href={`/blogs/read/${featured.id}`} className="inline-flex items-center gap-2 text-brand-gold font-bold uppercase tracking-widest hover:text-white transition-colors group">
-                                            Read Full Story <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                                            {featured.language === 'Arabic' ? 'اقرأ المزيد' : 'Read Full Story'} <ArrowRight className={`w-4 h-4 transition-transform group-hover:translate-x-1 ${featured.language === 'Arabic' ? 'rotate-180' : ''}`} />
                                         </Link>
                                     </div>
                                 </div>
@@ -146,35 +162,39 @@ export default function UpdatesPage() {
 
                         {/* 3. FILTER / TIMELINE BAR */}
                         <section className="px-6 md:px-12 lg:px-24 mb-8 max-w-7xl mx-auto">
-                            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-4">
                                 <div className="flex items-center gap-2">
                                     <Clock className="w-5 h-5 text-brand-brown-dark" />
                                     <h3 className="font-agency text-2xl text-brand-brown-dark">Recent Activity</h3>
                                 </div>
 
-                                {/* Desktop Year Filter */}
-                                <div className="hidden md:flex gap-2">
-                                    {years.map((year, idx) => (
-                                        <button key={idx} className={`px-4 py-1 rounded-full text-xs font-bold transition-colors ${idx === 0 ? 'bg-brand-sand text-brand-brown-dark' : 'text-gray-400 hover:text-brand-brown-dark'}`}>
-                                            {year}
+                                {/* Horizontal Language Filter */}
+                                <div className="flex overflow-x-auto gap-2 pb-2 md:pb-0 scrollbar-hide w-full md:w-auto">
+                                    {languages.map((lang) => (
+                                        <button 
+                                            key={lang} 
+                                            onClick={() => setActiveLang(lang)}
+                                            className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border ${
+                                                activeLang === lang 
+                                                ? 'bg-brand-brown-dark text-white border-brand-brown-dark' 
+                                                : 'bg-brand-sand text-gray-500 border-transparent hover:border-brand-gold hover:text-brand-gold'
+                                            }`}
+                                        >
+                                            {lang}
                                         </button>
                                     ))}
                                 </div>
-
-                                {/* Mobile Filter Icon */}
-                                <button className="md:hidden text-gray-400">
-                                    <Filter className="w-5 h-5" />
-                                </button>
                             </div>
                         </section>
 
                         {/* 4. NEWS GRID */}
                         <section className="px-6 md:px-12 lg:px-24 max-w-7xl mx-auto mb-12">
-                            {updates.length > 0 ? (
+                            {gridUpdates.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                                    {updates.map((item) => {
+                                    {gridUpdates.map((item) => {
                                         const date = getDateParts(item.date);
                                         const displayCat = getDisplayCategory(item);
+                                        const isArabic = item.language === 'Arabic';
 
                                         return (
                                             <Link href={`/blogs/read/${item.id}`} key={item.id} className="bg-white rounded-2xl p-6 flex flex-row md:flex-col gap-5 items-start shadow-md border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all group h-full">
@@ -191,18 +211,18 @@ export default function UpdatesPage() {
                                                 </div>
 
                                                 {/* Content */}
-                                                <div className="flex flex-col flex-grow">
+                                                <div className="flex flex-col flex-grow w-full" dir={isArabic ? 'rtl' : 'ltr'}>
                                                     <span className="md:hidden text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">
                                                         {displayCat}
                                                     </span>
-                                                    <h3 className="font-agency text-xl md:text-2xl text-brand-brown-dark leading-tight mb-3 group-hover:text-brand-gold transition-colors line-clamp-2">
+                                                    <h3 className={`font-agency text-xl md:text-2xl text-brand-brown-dark leading-tight mb-3 group-hover:text-brand-gold transition-colors line-clamp-2 ${isArabic ? 'font-tajawal font-bold' : ''}`}>
                                                         {item.title}
                                                     </h3>
-                                                    <p className="font-lato text-xs md:text-sm text-gray-600 leading-relaxed mb-4 line-clamp-3 flex-grow">
+                                                    <p className={`font-lato text-xs md:text-sm text-gray-600 leading-relaxed mb-4 line-clamp-3 flex-grow ${isArabic ? 'font-arabic' : ''}`}>
                                                         {item.excerpt}
                                                     </p>
-                                                    <span className="text-[10px] md:text-xs font-bold text-brand-brown-dark flex items-center gap-1 group-hover:underline decoration-brand-gold underline-offset-4 mt-auto">
-                                                        See Details <ArrowRight className="w-3 h-3" />
+                                                    <span className={`text-[10px] md:text-xs font-bold text-brand-brown-dark flex items-center gap-1 group-hover:underline decoration-brand-gold underline-offset-4 mt-auto ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                                        {isArabic ? 'التفاصيل' : 'See Details'} <ArrowRight className={`w-3 h-3 ${isArabic ? 'rotate-180' : ''}`} />
                                                     </span>
                                                 </div>
                                             </Link>
