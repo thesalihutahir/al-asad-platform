@@ -9,7 +9,8 @@ import Loader from '@/components/Loader';
 // Firebase
 import { db } from '@/lib/firebase';
 import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
-import { Clock, User, Tag, ChevronRight, Search, BookOpen } from 'lucide-react';
+// Added 'Mail' back to imports below
+import { Clock, User, Tag, ChevronRight, Search, BookOpen, Mail } from 'lucide-react';
 
 export default function ArticlesPage() {
 
@@ -28,7 +29,6 @@ export default function ArticlesPage() {
         const fetchData = async () => {
             try {
                 // Fetch Articles (Safe Query)
-                // Note: If 'orderBy' causes issues, remove it temporarily to test.
                 const qArticles = query(
                     collection(db, "posts"),
                     where("category", "==", "Article"),
