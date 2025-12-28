@@ -79,6 +79,18 @@ export default function ArticlesPage() {
         }
     };
 
+    // --- HELPER: Read Time Formatter (Automated) ---
+    const getReadTime = (time, lang) => {
+        if (!time) return '';
+        // If old data (string like "5 min read"), return as is
+        if (isNaN(time)) return time;
+        
+        // If new data (number like 5), format it based on language
+        if (lang === 'Arabic') return `${time} دقائق قراءة`;
+        if (lang === 'Hausa') return `Minti ${time} karatu`;
+        return `${time} min read`;
+    };
+
     // --- HELPER: Get Series Count ---
     const getSeriesCount = (seriesTitle) => {
         return articles.filter(a => a.series === seriesTitle).length;
@@ -101,7 +113,7 @@ export default function ArticlesPage() {
             <Header />
             <main className="flex-grow pb-16">
 
-                {/* 1. HERO SECTION (Restored Gradient) */}
+                {/* 1. HERO SECTION */}
                 <section className="w-full relative bg-white mb-8 md:mb-16">
                     <div className="relative w-full aspect-[2.5/1] md:aspect-[3.5/1] lg:aspect-[4/1]">
                         <Image 
@@ -111,7 +123,6 @@ export default function ArticlesPage() {
                             className="object-cover object-center" 
                             priority 
                         />
-                        {/* Original Gradient Request */}
                         <div className="absolute inset-0 bg-gradient-to-t from-white via-brand-gold/40 to-transparent "></div>
                     </div>
                     <div className="relative -mt-16 md:-mt-32 text-center px-6 z-10 max-w-4xl mx-auto">
@@ -236,7 +247,7 @@ export default function ArticlesPage() {
                                                         )}
                                                         {/* Force LTR for time/icon pair even in Arabic context */}
                                                         <span className={`text-[10px] text-gray-400 flex items-center gap-1 ${isArabic ? 'mr-auto' : 'ml-auto'}`} dir="ltr">
-                                                            <Clock className="w-3 h-3" /> {item.readTime || '5 min'}
+                                                            <Clock className="w-3 h-3" /> {getReadTime(item.readTime, item.language)}
                                                         </span>
                                                     </div>
 
