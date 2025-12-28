@@ -28,6 +28,18 @@ const formatDate = (dateString, locale = 'en-GB') => {
     } catch (e) { return dateString; }
 };
 
+// --- HELPER: Read Time Formatter ---
+const getReadTime = (time, lang) => {
+    if (!time) return '';
+    // If old data (string like "5 min read"), return as is
+    if (isNaN(time)) return time;
+    
+    // If new data (number like 5), format it based on language
+    if (lang === 'Arabic') return `${time} دقائق قراءة`;
+    if (lang === 'Hausa') return `Minti ${time} karatu`;
+    return `${time} min read`;
+};
+
 // --- HELPER: Time Ago ---
 const timeAgo = (date) => {
     if (!date) return 'Just now';
@@ -219,7 +231,7 @@ const ArticleLayout = ({ post }) => {
                             <span className="text-gray-300">|</span>
                             <div className="flex items-center gap-2" dir="ltr">
                                 <Clock className="w-4 h-4 text-brand-gold" />
-                                <span>{post.readTime}</span>
+                                <span>{getReadTime(post.readTime, post.language)}</span>
                             </div>
                         </div>
 
