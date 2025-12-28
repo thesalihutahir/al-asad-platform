@@ -171,20 +171,28 @@ const CommentsSection = ({ postId, isArabic }) => {
 };
 
 // ==========================================
-// LAYOUT 1: ARTICLE (Updated for RTL)
+// LAYOUT 1: ARTICLE (The "Card" Look)
 // ==========================================
 const ArticleLayout = ({ post }) => {
-    const isArabic = post.language === 'Arabic' || post.language === 'Hausa'; // Assuming Hausa might use Ajami or similar structure, but if Latin Hausa, remove 'Hausa' from here.
-    // Assuming Standard Latin Hausa: const isArabic = post.language === 'Arabic';
+    const isArabic = post.language === 'Arabic' || post.language === 'Hausa'; 
 
     return (
-        <div className="bg-brand-sand min-h-screen py-12 md:py-20 font-lato">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6">
-                <Link href="/blogs/articles" className="inline-flex items-center text-brand-brown-dark font-bold text-sm mb-6 hover:text-brand-gold transition-colors">
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Back to Articles
-                </Link>
+        <div className="bg-brand-sand min-h-screen py-12 md:py-20 font-lato relative">
+            {/* Background Pattern Hint */}
+            <div className="absolute top-0 left-0 w-full h-96 bg-[url('/pattern-light.svg')] opacity-5 pointer-events-none"></div>
 
-                <div className="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-gray-100">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10">
+                {/* Global Heading */}
+                <div className="flex justify-between items-center mb-8">
+                    <Link href="/blogs/articles" className="inline-flex items-center text-brand-brown-dark font-bold text-sm hover:text-brand-gold transition-colors">
+                        <ArrowLeft className="w-4 h-4 mr-2" /> Back to Articles
+                    </Link>
+                    <span className="font-agency text-xl text-brand-brown-dark/20 uppercase tracking-[0.2em] hidden md:block">Journal & Insights</span>
+                </div>
+
+                <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/50">
+                    
+                    {/* Hero Image */}
                     <div className="relative w-full aspect-video md:aspect-[2.5/1]">
                         <Image src={post.coverImage || "/fallback.webp"} alt={post.title} fill className="object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
@@ -195,20 +203,33 @@ const ArticleLayout = ({ post }) => {
                     </div>
 
                     <div className="px-6 py-8 md:px-12 md:py-12" dir={isArabic ? 'rtl' : 'ltr'}>
-                        {/* Meta */}
-                        <div className={`flex flex-wrap items-center gap-4 text-xs md:text-sm text-gray-500 mb-6 ${isArabic ? 'font-arabic' : ''}`}>
-                            <div className="flex items-center gap-2"><User className="w-4 h-4 text-brand-gold" /><span className="font-bold text-brand-brown-dark">{post.author || "Al-Asad Foundation"}</span></div>
+                        
+                        {/* Metadata Row - FORCED LTR for readability, but aligned based on language */}
+                        <div className={`flex flex-wrap items-center gap-4 text-xs md:text-sm text-gray-500 mb-8 pb-6 border-b border-gray-100 ${isArabic ? 'justify-end' : 'justify-start'}`}>
+                            {/* Individual items are forced LTR so the icon stays on the left of text */}
+                            <div className="flex items-center gap-2" dir="ltr">
+                                <User className="w-4 h-4 text-brand-gold" />
+                                <span className="font-bold text-brand-brown-dark">{post.author || "Al-Asad Foundation"}</span>
+                            </div>
                             <span className="text-gray-300">|</span>
-                            <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-brand-gold" /><span>{formatDate(post.date)}</span></div>
+                            <div className="flex items-center gap-2" dir="ltr">
+                                <Calendar className="w-4 h-4 text-brand-gold" />
+                                <span>{formatDate(post.date)}</span>
+                            </div>
                             <span className="text-gray-300">|</span>
-                            <div className="flex items-center gap-2"><Clock className="w-4 h-4 text-brand-gold" /><span>{post.readTime}</span></div>
+                            <div className="flex items-center gap-2" dir="ltr">
+                                <Clock className="w-4 h-4 text-brand-gold" />
+                                <span>{post.readTime}</span>
+                            </div>
                         </div>
 
                         {/* Title */}
                         <h1 className={`text-4xl md:text-5xl lg:text-6xl text-brand-brown-dark leading-[1.2] mb-6 ${isArabic ? 'font-tajawal font-bold text-right' : 'font-agency text-left'}`}>
                             {post.title}
                         </h1>
-                        <div className={`w-24 h-1.5 bg-brand-gold rounded-full mb-8 ${isArabic ? 'ml-auto mr-0' : 'mr-auto ml-0'}`}></div>
+                        
+                        {/* Divider aligned to title */}
+                        <div className={`w-24 h-1.5 bg-brand-gold rounded-full mb-10 ${isArabic ? 'ml-auto mr-0' : 'mr-auto ml-0'}`}></div>
 
                         {/* Content */}
                         <article className={`prose prose-lg md:prose-xl prose-stone max-w-none leading-loose text-gray-700 
@@ -245,14 +266,15 @@ const ArticleLayout = ({ post }) => {
 };
 
 // ==========================================
-// LAYOUT 2: NEWS (Updated for RTL)
+// LAYOUT 2: NEWS
 // ==========================================
 const NewsLayout = ({ post, relatedPosts }) => {
     const isArabic = post.language === 'Arabic';
 
     return (
-        <div className="bg-brand-sand min-h-screen py-8 md:py-16 font-lato">
-            <div className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="bg-brand-sand min-h-screen py-8 md:py-16 font-lato relative">
+             <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-white to-brand-sand pointer-events-none"></div>
+            <div className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
                 <div className="lg:col-span-8">
                     <div className="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-gray-100">
                         <div className="relative h-64 md:h-96 w-full">
@@ -264,8 +286,8 @@ const NewsLayout = ({ post, relatedPosts }) => {
                             </div>
                         </div>
                         <div className="p-8 md:p-10" dir={isArabic ? 'rtl' : 'ltr'}>
-                            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8 border-b border-gray-100 pb-4">
-                                <div className="flex items-center gap-2 text-sm font-bold text-gray-500"><Calendar className="w-4 h-4 text-brand-gold" /> {formatDate(post.date)}</div>
+                            <div className={`flex flex-col md:flex-row md:items-center gap-4 mb-8 border-b border-gray-100 pb-4 ${isArabic ? 'md:flex-row-reverse' : 'md:justify-between'}`}>
+                                <div className="flex items-center gap-2 text-sm font-bold text-gray-500" dir="ltr"><Calendar className="w-4 h-4 text-brand-gold" /> {formatDate(post.date)}</div>
                                 <div className="flex items-center gap-4">
                                     <LikeButton postId={post.id} initialLikes={post.likes || 0} />
                                     <SocialShare title={post.title} />
@@ -303,7 +325,7 @@ const NewsLayout = ({ post, relatedPosts }) => {
 };
 
 // ==========================================
-// LAYOUT 3: RESEARCH (Updated for RTL)
+// LAYOUT 3: RESEARCH
 // ==========================================
 const ResearchLayout = ({ post }) => {
     const isArabic = post.language === 'Arabic';
