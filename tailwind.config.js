@@ -18,7 +18,8 @@ module.exports = {
         // Define custom font families
         'agency': ['AgencyRegular', 'sans-serif'], // For headings
         'lato': ['LatoRegular', 'sans-serif'],     // For body text
-        'tajawal': ['Tajawal', 'sans-serif'],      
+        'tajawal': ['Tajawal', 'sans-serif'],
+        'arabic': ['"Traditional Arabic"', 'serif'],
       },
       backgroundImage: {
         // Define background image patterns
