@@ -3,7 +3,8 @@
 @tailwind utilities;
 
 /* --- FONT FACE DEFINITIONS --- */
-/* Traditional Arabic (Arabic Font) */
+
+/* Traditional Arabic (Bold) */
 @font-face {
   font-family: 'Traditional Arabic';
   src: url('/fonts/TradArabicBoldUnicode.woff2') format('woff2');
@@ -30,37 +31,39 @@
   font-display: swap;
 }
 
+/* Lato Bold (Crucial for bold text to look crisp) */
+@font-face {
+  font-family: 'LatoRegular';
+  src: url('/fonts/Lato-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* --- CUSTOM BRAND COLORS (Variables) --- */
 :root {
-  /* Official Brand Colors */
-  --color-brand-gold: #d17600;       
+  --color-brand-gold: #d17600;        
   --color-brand-brown-dark: #432e16; 
   --color-brand-brown-light: #655037; 
   --color-brand-sand: #F8F6F2;
 }
 
-/* Custom utility classes to access variables */
-.bg-brand-brown-light { background-color: var(--color-brand-brown-light); }
-.bg-brand-brown-dark { background-color: var(--color-brand-brown-dark); }
-.bg-brand-gold { background-color: var(--color-brand-gold); }
-.text-brand-brown-dark { color: var(--color-brand-brown-dark); }
-.text-brand-gold { color: var(--color-brand-gold); }
-
-/* Apply default font to body for consistency */
+/* Apply default font to body */
 body {
   font-family: 'LatoRegular', sans-serif;
+  color: var(--color-brand-brown-dark);
+  background-color: #ffffff;
 }
 
 html {
   scroll-behavior: smooth;
 }
 
-/* Custom Component Styles for Mockup Look */
+/* Custom Component Styles */
 .card-shadow {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
-/* Style for the Featured Program/Lecture background effect */
 .featured-background {
     background-color: var(--color-brand-sand);
     border: 1px solid #e0e0e0;
