@@ -9,7 +9,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, serverTimestamp, query, orderBy, where } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 // Utilities
-import { compressImage } from '@/utils/compressImage'; 
+import { compressImage } from '@/utils/compressImage';
 import Loader from '@/components/Loader';
 
 import { 
@@ -43,7 +43,7 @@ export default function CreateBlogPage() {
         language: 'English', 
         series: '', 
         author: 'Sheikh Goni Dr. Muneer Ja\'afar', 
-        readTime: '',
+        readTime: '', // Changed to Number Input below
         date: new Date().toISOString().split('T')[0], 
         tags: ''
     });
@@ -73,7 +73,6 @@ export default function CreateBlogPage() {
     useEffect(() => {
         const filtered = allSeries.filter(series => {
             const catMatch = series.category === formData.category;
-            // Loose filter: if series has language, match it. If not, show it anyway.
             const langMatch = series.language ? series.language === formData.language : true; 
             return catMatch && langMatch;
         });
@@ -270,10 +269,13 @@ export default function CreateBlogPage() {
                             <label className="block text-xs font-bold text-brand-brown mb-1">Date</label>
                             <input type="date" name="date" value={formData.date} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50" />
                         </div>
+
+                        {/* Read Time (Number Only) */}
                         <div>
-                            <label className="block text-xs font-bold text-brand-brown mb-1">Read Time</label>
-                            <input type="text" name="readTime" value={formData.readTime} onChange={handleChange} placeholder="e.g. 5 min read" className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50" />
+                            <label className="block text-xs font-bold text-brand-brown mb-1">Read Time (Minutes)</label>
+                            <input type="number" min="1" name="readTime" value={formData.readTime} onChange={handleChange} placeholder="e.g. 5" className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50" />
                         </div>
+
                         <div>
                             <label className="block text-xs font-bold text-brand-brown mb-1">Author</label>
                             <input type="text" name="author" value={formData.author} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50" />
