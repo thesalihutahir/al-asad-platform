@@ -150,7 +150,11 @@ export default function ArticlesPage() {
 
                         <div className="flex overflow-x-auto gap-4 pb-4 md:grid md:grid-cols-3 md:gap-8 scrollbar-hide snap-x">
                             {series.map((item) => (
-                                <div key={item.id} className="snap-center min-w-[260px] md:min-w-0 group cursor-pointer bg-white p-3 rounded-2xl shadow-sm hover:shadow-lg transition-all">
+                                <Link 
+                                    href={`/blogs/series/${item.id}`} 
+                                    key={item.id} 
+                                    className="snap-center min-w-[260px] md:min-w-0 group cursor-pointer bg-white p-3 rounded-2xl shadow-sm hover:shadow-lg transition-all"
+                                >
                                     <div className="relative w-full aspect-[16/9] rounded-xl overflow-hidden mb-3 bg-gray-100">
                                         <Image 
                                             src={item.cover || "/fallback.webp"} 
@@ -168,7 +172,7 @@ export default function ArticlesPage() {
                                     {item.language && (
                                         <span className="text-[10px] text-gray-400 uppercase tracking-wider block mt-1 px-1">{item.language} Series</span>
                                     )}
-                                </div>
+                                </Link>
                             ))}
                         </div>
                     </section>
