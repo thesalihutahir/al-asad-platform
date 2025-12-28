@@ -212,7 +212,7 @@ export default function VideosPage() {
                                         return (
                                             <div 
                                                 key={video.id} 
-                                                className="group block bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 transition-all hover:shadow-xl"
+                                                className="group block bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 transition-all hover:shadow-xl hover:border-brand-gold/20"
                                             >
                                                 {/* Video / Thumbnail Container */}
                                                 <div className="relative w-full aspect-video bg-black">
@@ -249,31 +249,34 @@ export default function VideosPage() {
                                                 </div>
 
                                                 {/* Content */}
-                                                <div className="p-5" dir={dir}>
-                                                    <div className="flex justify-between items-start mb-2" dir="ltr">
-                                                        <span className="text-[10px] font-bold text-brand-gold uppercase tracking-widest bg-brand-gold/10 px-2 py-0.5 rounded">
+                                                <div className="p-5 flex flex-col h-full" dir={dir}>
+                                                    {/* Meta Row: Category & Date */}
+                                                    <div className="flex justify-between items-center mb-3" dir="ltr">
+                                                        <span className="text-[10px] font-bold text-brand-brown-dark bg-brand-sand px-2 py-1 rounded uppercase tracking-wider">
                                                             {video.category}
                                                         </span>
-                                                        <span className="text-[10px] text-gray-400 font-lato">
+                                                        <span className="text-[10px] text-gray-400 font-bold">
                                                             {formatDate(video.date)}
                                                         </span>
                                                     </div>
 
+                                                    {/* Title */}
                                                     <h3 
                                                         onClick={() => setPlayingVideoId(video.id)} // Allow title click to play too
-                                                        className={`font-agency text-xl md:text-2xl text-brand-brown-dark leading-tight mb-3 group-hover:text-brand-gold transition-colors line-clamp-2 cursor-pointer ${dir === 'rtl' ? 'font-tajawal font-bold' : ''}`}
+                                                        className={`font-agency text-xl md:text-2xl text-brand-brown-dark leading-tight mb-2 group-hover:text-brand-gold transition-colors cursor-pointer ${dir === 'rtl' ? 'font-tajawal font-bold' : ''}`}
                                                     >
                                                         {video.title}
                                                     </h3>
 
-                                                    <div className={`flex items-center gap-2 mt-auto ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}>
+                                                    {/* Description (Truncated) */}
+                                                    {video.description && (
                                                         <p 
                                                             onClick={() => setPlayingVideoId(video.id)}
-                                                            className="text-xs font-bold text-brand-brown group-hover:underline decoration-brand-gold/50 underline-offset-4 cursor-pointer"
+                                                            className={`text-sm text-gray-600 line-clamp-2 leading-relaxed cursor-pointer hover:text-gray-900 transition-colors ${dir === 'rtl' ? 'font-arabic' : 'font-lato'}`}
                                                         >
-                                                            {dir === 'rtl' ? 'شاهد الآن' : 'Watch Now'}
+                                                            {video.description}
                                                         </p>
-                                                    </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         );
