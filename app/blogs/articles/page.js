@@ -80,19 +80,28 @@ export default function ArticlesPage() {
             <Header />
             <main className="flex-grow pb-16">
 
-                {/* HERO */}
+                {/* 1. HERO SECTION */}
                 <section className="w-full relative bg-white mb-8 md:mb-16">
                     <div className="relative w-full aspect-[2.5/1] md:aspect-[3.5/1] lg:aspect-[4/1]">
-                        <Image src="/images/heroes/blogs-articles-hero.webp" alt="Articles Hero" fill className="object-cover object-center" priority />
-                        <div className="absolute inset-0 bg-gradient-to-t from-brand-sand via-brand-gold/20 to-transparent "></div>
+                        <Image 
+                            src="/images/heroes/blogs-articles-hero.webp" 
+                            alt="Research Hero" 
+                            fill 
+                            className="object-cover object-center" 
+                            priority 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-white via-brand-gold/40 to-transparent "></div>
                     </div>
                     <div className="relative -mt-16 md:-mt-32 text-center px-6 z-10 max-w-4xl mx-auto">
-                        <h1 className="font-agency text-4xl md:text-6xl lg:text-7xl text-brand-brown-dark mb-4 drop-shadow-md">Articles</h1>
+                        <h1 className="font-agency text-4xl md:text-6xl lg:text-7xl text-brand-brown-dark mb-4 drop-shadow-md">
+                            Articles
+                        </h1>
                         <div className="w-16 md:w-24 h-1 bg-brand-gold mx-auto rounded-full mb-6"></div>
-                        <p className="font-lato text-brand-brown text-sm md:text-xl max-w-2xl mx-auto leading-relaxed font-medium">Reflections, knowledge, and insights.</p>
+                        <p className="font-lato text-brand-brown text-sm md:text-xl max-w-2xl mx-auto leading-relaxed font-medium">
+                            Reflections, knowledge, and insights. Deep dive into topics that matter to your faith and daily life.
+                        </p>
                     </div>
                 </section>
-
                 {/* SERIES (Horizontal Loop) */}
                 {series.length > 0 && (
                     <section className="px-6 md:px-12 lg:px-24 mb-12 max-w-7xl mx-auto">
