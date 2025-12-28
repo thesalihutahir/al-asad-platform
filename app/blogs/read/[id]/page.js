@@ -16,7 +16,6 @@ import {
     User, 
     Clock, 
     Tag, 
-    Share2, 
     Download, 
     FileText, 
     ArrowLeft,
@@ -27,7 +26,12 @@ import {
 } from 'lucide-react';
 
 export default function BlogPostPage() {
-    const { id } = useParams();
+    // Unwrapping params is necessary in Next.js 15+, but standard in older versions
+    // To be safe, we access id directly if params is not a promise, or via use() if it is.
+    // For standard Next 14 apps:
+    const params = useParams();
+    const id = params?.id; // Safely access ID
+
     const router = useRouter();
     
     const [post, setPost] = useState(null);
@@ -38,6 +42,8 @@ export default function BlogPostPage() {
     useEffect(() => {
         const fetchPostData = async () => {
             if (!id) return;
+            setLoading(true);
+
             try {
                 // A. Fetch Main Post
                 const docRef = doc(db, "posts", id);
@@ -47,25 +53,27 @@ export default function BlogPostPage() {
                     const postData = { id: docSnap.id, ...docSnap.data() };
                     setPost(postData);
 
-                    // B. Fetch Related Posts (Same Category, excluding current)
-                    // Note: Firestore limitation means we fetch a few more and filter in JS
-                    const qRelated = query(
-                        collection(db, "posts"),
-                        where("category", "==", postData.category),
-                        where("status", "==", "Published"),
-                        orderBy("createdAt", "desc"),
-                        limit(4) 
-                    );
-                    
-                    const relatedSnap = await getDocs(qRelated);
-                    const related = relatedSnap.docs
-                        .map(doc => ({ id: doc.id, ...doc.data() }))
-                        .filter(p => p.id !== id) // Exclude current post
-                        .slice(0, 3); // Keep only 3
+                    // B. Fetch Related Posts (Same Category)
+                    if (postData.category) {
+                        const qRelated = query(
+                            collection(db, "posts"),
+                            where("category", "==", postData.category),
+                            where("status", "==", "Published"),
+                            orderBy("createdAt", "desc"),
+                            limit(4) 
+                        );
+                        
+                        const relatedSnap = await getDocs(qRelated);
+                        const related = relatedSnap.docs
+                            .map(doc => ({ id: doc.id, ...doc.data() }))
+                            .filter(p => p.id !== id) // Exclude current post
+                            .slice(0, 3); // Keep only 3
 
-                    setRelatedPosts(related);
+                        setRelatedPosts(related);
+                    }
                 } else {
                     console.error("Post not found");
+                    setPost(null);
                 }
             } catch (error) {
                 console.error("Error fetching post:", error);
@@ -82,23 +90,29 @@ export default function BlogPostPage() {
         switch(category) {
             case 'News': return '/images/heroes/blogs-updates-hero.webp';
             case 'Research': return '/images/heroes/blogs-research-publications-hero.webp';
-            default: return '/images/heroes/blogs-articles-hero.webp'; // Default for Articles
+            default: return '/images/heroes/blogs-articles-hero.webp';
         }
     };
 
     const formatDate = (dateString) => {
-        if (!dateString) return '';
-        return new Date(dateString).toLocaleDateString('en-GB', { 
-            day: 'numeric', month: 'long', year: 'numeric' 
-        });
+        try {
+            if (!dateString) return '';
+            return new Date(dateString).toLocaleDateString('en-GB', { 
+                day: 'numeric', month: 'long', year: 'numeric' 
+            });
+        } catch (e) {
+            return dateString; // Return original string if parse fails
+        }
     };
 
     // --- LOADING STATE ---
     if (loading) {
         return (
-            <div className="min-h-screen bg-white">
+            <div className="min-h-screen bg-white flex flex-col">
                 <Header />
-                <Loader size="full" />
+                <div className="flex-grow flex items-center justify-center">
+                    <Loader size="lg" />
+                </div>
             </div>
         );
     }
@@ -128,8 +142,8 @@ export default function BlogPostPage() {
 
             <main className="flex-grow">
 
-                {/* 1. IMMERSIVE HEADER (Contextual Background) */}
-                <div className="relative w-full h-[60vh] lg:h-[70vh]">
+                {/* 1. IMMERSIVE HEADER */}
+                <div className="relative w-full h-[50vh] lg:h-[60vh]">
                     <Image 
                         src={categoryHero} 
                         alt="Category Hero" 
@@ -146,7 +160,7 @@ export default function BlogPostPage() {
                         {/* Breadcrumb / Category */}
                         <div className="mb-6 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-700">
                             <span className="px-3 py-1 bg-brand-gold text-white text-xs font-bold uppercase tracking-widest rounded-full">
-                                {post.category}
+                                {post.category || 'Article'}
                             </span>
                             {post.language && (
                                 <span className="px-3 py-1 bg-white/20 text-white text-xs font-bold uppercase tracking-widest rounded-full backdrop-blur-md">
@@ -156,7 +170,7 @@ export default function BlogPostPage() {
                         </div>
 
                         {/* Title */}
-                        <h1 className="font-agency text-4xl md:text-6xl lg:text-7xl leading-tight mb-6 drop-shadow-xl animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
+                        <h1 className="font-agency text-3xl md:text-5xl lg:text-6xl leading-tight mb-6 drop-shadow-xl animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 max-w-4xl">
                             {post.title}
                         </h1>
 
@@ -185,7 +199,7 @@ export default function BlogPostPage() {
                     <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl p-8 md:p-16 lg:p-20 border border-gray-100">
                         
                         {/* Featured Image (Specific to Post) */}
-                        <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-12 shadow-lg">
+                        <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-12 shadow-lg bg-gray-100">
                             <Image 
                                 src={post.coverImage || "/fallback.webp"} 
                                 alt={post.title} 
@@ -227,22 +241,24 @@ export default function BlogPostPage() {
                             
                             {/* Tags */}
                             <div className="flex flex-wrap gap-2">
-                                {post.tags && post.tags.split(',').map((tag, idx) => (
+                                {post.tags && (typeof post.tags === 'string' ? post.tags.split(',') : post.tags).map((tag, idx) => (
                                     <span key={idx} className="flex items-center gap-1 text-xs font-bold bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full hover:bg-brand-gold hover:text-white transition-colors cursor-pointer">
                                         <Tag className="w-3 h-3" /> {tag.trim()}
                                     </span>
                                 ))}
                             </div>
 
-                            {/* Share Buttons (Mock) */}
+                            {/* Share Buttons (Functional Copy Link) */}
                             <div className="flex items-center gap-3">
                                 <span className="text-sm font-bold text-gray-400 uppercase tracking-wider mr-2">Share:</span>
                                 <button className="p-2 bg-gray-50 rounded-full text-blue-600 hover:bg-blue-600 hover:text-white transition-colors"><Facebook className="w-4 h-4" /></button>
                                 <button className="p-2 bg-gray-50 rounded-full text-sky-500 hover:bg-sky-500 hover:text-white transition-colors"><Twitter className="w-4 h-4" /></button>
                                 <button className="p-2 bg-gray-50 rounded-full text-blue-700 hover:bg-blue-700 hover:text-white transition-colors"><Linkedin className="w-4 h-4" /></button>
                                 <button className="p-2 bg-gray-50 rounded-full text-gray-600 hover:bg-gray-600 hover:text-white transition-colors" onClick={() => {
-                                    navigator.clipboard.writeText(window.location.href);
-                                    alert("Link copied!");
+                                    if (typeof window !== 'undefined') {
+                                        navigator.clipboard.writeText(window.location.href);
+                                        alert("Link copied to clipboard!");
+                                    }
                                 }}>
                                     <LinkIcon className="w-4 h-4" />
                                 </button>
@@ -268,7 +284,7 @@ export default function BlogPostPage() {
                                                 src={item.coverImage || "/fallback.webp"} 
                                                 alt={item.title} 
                                                 fill 
-                                                className="object-cover" 
+                                                className="object-cover transition-transform duration-700 group-hover:scale-105" 
                                             />
                                         </div>
                                         <div className="p-6">
