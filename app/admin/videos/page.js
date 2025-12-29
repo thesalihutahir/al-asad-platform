@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 // Firebase
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
+// Global Modal Context
+import { useModal } from '@/context/ModalContext';
 
 import { 
     PlusCircle, 
@@ -23,6 +25,13 @@ import {
 
 export default function ManageVideosPage() {
     const router = useRouter();
+    const { showSuccess } = useModal(); // Use for success feedback
+    
+    // We can also reuse the modal for "confirm delete" by tweaking the context or just using window.confirm for dangerous actions is often safer/faster.
+    // However, if you want a branded delete, we can add a delete confirmation modal. 
+    // For now, I will keep window.confirm for DELETION as it's a standard safety pattern, 
+    // but use the custom modal to confirm "Deleted Successfully".
+
     const [activeTab, setActiveTab] = useState('videos'); 
     const [isLoading, setIsLoading] = useState(true);
 
@@ -102,6 +111,7 @@ export default function ManageVideosPage() {
             ? "Warning: Deleting this playlist will NOT delete the videos inside it, but they will become 'orphaned' (no playlist). Continue?"
             : "Are you sure you want to delete this video? This cannot be undone.";
 
+        // Standard browser confirm is safer for destructive actions to avoid accidental clicks
         if (!confirm(message)) return;
 
         try {
@@ -110,6 +120,14 @@ export default function ManageVideosPage() {
             } else {
                 await deleteDoc(doc(db, "video_playlists", id));
             }
+            
+            // Show Branded Success Modal
+            showSuccess({
+                title: "Deleted!",
+                message: `The ${type} has been successfully deleted.`,
+                confirmText: "Okay",
+            });
+
         } catch (error) {
             console.error("Error deleting:", error);
             alert("Failed to delete.");
