@@ -20,7 +20,7 @@ export default function VideosPage() {
     const [activeFilter, setActiveFilter] = useState("All Videos");
     const [visibleCount, setVisibleCount] = useState(6);
 
-    // UPDATED FILTERS TO MATCH ADMIN UPLOAD OPTIONS
+    // CORRECTED FILTERS: Must match the "Category" dropdown in your Admin Upload page
     const filters = ["All Videos", "English", "Hausa", "Arabic"];
 
     // --- FETCH DATA ---
@@ -119,16 +119,16 @@ export default function VideosPage() {
                                     <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark">
                                         Featured Series
                                     </h2>
-                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden md:block">
-                                        Curated Playlists
-                                    </span>
+                                    <Link href="/media/videos/playlists" className="text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-brand-gold transition-colors hidden md:block">
+                                        View All Series →
+                                    </Link>
                                 </div>
 
                                 <div className="flex overflow-x-auto gap-4 pb-4 md:grid md:grid-cols-3 md:gap-8 scrollbar-hide snap-x">
-                                    {playlists.map((playlist) => (
+                                    {playlists.slice(0, 3).map((playlist) => ( // Showing only first 3 featured
                                         <Link 
                                             key={playlist.id} 
-                                            href={`/media/playlists/${playlist.id}`} 
+                                            href={`/media/videos/playlists/${playlist.id}`} // CORRECTED PATH
                                             className="snap-center min-w-[260px] md:min-w-0 bg-brand-sand/30 rounded-2xl overflow-hidden cursor-pointer group hover:shadow-lg transition-all"
                                         >
                                             <div className="relative w-full aspect-[16/10] bg-gray-200">
@@ -200,7 +200,7 @@ export default function VideosPage() {
                                         return (
                                             <Link 
                                                 key={video.id} 
-                                                href={`/media/videos/${video.id}`} // LINK TO DEDICATED PAGE
+                                                href={`/media/videos/${video.id}`} // LINK TO DEDICATED WATCH PAGE
                                                 className="group block bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 transition-all hover:shadow-xl hover:border-brand-gold/20"
                                             >
                                                 {/* Thumbnail Container */}
