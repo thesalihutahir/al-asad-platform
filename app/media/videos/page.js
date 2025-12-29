@@ -136,7 +136,7 @@ export default function VideosPage() {
                                 {/* HEADER: Flex Row + Styled Button */}
                                 <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
                                     <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark">
-                                        Featured Playlists
+                                        <span className="hidden sm:inline">Featured </span>Playlists
                                     </h2>
                                     <Link 
                                         href="/media/videos/playlists" 
@@ -239,7 +239,7 @@ export default function VideosPage() {
                              {/* UPDATED HEADER: Always Row, Proper Alignment */}
                              <div className="flex flex-row items-center justify-between gap-4 mb-6 md:mb-8">
                                 <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark whitespace-nowrap">
-                                    Recent <span className="hidden sm:inline">Uploads</span>
+                                    Recent Uploads
                                 </h2>
 
                                 {/* SORTING BUTTON */}
