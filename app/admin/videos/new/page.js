@@ -26,13 +26,14 @@ export default function AddVideoPage() {
     const [isLoadingPlaylists, setIsLoadingPlaylists] = useState(true);
 
     // Dynamic Playlists State
-    const [availablePlaylists, setAvailablePlaylists] = useState([]);
+    const [allPlaylists, setAllPlaylists] = useState([]);
+    const [filteredPlaylists, setFilteredPlaylists] = useState([]);
 
     // Form State
     const [formData, setFormData] = useState({
         title: '',
         url: '',
-        category: 'English', // Default to English
+        category: 'English', // Acts as Language
         playlist: '', 
         date: new Date().toISOString().split('T')[0],
         description: ''
@@ -41,8 +42,6 @@ export default function AddVideoPage() {
     const [videoId, setVideoId] = useState(null);
     const [thumbnail, setThumbnail] = useState(null);
     const [isValid, setIsValid] = useState(false);
-    
-    // Preview Playback State
     const [isPlayingPreview, setIsPlayingPreview] = useState(false);
 
     // Helper: Auto-Detect Arabic for Preview
@@ -62,7 +61,11 @@ export default function AddVideoPage() {
                     id: doc.id,
                     ...doc.data()
                 }));
-                setAvailablePlaylists(playlists);
+                setAllPlaylists(playlists);
+                
+                // Initial Filter (English)
+                setFilteredPlaylists(playlists.filter(p => p.category === 'English'));
+
             } catch (error) {
                 console.error("Error fetching playlists:", error);
             } finally {
@@ -72,6 +75,17 @@ export default function AddVideoPage() {
 
         fetchPlaylists();
     }, []);
+
+    // 2. Filter Playlists when Category Changes
+    useEffect(() => {
+        if (allPlaylists.length > 0) {
+            const filtered = allPlaylists.filter(p => p.category === formData.category);
+            setFilteredPlaylists(filtered);
+            
+            // Clear selected playlist if it doesn't match new category
+            setFormData(prev => ({ ...prev, playlist: '' }));
+        }
+    }, [formData.category, allPlaylists]);
 
     // Helper: Extract YouTube ID
     const extractVideoId = (url) => {
@@ -84,7 +98,7 @@ export default function AddVideoPage() {
     const handleUrlChange = (e) => {
         const url = e.target.value;
         setFormData(prev => ({ ...prev, url }));
-        setIsPlayingPreview(false); // Reset player when URL changes
+        setIsPlayingPreview(false);
 
         const id = extractVideoId(url);
         if (id) {
@@ -210,44 +224,7 @@ export default function AddVideoPage() {
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
                         <h3 className="font-agency text-xl text-brand-brown-dark border-b border-gray-100 pb-2">Video Details</h3>
 
-                        {/* Playlist Selection */}
-                        <div className="bg-brand-sand/20 p-4 rounded-xl border border-brand-gold/20">
-                            <label className="flex items-center gap-2 text-xs font-bold text-brand-brown-dark uppercase tracking-wider mb-2">
-                                <ListVideo className="w-4 h-4" /> Add to Series / Playlist
-                            </label>
-                            <select 
-                                name="playlist"
-                                value={formData.playlist}
-                                onChange={handleChange}
-                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer"
-                            >
-                                <option value="">Select a Playlist (Optional)</option>
-                                {isLoadingPlaylists ? (
-                                    <option disabled>Loading playlists...</option>
-                                ) : (
-                                    availablePlaylists.map(pl => (
-                                        <option key={pl.id} value={pl.title}>{pl.title}</option>
-                                    ))
-                                )}
-                            </select>
-                            <p className="text-[10px] text-gray-500 mt-1">
-                                Selecting a playlist will group this video with others in the series.
-                            </p>
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-bold text-brand-brown mb-1">Video Title</label>
-                            <input 
-                                type="text" 
-                                name="title"
-                                value={formData.title}
-                                onChange={handleChange}
-                                placeholder="Enter video title" 
-                                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
-                                dir={getDir(formData.title)} // Auto-RTL Input
-                            />
-                        </div>
-
+                        {/* Category & Date Row */}
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-bold text-brand-brown mb-1">Category (Language)</label>
@@ -272,6 +249,48 @@ export default function AddVideoPage() {
                                     className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
                                 />
                             </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-brand-brown mb-1">Video Title</label>
+                            <input 
+                                type="text" 
+                                name="title"
+                                value={formData.title}
+                                onChange={handleChange}
+                                placeholder="Enter video title" 
+                                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
+                                dir={getDir(formData.title)} // Auto-RTL Input
+                            />
+                        </div>
+
+                        {/* Playlist Selection (Moved Down) */}
+                        <div className="bg-brand-sand/20 p-4 rounded-xl border border-brand-gold/20">
+                            <label className="flex items-center gap-2 text-xs font-bold text-brand-brown-dark uppercase tracking-wider mb-2">
+                                <ListVideo className="w-4 h-4" /> Add to Series / Playlist
+                            </label>
+                            <select 
+                                name="playlist"
+                                value={formData.playlist}
+                                onChange={handleChange}
+                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer"
+                            >
+                                <option value="">Select a Playlist (Optional)</option>
+                                {isLoadingPlaylists ? (
+                                    <option disabled>Loading playlists...</option>
+                                ) : (
+                                    filteredPlaylists.length > 0 ? (
+                                        filteredPlaylists.map(pl => (
+                                            <option key={pl.id} value={pl.title}>{pl.title}</option>
+                                        ))
+                                    ) : (
+                                        <option disabled>No playlists found for {formData.category}</option>
+                                    )
+                                )}
+                            </select>
+                            <p className="text-[10px] text-gray-500 mt-1">
+                                Only playlists matching the selected category ({formData.category}) are shown.
+                            </p>
                         </div>
 
                         <div>
