@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 // Firebase
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, serverTimestamp, query, orderBy } from 'firebase/firestore';
+// Global Modal Context
+import { useModal } from '@/context/ModalContext';
 
 import { 
     ArrowLeft, 
@@ -14,7 +16,7 @@ import {
     Youtube, 
     PlayCircle, 
     CheckCircle, 
-    ListVideo,
+    ListVideo, 
     Loader2,
     Play,
     Clock
@@ -22,6 +24,8 @@ import {
 
 export default function AddVideoPage() {
     const router = useRouter();
+    const { showSuccess } = useModal(); // Access the global modal
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoadingPlaylists, setIsLoadingPlaylists] = useState(true);
 
@@ -140,8 +144,13 @@ export default function AddVideoPage() {
             // Save to Firestore
             await addDoc(collection(db, "videos"), videoData);
 
-            alert("Video published successfully!");
-            router.push('/admin/videos');
+            // Trigger Global Success Modal
+            showSuccess({
+                title: "Video Published!",
+                message: "Your video has been successfully added to the library.",
+                confirmText: "Return to Library",
+                onConfirm: () => router.push('/admin/videos')
+            });
 
         } catch (error) {
             console.error("Error saving video:", error);
