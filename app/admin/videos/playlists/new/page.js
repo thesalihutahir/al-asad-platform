@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation';
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+// Global Modal Context
+import { useModal } from '@/context/ModalContext';
 
 import { 
     ArrowLeft, 
@@ -19,6 +21,8 @@ import {
 
 export default function CreatePlaylistPage() {
     const router = useRouter();
+    const { showSuccess } = useModal(); // Access global modal
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
 
@@ -104,8 +108,13 @@ export default function CreatePlaylistPage() {
                 createdAt: serverTimestamp()
             });
 
-            alert("Playlist created successfully!");
-            router.push('/admin/videos'); 
+            // Show Success Modal
+            showSuccess({
+                title: "Playlist Created!",
+                message: "Your new playlist has been created successfully.",
+                confirmText: "Return to Library",
+                onConfirm: () => router.push('/admin/videos')
+            });
 
         } catch (error) {
             console.error("Error creating playlist:", error);
