@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 // Firebase
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, serverTimestamp, query, orderBy, where } from 'firebase/firestore'; // Added 'where'
+import { collection, addDoc, getDocs, serverTimestamp, query, orderBy, where } from 'firebase/firestore'; 
 // Global Modal Context
 import { useModal } from '@/context/ModalContext';
 
@@ -20,7 +20,7 @@ import {
     Loader2,
     Play,
     Clock,
-    AlertTriangle // Added for Duplicate Warning
+    AlertTriangle 
 } from 'lucide-react';
 
 export default function AddVideoPage() {
@@ -48,8 +48,8 @@ export default function AddVideoPage() {
     const [thumbnail, setThumbnail] = useState(null);
     const [isValid, setIsValid] = useState(false);
     const [isPlayingPreview, setIsPlayingPreview] = useState(false);
-    
-    // NEW: Duplicate State
+
+    // Duplicate State
     const [duplicateWarning, setDuplicateWarning] = useState(null);
     const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
 
@@ -97,10 +97,10 @@ export default function AddVideoPage() {
         return (match && match[2].length === 11) ? match[2] : null;
     };
 
-    // NEW: Check for Duplicates in Firestore
+    // Check for Duplicates in Firestore
     const checkDuplicate = async (id) => {
         setIsCheckingDuplicate(true);
-        setDuplicateWarning(null); // Reset prev warning
+        setDuplicateWarning(null); 
         try {
             const q = query(collection(db, "videos"), where("videoId", "==", id));
             const snapshot = await getDocs(q);
@@ -110,7 +110,7 @@ export default function AddVideoPage() {
                 const location = existingVideo.playlist 
                     ? `Playlist: "${existingVideo.playlist}"` 
                     : "Single Video (No Playlist)";
-                
+
                 setDuplicateWarning(`Duplicate Found: This video already exists in your library under ${location}.`);
             }
         } catch (error) {
@@ -147,15 +147,12 @@ export default function AddVideoPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        if (!isValid || !videoId) {
-            alert("Please enter a valid YouTube URL first.");
+
+        // Prevent submission if invalid or duplicate exists
+        if (!isValid || !videoId || duplicateWarning) {
             return;
         }
 
-        // Optional: Block submission if duplicate? 
-        // For now, we allow it but the warning stays visible.
-        
         setIsSubmitting(true);
 
         try {
@@ -190,7 +187,7 @@ export default function AddVideoPage() {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     };
-    return (
+return (
         <form onSubmit={handleSubmit} className="space-y-6 max-w-5xl mx-auto pb-12">
 
             {/* 1. HEADER & ACTIONS */}
@@ -212,9 +209,10 @@ export default function AddVideoPage() {
                     </Link>
                     <button 
                         type="submit" 
-                        disabled={!isValid || isSubmitting}
+                        // UPDATED: Disabled if Duplicate Warning exists
+                        disabled={!isValid || isSubmitting || !!duplicateWarning}
                         className={`flex items-center gap-2 px-6 py-2.5 font-bold rounded-xl transition-colors shadow-md ${
-                            isValid 
+                            isValid && !duplicateWarning 
                             ? 'bg-brand-gold text-white hover:bg-brand-brown-dark' 
                             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                         }`}
@@ -232,7 +230,7 @@ export default function AddVideoPage() {
 
                     {/* YouTube URL Input & DUPLICATE CHECKER */}
                     <div className={`p-6 rounded-2xl shadow-sm border transition-colors ${
-                        duplicateWarning ? 'bg-orange-50 border-orange-200' : // Change style on warning
+                        duplicateWarning ? 'bg-orange-50 border-orange-200' : 
                         isValid ? 'bg-green-50 border-green-200' : 'bg-white border-gray-100'
                     }`}>
                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
@@ -250,7 +248,7 @@ export default function AddVideoPage() {
                             />
                             {isValid && <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />}
                         </div>
-                        
+
                         <div className="flex items-center justify-between mt-2">
                             <p className={`text-xs font-bold ${isValid ? 'text-green-600' : 'text-gray-400'}`}>
                                 {isCheckingDuplicate ? "Checking library..." : isValid ? "✓ Video found" : "Waiting for valid link..."}
