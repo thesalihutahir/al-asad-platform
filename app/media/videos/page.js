@@ -126,8 +126,9 @@ export default function VideosPage() {
                                     <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark">
                                         Featured Series
                                     </h2>
-                                    <Link href="/media/videos/playlists" className="text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-brand-gold transition-colors hidden md:block">
-                                        View All Series →
+                                    {/* UPDATED: Removed 'hidden md:block' so it shows on mobile, updated text */}
+                                    <Link href="/media/videos/playlists" className="text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-brand-gold transition-colors">
+                                        View All Playlists →
                                     </Link>
                                 </div>
 
