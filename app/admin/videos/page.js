@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 // Firebase
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
@@ -20,7 +21,7 @@ import {
 } from 'lucide-react';
 
 export default function ManageVideosPage() {
-
+    const router = useRouter();
     const [activeTab, setActiveTab] = useState('videos'); 
     const [isLoading, setIsLoading] = useState(true);
 
@@ -62,6 +63,11 @@ export default function ManageVideosPage() {
             console.error("Error deleting:", error);
             alert("Failed to delete.");
         }
+    };
+
+    // 3. HANDLE EDIT NAVIGATION
+    const handleEdit = (id) => {
+        router.push(`/admin/videos/edit/${id}`);
     };
 
     return (
@@ -164,7 +170,22 @@ export default function ManageVideosPage() {
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 text-right">
-                                                        <button onClick={() => handleDelete(video.id, 'video')} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <button 
+                                                                onClick={() => handleEdit(video.id)} // EDIT ACTION
+                                                                className="p-2 text-gray-400 hover:text-brand-gold hover:bg-brand-sand rounded-lg transition-colors"
+                                                                title="Edit Video"
+                                                            >
+                                                                <Edit className="w-4 h-4" />
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => handleDelete(video.id, 'video')} 
+                                                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                                title="Delete Video"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))
