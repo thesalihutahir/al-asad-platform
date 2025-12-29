@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 // Firebase
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, getDocs, serverTimestamp, query, orderBy, where } from 'firebase/firestore'; // Added 'where'
 // Global Modal Context
 import { useModal } from '@/context/ModalContext';
 
@@ -19,12 +19,13 @@ import {
     ListVideo, 
     Loader2,
     Play,
-    Clock
+    Clock,
+    AlertTriangle // Added for Duplicate Warning
 } from 'lucide-react';
 
 export default function AddVideoPage() {
     const router = useRouter();
-    const { showSuccess } = useModal(); // Access the global modal
+    const { showSuccess } = useModal(); 
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoadingPlaylists, setIsLoadingPlaylists] = useState(true);
@@ -37,7 +38,7 @@ export default function AddVideoPage() {
     const [formData, setFormData] = useState({
         title: '',
         url: '',
-        category: 'English', // Acts as Language
+        category: 'English', 
         playlist: '', 
         date: new Date().toISOString().split('T')[0],
         description: ''
@@ -47,6 +48,10 @@ export default function AddVideoPage() {
     const [thumbnail, setThumbnail] = useState(null);
     const [isValid, setIsValid] = useState(false);
     const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+    
+    // NEW: Duplicate State
+    const [duplicateWarning, setDuplicateWarning] = useState(null);
+    const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
 
     // Helper: Auto-Detect Arabic for Preview
     const getDir = (text) => {
@@ -66,17 +71,13 @@ export default function AddVideoPage() {
                     ...doc.data()
                 }));
                 setAllPlaylists(playlists);
-                
-                // Initial Filter (English)
                 setFilteredPlaylists(playlists.filter(p => p.category === 'English'));
-
             } catch (error) {
                 console.error("Error fetching playlists:", error);
             } finally {
                 setIsLoadingPlaylists(false);
             }
         };
-
         fetchPlaylists();
     }, []);
 
@@ -85,8 +86,6 @@ export default function AddVideoPage() {
         if (allPlaylists.length > 0) {
             const filtered = allPlaylists.filter(p => p.category === formData.category);
             setFilteredPlaylists(filtered);
-            
-            // Clear selected playlist if it doesn't match new category
             setFormData(prev => ({ ...prev, playlist: '' }));
         }
     }, [formData.category, allPlaylists]);
@@ -98,17 +97,42 @@ export default function AddVideoPage() {
         return (match && match[2].length === 11) ? match[2] : null;
     };
 
+    // NEW: Check for Duplicates in Firestore
+    const checkDuplicate = async (id) => {
+        setIsCheckingDuplicate(true);
+        setDuplicateWarning(null); // Reset prev warning
+        try {
+            const q = query(collection(db, "videos"), where("videoId", "==", id));
+            const snapshot = await getDocs(q);
+
+            if (!snapshot.empty) {
+                const existingVideo = snapshot.docs[0].data();
+                const location = existingVideo.playlist 
+                    ? `Playlist: "${existingVideo.playlist}"` 
+                    : "Single Video (No Playlist)";
+                
+                setDuplicateWarning(`Duplicate Found: This video already exists in your library under ${location}.`);
+            }
+        } catch (error) {
+            console.error("Error checking duplicate:", error);
+        } finally {
+            setIsCheckingDuplicate(false);
+        }
+    };
+
     // Handle URL Change
     const handleUrlChange = (e) => {
         const url = e.target.value;
         setFormData(prev => ({ ...prev, url }));
         setIsPlayingPreview(false);
+        setDuplicateWarning(null); // Reset warning immediately on type
 
         const id = extractVideoId(url);
         if (id) {
             setVideoId(id);
             setThumbnail(`https://img.youtube.com/vi/${id}/maxresdefault.jpg`);
             setIsValid(true);
+            checkDuplicate(id); // Trigger smart check
         } else {
             setVideoId(null);
             setThumbnail(null);
@@ -129,22 +153,22 @@ export default function AddVideoPage() {
             return;
         }
 
+        // Optional: Block submission if duplicate? 
+        // For now, we allow it but the warning stays visible.
+        
         setIsSubmitting(true);
 
         try {
-            // Prepare Data
             const videoData = {
                 ...formData,
-                videoId: videoId, // Important for embedding
+                videoId: videoId, 
                 thumbnail: thumbnail,
                 createdAt: serverTimestamp(),
                 views: 0
             };
 
-            // Save to Firestore
             await addDoc(collection(db, "videos"), videoData);
 
-            // Trigger Global Success Modal
             showSuccess({
                 title: "Video Published!",
                 message: "Your video has been successfully added to the library.",
@@ -166,7 +190,6 @@ export default function AddVideoPage() {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     };
-
     return (
         <form onSubmit={handleSubmit} className="space-y-6 max-w-5xl mx-auto pb-12">
 
@@ -207,8 +230,11 @@ export default function AddVideoPage() {
                 {/* 2. LEFT COLUMN: INPUT FIELDS */}
                 <div className="space-y-6">
 
-                    {/* YouTube URL Input */}
-                    <div className={`p-6 rounded-2xl shadow-sm border transition-colors ${isValid ? 'bg-green-50 border-green-200' : 'bg-white border-gray-100'}`}>
+                    {/* YouTube URL Input & DUPLICATE CHECKER */}
+                    <div className={`p-6 rounded-2xl shadow-sm border transition-colors ${
+                        duplicateWarning ? 'bg-orange-50 border-orange-200' : // Change style on warning
+                        isValid ? 'bg-green-50 border-green-200' : 'bg-white border-gray-100'
+                    }`}>
                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                             YouTube Link
                         </label>
@@ -224,9 +250,20 @@ export default function AddVideoPage() {
                             />
                             {isValid && <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />}
                         </div>
-                        <p className={`text-xs mt-2 font-bold ${isValid ? 'text-green-600' : 'text-gray-400'}`}>
-                            {isValid ? "✓ Video found & linked successfully" : "Waiting for valid link..."}
-                        </p>
+                        
+                        <div className="flex items-center justify-between mt-2">
+                            <p className={`text-xs font-bold ${isValid ? 'text-green-600' : 'text-gray-400'}`}>
+                                {isCheckingDuplicate ? "Checking library..." : isValid ? "✓ Video found" : "Waiting for valid link..."}
+                            </p>
+                        </div>
+
+                        {/* SMART DUPLICATE ALERT */}
+                        {duplicateWarning && (
+                            <div className="mt-3 flex items-start gap-2 text-xs font-bold text-orange-700 bg-orange-100 p-2 rounded-lg border border-orange-200 animate-in fade-in slide-in-from-top-1">
+                                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                                <span>{duplicateWarning}</span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Video Details */}
@@ -273,7 +310,7 @@ export default function AddVideoPage() {
                             />
                         </div>
 
-                        {/* Playlist Selection (Moved Down) */}
+                        {/* Playlist Selection */}
                         <div className="bg-brand-sand/20 p-4 rounded-xl border border-brand-gold/20">
                             <label className="flex items-center gap-2 text-xs font-bold text-brand-brown-dark uppercase tracking-wider mb-2">
                                 <ListVideo className="w-4 h-4" /> Add to Series / Playlist
@@ -326,7 +363,7 @@ export default function AddVideoPage() {
                             Live Preview
                         </h3>
 
-                        {/* Preview Card (Exact Frontend Replica) */}
+                        {/* Preview Card */}
                         <div className="bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 transform transition-all hover:scale-[1.02]">
 
                             {/* Thumbnail / Video Area */}
@@ -390,7 +427,7 @@ export default function AddVideoPage() {
                                 <h3 className={`font-agency text-xl text-brand-brown-dark mb-2 leading-tight ${getDir(formData.title) === 'rtl' ? 'font-tajawal font-bold' : ''}`}>
                                     {formData.title || "Video Title Placeholder"}
                                 </h3>
-                                
+
                                 {formData.playlist && (
                                     <p className="text-xs text-brand-gold font-bold uppercase tracking-wide mb-2" dir="ltr">
                                         Part of: {formData.playlist}
