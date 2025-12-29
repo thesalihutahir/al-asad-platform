@@ -20,14 +20,13 @@ export default function VideosPage() {
     const [activeFilter, setActiveFilter] = useState("All Videos");
     const [visibleCount, setVisibleCount] = useState(6);
 
-    // CORRECTED FILTERS: Must match the "Category" dropdown in your Admin Upload page
     const filters = ["All Videos", "English", "Hausa", "Arabic"];
 
     // --- FETCH DATA ---
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch Videos
+                // 1. Fetch Videos
                 const qVideos = query(collection(db, "videos"), orderBy("createdAt", "desc"));
                 const videoSnapshot = await getDocs(qVideos);
                 const fetchedVideos = videoSnapshot.docs.map(doc => ({
@@ -36,13 +35,21 @@ export default function VideosPage() {
                 }));
                 setVideos(fetchedVideos);
 
-                // Fetch Playlists
+                // 2. Fetch Playlists
                 const qPlaylists = query(collection(db, "video_playlists"), orderBy("createdAt", "desc"));
                 const playlistSnapshot = await getDocs(qPlaylists);
-                const fetchedPlaylists = playlistSnapshot.docs.map(doc => ({
+                let fetchedPlaylists = playlistSnapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 }));
+
+                // 3. CALCULATE REAL COUNTS
+                // We map through playlists and count how many videos match the playlist title
+                fetchedPlaylists = fetchedPlaylists.map(playlist => {
+                    const realCount = fetchedVideos.filter(v => v.playlist === playlist.title).length;
+                    return { ...playlist, count: realCount }; // Override the static count
+                });
+
                 setPlaylists(fetchedPlaylists);
 
             } catch (error) {
@@ -125,10 +132,14 @@ export default function VideosPage() {
                                 </div>
 
                                 <div className="flex overflow-x-auto gap-4 pb-4 md:grid md:grid-cols-3 md:gap-8 scrollbar-hide snap-x">
-                                    {playlists.slice(0, 3).map((playlist) => ( // Showing only first 3 featured
+                                    {/* Sort by count (popular) or create date, taking top 3 */}
+                                    {playlists
+                                        .sort((a, b) => b.count - a.count) 
+                                        .slice(0, 3)
+                                        .map((playlist) => (
                                         <Link 
                                             key={playlist.id} 
-                                            href={`/media/videos/playlists/${playlist.id}`} // CORRECTED PATH
+                                            href={`/media/videos/playlists/${playlist.id}`} 
                                             className="snap-center min-w-[260px] md:min-w-0 bg-brand-sand/30 rounded-2xl overflow-hidden cursor-pointer group hover:shadow-lg transition-all"
                                         >
                                             <div className="relative w-full aspect-[16/10] bg-gray-200">
@@ -144,7 +155,8 @@ export default function VideosPage() {
                                                     </div>
                                                 </div>
                                                 <div className="absolute bottom-2 right-2 bg-black/80 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
-                                                    <ListVideo className="w-3 h-3" /> {playlist.count || 0} Videos
+                                                    {/* HERE IS THE REAL COUNT */}
+                                                    <ListVideo className="w-3 h-3" /> {playlist.count} Videos
                                                 </div>
                                             </div>
 
@@ -200,7 +212,7 @@ export default function VideosPage() {
                                         return (
                                             <Link 
                                                 key={video.id} 
-                                                href={`/media/videos/${video.id}`} // LINK TO DEDICATED WATCH PAGE
+                                                href={`/media/videos/${video.id}`} 
                                                 className="group block bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 transition-all hover:shadow-xl hover:border-brand-gold/20"
                                             >
                                                 {/* Thumbnail Container */}
@@ -238,7 +250,7 @@ export default function VideosPage() {
                                                         {video.title}
                                                     </h3>
 
-                                                    {/* Description (Truncated) */}
+                                                    {/* Description */}
                                                     {video.description && (
                                                         <p className={`text-sm text-gray-600 line-clamp-2 leading-relaxed hover:text-gray-900 transition-colors ${dir === 'rtl' ? 'font-arabic' : 'font-lato'}`}>
                                                             {video.description}
