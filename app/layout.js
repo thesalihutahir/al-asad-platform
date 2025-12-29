@@ -6,7 +6,7 @@ import { AuthContextProvider } from "@/context/AuthContext";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Al Asad Education Foundation",
+  title: "Al-Asad Education Foundation",
   description: "Transforming education through Qur'an values and community empowerment.",
 };
 
