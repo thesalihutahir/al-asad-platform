@@ -34,15 +34,24 @@ export default function ManageVideosPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('All');
 
+    // Helper: Auto-Detect Arabic
+    const getDir = (text) => {
+        if (!text) return 'ltr';
+        const arabicPattern = /[\u0600-\u06FF]/;
+        return arabicPattern.test(text) ? 'rtl' : 'ltr';
+    };
+
     // 1. FETCH VIDEOS & PLAYLISTS
     useEffect(() => {
         setIsLoading(true);
 
+        // Fetch Videos
         const qVideos = query(collection(db, "videos"), orderBy("createdAt", "desc"));
         const unsubVideos = onSnapshot(qVideos, (snapshot) => {
             setVideos(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         });
 
+        // Fetch Playlists
         const qPlaylists = query(collection(db, "video_playlists"), orderBy("createdAt", "desc"));
         const unsubPlaylists = onSnapshot(qPlaylists, (snapshot) => {
             setPlaylists(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
@@ -55,7 +64,7 @@ export default function ManageVideosPage() {
         };
     }, []);
 
-    // 2. FILTER LOGIC
+    // 2. CALCULATE DYNAMIC COUNTS & FILTER LOGIC
     const getFilteredContent = () => {
         const term = searchTerm.toLowerCase();
         
@@ -70,7 +79,13 @@ export default function ManageVideosPage() {
                 return matchesSearch && matchesCategory;
             });
         } else {
-            return playlists.filter(playlist => {
+            // Map playlists to include dynamic counts from the 'videos' state
+            const playlistsWithCounts = playlists.map(pl => ({
+                ...pl,
+                realCount: videos.filter(v => v.playlist === pl.title).length
+            }));
+
+            return playlistsWithCounts.filter(playlist => {
                 const matchesSearch = playlist.title.toLowerCase().includes(term);
                 const matchesCategory = categoryFilter === 'All' || playlist.category === categoryFilter;
 
@@ -83,7 +98,11 @@ export default function ManageVideosPage() {
 
     // 3. ACTIONS
     const handleDelete = async (id, type) => {
-        if (!confirm(`Are you sure you want to delete this ${type}? This cannot be undone.`)) return;
+        const message = type === 'playlist' 
+            ? "Warning: Deleting this playlist will NOT delete the videos inside it, but they will become 'orphaned' (no playlist). Continue?"
+            : "Are you sure you want to delete this video? This cannot be undone.";
+
+        if (!confirm(message)) return;
 
         try {
             if (type === 'video') {
@@ -97,8 +116,12 @@ export default function ManageVideosPage() {
         }
     };
 
-    const handleEdit = (id) => {
-        router.push(`/admin/videos/edit/${id}`);
+    const handleEdit = (id, type) => {
+        if (type === 'playlist') {
+            router.push(`/admin/videos/playlists/edit/${id}`);
+        } else {
+            router.push(`/admin/videos/edit/${id}`);
+        }
     };
 
     return (
@@ -156,8 +179,6 @@ export default function ManageVideosPage() {
 
                 {/* Filters */}
                 <div className="flex flex-col md:flex-row w-full xl:w-auto gap-3">
-                    
-                    {/* Category Dropdown */}
                     <div className="relative">
                         <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-gold" />
                         <select 
@@ -172,23 +193,17 @@ export default function ManageVideosPage() {
                         </select>
                     </div>
 
-                    {/* Search Bar */}
                     <div className="relative w-full md:w-72">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input 
                             type="text" 
-                            placeholder={`Search by title${activeTab === 'videos' ? ' or playlist' : ''}...`}
+                            placeholder={`Search by title...`}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all" 
                         />
                         {searchTerm && (
-                            <button 
-                                onClick={() => setSearchTerm('')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500"
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
+                            <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500"><X className="w-4 h-4" /></button>
                         )}
                     </div>
                 </div>
@@ -216,7 +231,7 @@ export default function ManageVideosPage() {
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
                                         {filteredContent.length === 0 ? (
-                                            <tr><td colSpan="4" className="px-6 py-12 text-center text-gray-400">No videos found matching your filters.</td></tr>
+                                            <tr><td colSpan="4" className="px-6 py-12 text-center text-gray-400">No videos found.</td></tr>
                                         ) : (
                                             filteredContent.map((video) => (
                                                 <tr key={video.id} className="hover:bg-gray-50 transition-colors group">
@@ -225,7 +240,7 @@ export default function ManageVideosPage() {
                                                             <div className="relative w-16 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-black">
                                                                 <Image src={video.thumbnail || "/fallback.webp"} alt={video.title} fill className="object-cover opacity-80" />
                                                             </div>
-                                                            <h3 className="font-bold text-brand-brown-dark text-sm line-clamp-1 max-w-[250px]" title={video.title}>
+                                                            <h3 className={`font-bold text-brand-brown-dark text-sm line-clamp-1 max-w-[250px] ${getDir(video.title) === 'rtl' ? 'font-tajawal' : ''}`} title={video.title}>
                                                                 {video.title}
                                                             </h3>
                                                         </div>
@@ -233,8 +248,7 @@ export default function ManageVideosPage() {
                                                     <td className="px-6 py-4">
                                                         <span className={`inline-block px-2 py-1 rounded text-[10px] font-bold uppercase ${
                                                             video.category === 'English' ? 'bg-blue-100 text-blue-700' :
-                                                            video.category === 'Hausa' ? 'bg-green-100 text-green-700' :
-                                                            'bg-orange-100 text-orange-700'
+                                                            video.category === 'Hausa' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
                                                         }`}>
                                                             {video.category}
                                                         </span>
@@ -244,24 +258,14 @@ export default function ManageVideosPage() {
                                                             <span className="text-xs font-bold text-brand-brown bg-brand-sand px-2 py-1 rounded-md">
                                                                 {video.playlist}
                                                             </span>
-                                                        ) : (
-                                                            <span className="text-xs text-gray-400">-</span>
-                                                        )}
+                                                        ) : <span className="text-xs text-gray-400">-</span>}
                                                     </td>
                                                     <td className="px-6 py-4 text-right">
                                                         <div className="flex items-center justify-end gap-2">
-                                                            <button 
-                                                                onClick={() => handleEdit(video.id)} 
-                                                                className="p-2 text-gray-400 hover:text-brand-gold hover:bg-brand-sand rounded-lg transition-colors"
-                                                                title="Edit Video"
-                                                            >
+                                                            <button onClick={() => handleEdit(video.id, 'video')} className="p-2 text-gray-400 hover:text-brand-gold hover:bg-brand-sand rounded-lg" title="Edit">
                                                                 <Edit className="w-4 h-4" />
                                                             </button>
-                                                            <button 
-                                                                onClick={() => handleDelete(video.id, 'video')} 
-                                                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                                title="Delete Video"
-                                                            >
+                                                            <button onClick={() => handleDelete(video.id, 'video')} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Delete">
                                                                 <Trash2 className="w-4 h-4" />
                                                             </button>
                                                         </div>
@@ -291,24 +295,31 @@ export default function ManageVideosPage() {
                                                     <div className="absolute top-2 left-2">
                                                         <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase shadow-sm ${
                                                             list.category === 'English' ? 'bg-blue-600 text-white' :
-                                                            list.category === 'Hausa' ? 'bg-green-600 text-white' :
-                                                            'bg-orange-600 text-white'
+                                                            list.category === 'Hausa' ? 'bg-green-600 text-white' : 'bg-orange-600 text-white'
                                                         }`}>
                                                             {list.category}
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <div className="p-4 flex justify-between items-start gap-4">
-                                                    <div>
-                                                        <h3 className="font-agency text-lg text-brand-brown-dark leading-tight line-clamp-2">{list.title}</h3>
-                                                        <p className="text-xs text-gray-400 mt-1 font-bold">
-                                                            {/* Note: This is the stored count. Ideally we'd fetch real counts here too, but for admin view, simple is faster */}
-                                                            Stored Count: {list.count || 0} Videos
-                                                        </p>
+                                                <div className="p-4" dir={getDir(list.title)}>
+                                                    <div className="flex justify-between items-start gap-4" dir="ltr">
+                                                        <div>
+                                                            <h3 className={`font-agency text-lg text-brand-brown-dark leading-tight line-clamp-2 ${getDir(list.title) === 'rtl' ? 'font-tajawal font-bold' : ''}`}>
+                                                                {list.title}
+                                                            </h3>
+                                                            <p className="text-xs text-brand-gold mt-1 font-bold flex items-center gap-1">
+                                                                <ListVideo className="w-3 h-3" /> {list.realCount} Videos
+                                                            </p>
+                                                        </div>
+                                                        <div className="flex gap-1">
+                                                            <button onClick={() => handleEdit(list.id, 'playlist')} className="p-2 text-gray-400 hover:text-brand-gold hover:bg-brand-sand rounded-lg">
+                                                                <Edit className="w-4 h-4" />
+                                                            </button>
+                                                            <button onClick={() => handleDelete(list.id, 'playlist')} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                    <button onClick={() => handleDelete(list.id, 'playlist')} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg flex-shrink-0">
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
                                                 </div>
                                             </div>
                                         ))}
