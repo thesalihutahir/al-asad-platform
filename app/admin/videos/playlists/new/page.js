@@ -24,13 +24,20 @@ export default function CreatePlaylistPage() {
 
     const [formData, setFormData] = useState({
         title: '',
-        category: 'General',
+        category: 'English', // Default to English
         cover: '' // Will store Firebase Storage URL
     });
 
     // Image File State
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+
+    // Helper: Auto-Detect Arabic
+    const getDir = (text) => {
+        if (!text) return 'ltr';
+        const arabicPattern = /[\u0600-\u06FF]/;
+        return arabicPattern.test(text) ? 'rtl' : 'ltr';
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -65,7 +72,7 @@ export default function CreatePlaylistPage() {
         setIsSubmitting(true);
 
         try {
-            let coverUrl = "/fallback.webp"; // UPDATED FALLBACK
+            let coverUrl = "/fallback.webp"; // Default fallback
 
             // 1. Upload Cover Image (if selected)
             if (imageFile) {
@@ -134,23 +141,22 @@ export default function CreatePlaylistPage() {
                         onChange={handleChange}
                         placeholder="e.g. Tafsir Surah Al-Baqarah 2024" 
                         className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
+                        dir={getDir(formData.title)} // Auto-RTL
                     />
                 </div>
 
-                {/* Category */}
+                {/* Category (Language) */}
                 <div>
-                    <label className="block text-xs font-bold text-brand-brown mb-1">Category</label>
+                    <label className="block text-xs font-bold text-brand-brown mb-1">Category (Language)</label>
                     <select 
                         name="category"
                         value={formData.category}
                         onChange={handleChange}
                         className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
                     >
-                        <option>General</option>
-                        <option>Tafsir</option>
-                        <option>Seerah</option>
-                        <option>Ramadan</option>
-                        <option>Event</option>
+                        <option>English</option>
+                        <option>Hausa</option>
+                        <option>Arabic</option>
                     </select>
                 </div>
 
