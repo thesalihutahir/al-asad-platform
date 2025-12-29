@@ -2,7 +2,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 // Context Imports
 import { AuthContextProvider } from "@/context/AuthContext"; 
-import { ModalProvider } from "@/app/context/ModalContext"; // Import the Modal System
+import { ModalProvider } from "@/context/ModalContext"; // Import the Modal System
 
 const inter = Inter({ subsets: ["latin"] });
 
