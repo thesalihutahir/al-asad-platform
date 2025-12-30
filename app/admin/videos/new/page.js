@@ -130,7 +130,7 @@ export default function AddVideoPage() {
         const id = extractVideoId(url);
         if (id) {
             setVideoId(id);
-            setThumbnail(`https://img.youtube.com/vi/${id}/maxresdefault.jpg`);
+            setThumbnail(`https://img.youtube.com/vi/${id}/hqdefault.jpg`);
             setIsValid(true);
             checkDuplicate(id); // Trigger smart check
         } else {
