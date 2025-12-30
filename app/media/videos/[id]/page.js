@@ -39,7 +39,6 @@ export default function WatchVideoPage() {
                     let q;
 
                     if (videoData.playlist) {
-                        // A. If Playlist: Fetch ALL videos in SAME playlist
                         q = query(
                             videosRef, 
                             where("playlist", "==", videoData.playlist)
@@ -48,8 +47,7 @@ export default function WatchVideoPage() {
                         const snap = await getDocs(q);
                         let playlistVideos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-                        // SORT CHRONOLOGICALLY (Oldest First = Episode 1, 2, 3...)
-                        // This ensures "Next" logic flows naturally: Ep 1 -> Ep 2
+                        // Sort Chronologically
                         playlistVideos.sort((a, b) => new Date(a.date) - new Date(b.date));
 
                         // Find current index
@@ -59,16 +57,12 @@ export default function WatchVideoPage() {
                         if (currentIndex !== -1 && currentIndex < playlistVideos.length - 1) {
                             setNextVideo(playlistVideos[currentIndex + 1]); 
                         } else {
-                            // If it's the last episode, maybe suggest the first one or nothing
                             setNextVideo(null); 
                         }
 
-                        // Filter out current video for "Related" list (Show next few episodes)
-                        // Ideally, show videos AFTER the current one, or just others in the series
                         setRelatedVideos(playlistVideos.filter(v => v.id !== id).slice(0, 4));
 
                     } else {
-                        // B. No Playlist: Fetch videos of SAME Category
                         q = query(
                             videosRef, 
                             where("category", "==", videoData.category), 
@@ -164,32 +158,50 @@ export default function WatchVideoPage() {
                             ></iframe>
                         </div>
 
-                        {/* Video Info */}
+                        {/* Video Info Card */}
                         <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100" dir={dir}>
-                            <div className="flex flex-wrap items-start justify-between gap-4 mb-4" dir="ltr">
-                                <div className="flex gap-2">
-                                    <span className="px-3 py-1 bg-brand-gold/10 text-brand-gold text-xs font-bold uppercase rounded-full tracking-wide">
+                            
+                            {/* Meta Header: Categories & Share */}
+                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-5 border-b border-gray-50 pb-4" dir="ltr">
+                                
+                                {/* Tags Container */}
+                                <div className="flex flex-wrap items-center gap-3">
+                                    {/* Category Tag */}
+                                    <span className="px-3 py-1.5 bg-brand-gold/10 text-brand-gold text-[10px] md:text-xs font-bold uppercase rounded-md tracking-wider whitespace-nowrap">
                                         {video.category}
                                     </span>
+
+                                    {/* Playlist Tag (Refined for Long Text) */}
                                     {video.playlist && (
-                                        <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-bold uppercase rounded-full tracking-wide flex items-center gap-1">
-                                            <ListVideo className="w-3 h-3" /> {video.playlist}
-                                        </span>
+                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-gray-100 text-gray-600 text-[10px] md:text-xs font-bold uppercase rounded-md max-w-full sm:max-w-[300px]">
+                                            <ListVideo className="w-3 h-3 flex-shrink-0 text-gray-400" /> 
+                                            <span className="truncate" title={video.playlist}>
+                                                {video.playlist}
+                                            </span>
+                                        </div>
                                     )}
                                 </div>
-                                <button onClick={handleShare} className="flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-brand-brown-dark transition-colors">
+
+                                {/* Share Button */}
+                                <button 
+                                    onClick={handleShare} 
+                                    className="flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-brand-brown-dark transition-colors self-start sm:self-center"
+                                >
                                     <Share2 className="w-4 h-4" /> Share
                                 </button>
                             </div>
 
+                            {/* Title */}
                             <h1 className={`text-2xl md:text-3xl lg:text-4xl font-bold text-brand-brown-dark mb-3 leading-tight ${dir === 'rtl' ? 'font-tajawal' : 'font-agency'}`}>
                                 {video.title}
                             </h1>
 
+                            {/* Date */}
                             <div className="flex items-center gap-2 text-sm text-gray-500 font-bold mb-6" dir="ltr">
-                                <Calendar className="w-4 h-4" /> {formatDate(video.date)}
+                                <Calendar className="w-4 h-4 text-gray-400" /> {formatDate(video.date)}
                             </div>
 
+                            {/* Description */}
                             <div className={`prose max-w-none text-gray-600 leading-relaxed whitespace-pre-line ${dir === 'rtl' ? 'font-arabic text-right' : 'font-lato'}`}>
                                 {video.description}
                             </div>
@@ -200,7 +212,7 @@ export default function WatchVideoPage() {
                     {/* RIGHT COLUMN: SIDEBAR */}
                     <div className="space-y-6">
                         
-                        {/* NEXT VIDEO CARD (Only if playlist exists) */}
+                        {/* NEXT VIDEO CARD */}
                         {nextVideo && (
                             <div className="bg-brand-brown-dark text-white p-6 rounded-2xl shadow-lg relative overflow-hidden group">
                                 <div className="absolute top-0 right-0 p-4 opacity-10">
