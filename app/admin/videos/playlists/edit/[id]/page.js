@@ -23,7 +23,7 @@ export default function EditPlaylistPage() {
     const router = useRouter();
     const params = useParams();
     const id = params?.id;
-    const { showSuccess } = useModal(); // Access global modal
+    const { showSuccess } = useModal(); 
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -34,6 +34,7 @@ export default function EditPlaylistPage() {
 
     const [formData, setFormData] = useState({
         title: '',
+        description: '', // NEW: Description Field
         category: 'English',
         cover: '' 
     });
@@ -61,6 +62,7 @@ export default function EditPlaylistPage() {
                     const data = docSnap.data();
                     setFormData({
                         title: data.title || '',
+                        description: data.description || '', // Load Description
                         category: data.category || 'English',
                         cover: data.cover || ''
                     });
@@ -100,7 +102,7 @@ export default function EditPlaylistPage() {
     const removeImage = () => {
         setImageFile(null);
         setImagePreview(null);
-        setFormData(prev => ({ ...prev, cover: '' })); // Mark for removal
+        setFormData(prev => ({ ...prev, cover: '' })); 
     };
 
     const handleSubmit = async (e) => {
@@ -138,7 +140,8 @@ export default function EditPlaylistPage() {
             // 2. Update Playlist Doc
             const playlistRef = doc(db, "video_playlists", id);
             await updateDoc(playlistRef, {
-                title: formData.title,
+                title: formData.title.trim(),
+                description: formData.description.trim(), // Save Description
                 category: formData.category,
                 cover: coverUrl,
                 updatedAt: new Date().toISOString()
@@ -154,7 +157,7 @@ export default function EditPlaylistPage() {
                 // Batch update allows multiple writes (up to 500)
                 const batch = writeBatch(db);
                 videoSnaps.forEach((videoDoc) => {
-                    batch.update(videoDoc.ref, { playlist: formData.title });
+                    batch.update(videoDoc.ref, { playlist: formData.title.trim() });
                 });
                 await batch.commit();
                 console.log(`Updated ${videoSnaps.size} videos to new playlist name.`);
@@ -211,6 +214,20 @@ export default function EditPlaylistPage() {
                             Note: Changing the title will automatically update all videos in this playlist.
                         </p>
                     )}
+                </div>
+
+                {/* NEW: Description Field */}
+                <div>
+                    <label className="block text-xs font-bold text-brand-brown mb-1">Description (Optional)</label>
+                    <textarea 
+                        name="description"
+                        value={formData.description}
+                        onChange={handleChange}
+                        rows="3"
+                        placeholder="Briefly describe what this series is about..." 
+                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
+                        dir={getDir(formData.description)} 
+                    ></textarea>
                 </div>
 
                 {/* Category (Language) */}
