@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { CheckCircle, AlertTriangle, Trash2 } from 'lucide-react'; // Added icons
+import { Check, AlertTriangle, Trash2, X } from 'lucide-react';
 
 export default function SuccessModal({ 
     isOpen, 
@@ -10,8 +10,8 @@ export default function SuccessModal({
     title, 
     message, 
     onConfirm, 
-    onCancel,
-    confirmText = "Continue",
+    onCancel, 
+    confirmText = "Continue", 
     cancelText
 }) {
     if (!isOpen) return null;
@@ -19,55 +19,58 @@ export default function SuccessModal({
     const isDanger = type === 'danger';
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-brand-brown-dark/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        // 1. BACKDROP: Slightly darker, stronger blur for focus
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-brand-brown-dark/40 backdrop-blur-md p-4 animate-in fade-in duration-300">
             
-            <div className={`bg-white w-full max-w-sm rounded-3xl shadow-2xl border-2 overflow-hidden transform animate-in zoom-in-95 duration-200 ${isDanger ? 'border-red-500' : 'border-brand-gold'}`}>
+            {/* 2. MODAL BOX: Compact, Rounded, clean white */}
+            <div className="bg-white w-[90%] max-w-[340px] rounded-3xl shadow-2xl shadow-brand-brown-dark/20 transform animate-in zoom-in-95 slide-in-from-bottom-2 duration-300 overflow-hidden">
                 
-                {/* Decoration Header */}
-                <div className={`h-2 w-full ${isDanger ? 'bg-red-500' : 'bg-brand-gold'}`}></div>
-
-                <div className="p-8 text-center">
-                    {/* Icon Logic */}
-                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${isDanger ? 'bg-red-100' : 'bg-green-100'}`}>
+                <div className="p-6 text-center">
+                    
+                    {/* 3. ICON: Minimalist with a soft ring effect */}
+                    <div className={`mx-auto flex items-center justify-center w-14 h-14 rounded-full mb-5 transition-transform duration-500 hover:scale-110 ${
+                        isDanger 
+                        ? 'bg-red-50 text-red-500 ring-4 ring-red-50' 
+                        : 'bg-green-50 text-green-600 ring-4 ring-green-50'
+                    }`}>
                         {isDanger ? (
-                            <Trash2 className="w-8 h-8 text-red-600" />
+                            <Trash2 className="w-6 h-6" strokeWidth={2.5} />
                         ) : (
-                            <CheckCircle className="w-8 h-8 text-green-600" />
+                            <Check className="w-7 h-7" strokeWidth={3} />
                         )}
                     </div>
 
-                    {/* Content */}
-                    <h3 className="font-agency text-3xl text-brand-brown-dark mb-2">
+                    {/* 4. CONTENT: Tight typography */}
+                    <h3 className="font-agency text-2xl text-brand-brown-dark mb-2">
                         {title || "Success!"}
                     </h3>
-                    <p className="font-lato text-gray-500 mb-8 leading-relaxed">
+                    <p className="font-lato text-sm text-gray-500 leading-relaxed px-2 mb-6">
                         {message || "Action completed successfully."}
                     </p>
 
-                    {/* Buttons Row */}
+                    {/* 5. ACTIONS: Stacked on mobile if needed, but side-by-side here for compactness */}
                     <div className="flex gap-3">
-                        {/* Cancel Button (Only if cancelText exists) */}
                         {cancelText && (
                             <button 
                                 onClick={onCancel || onClose}
-                                className="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-colors uppercase text-xs tracking-wider"
+                                className="flex-1 py-2.5 bg-gray-50 text-gray-600 font-bold rounded-xl hover:bg-gray-100 transition-colors text-xs tracking-wide"
                             >
                                 {cancelText}
                             </button>
                         )}
 
-                        {/* Confirm Button */}
                         <button 
                             onClick={onConfirm || onClose}
-                            className={`flex-1 py-3 text-white font-bold rounded-xl transition-colors shadow-lg tracking-wide uppercase text-xs ${
+                            className={`flex-1 py-2.5 text-white font-bold rounded-xl transition-all shadow-md active:scale-95 text-xs tracking-wide ${
                                 isDanger 
-                                ? 'bg-red-600 hover:bg-red-700 shadow-red-500/20' 
+                                ? 'bg-red-500 hover:bg-red-600 shadow-red-200' 
                                 : 'bg-brand-gold hover:bg-brand-brown-dark shadow-brand-gold/20'
                             }`}
                         >
                             {confirmText}
                         </button>
                     </div>
+
                 </div>
             </div>
         </div>
