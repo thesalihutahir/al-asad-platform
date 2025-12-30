@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 // Firebase
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore'; // Added 'where', 'query', 'getDocs'
+import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore'; 
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 // Global Modal Context
 import { useModal } from '@/context/ModalContext';
@@ -17,7 +17,7 @@ import {
     X, 
     Image as ImageIcon, 
     Loader2,
-    AlertTriangle // Added for warning icon
+    AlertTriangle 
 } from 'lucide-react';
 
 export default function CreatePlaylistPage() {
@@ -33,6 +33,7 @@ export default function CreatePlaylistPage() {
 
     const [formData, setFormData] = useState({
         title: '',
+        description: '', // NEW: Description Field
         category: 'English', 
         cover: '' 
     });
@@ -48,7 +49,7 @@ export default function CreatePlaylistPage() {
         return arabicPattern.test(text) ? 'rtl' : 'ltr';
     };
 
-    // NEW: Check Duplicate Title
+    // Check Duplicate Title
     const checkDuplicateTitle = async (title) => {
         if (!title.trim()) {
             setDuplicateWarning(null);
@@ -135,7 +136,8 @@ export default function CreatePlaylistPage() {
             // 2. Save Playlist Metadata
             await addDoc(collection(db, "video_playlists"), {
                 ...formData,
-                title: formData.title.trim(), // Ensure trimmed title is saved
+                title: formData.title.trim(), 
+                description: formData.description.trim(), // Save Description
                 cover: coverUrl,
                 count: 0, 
                 status: "Active",
@@ -157,7 +159,8 @@ export default function CreatePlaylistPage() {
             setIsSubmitting(false);
         }
     };
-return (
+
+    return (
         <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto pb-12">
 
             {/* Header */}
@@ -186,7 +189,7 @@ return (
                             className={`w-full bg-gray-50 border rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 ${
                                 duplicateWarning ? 'border-orange-300 bg-orange-50' : 'border-gray-200'
                             }`}
-                            dir={getDir(formData.title)} // Auto-RTL
+                            dir={getDir(formData.title)} 
                         />
                         {isChecking && (
                             <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -202,6 +205,20 @@ return (
                             <span>{duplicateWarning}</span>
                         </div>
                     )}
+                </div>
+
+                {/* NEW: Description Field */}
+                <div>
+                    <label className="block text-xs font-bold text-brand-brown mb-1">Description (Optional)</label>
+                    <textarea 
+                        name="description"
+                        value={formData.description}
+                        onChange={handleChange}
+                        rows="3"
+                        placeholder="Briefly describe what this series is about..." 
+                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
+                        dir={getDir(formData.description)} 
+                    ></textarea>
                 </div>
 
                 {/* Category (Language) */}
@@ -268,7 +285,6 @@ return (
                     </Link>
                     <button 
                         type="submit" 
-                        // Disabled logic updated
                         disabled={isSubmitting || !!duplicateWarning || !formData.title}
                         className={`flex-1 flex items-center justify-center gap-2 py-3 font-bold rounded-xl transition-colors shadow-md ${
                             isSubmitting || !!duplicateWarning || !formData.title
