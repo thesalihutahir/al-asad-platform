@@ -6,8 +6,10 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 // Firebase
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+// Global Modal Context
+import { useModal } from '@/context/ModalContext';
 
 import { 
     ArrowLeft, 
@@ -15,28 +17,71 @@ import {
     Mic, 
     X, 
     Image as ImageIcon, 
-    Loader2
+    Loader2,
+    AlertTriangle
 } from 'lucide-react';
 
 export default function CreatePodcastShowPage() {
     const router = useRouter();
+    const { showSuccess } = useModal(); 
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+
+    // Duplicate Check State
+    const [duplicateWarning, setDuplicateWarning] = useState(null);
+    const [isChecking, setIsChecking] = useState(false);
 
     const [formData, setFormData] = useState({
         title: '',
         host: 'Al-Asad Foundation',
         category: 'General',
-        cover: '' // Firebase URL
+        description: '', // Added Description
+        cover: '' 
     });
 
     // Image File State
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
 
+    // Helper: Auto-Detect Arabic
+    const getDir = (text) => {
+        if (!text) return 'ltr';
+        const arabicPattern = /[\u0600-\u06FF]/;
+        return arabicPattern.test(text) ? 'rtl' : 'ltr';
+    };
+
+    // Check Duplicate Title
+    const checkDuplicateTitle = async (title) => {
+        if (!title.trim()) {
+            setDuplicateWarning(null);
+            return;
+        }
+        
+        setIsChecking(true);
+        try {
+            const q = query(collection(db, "podcast_shows"), where("title", "==", title.trim()));
+            const snapshot = await getDocs(q);
+
+            if (!snapshot.empty) {
+                setDuplicateWarning(`A show named "${title}" already exists.`);
+            } else {
+                setDuplicateWarning(null);
+            }
+        } catch (error) {
+            console.error("Error checking duplicate:", error);
+        } finally {
+            setIsChecking(false);
+        }
+    };
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+
+        if (name === 'title') {
+            checkDuplicateTitle(value);
+        }
     };
 
     const handleImageChange = (e) => {
@@ -58,16 +103,16 @@ export default function CreatePodcastShowPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        if (!formData.title) {
-            alert("Please enter a Show Title.");
+
+        // Prevent submission if duplicate exists or title empty
+        if (!formData.title || duplicateWarning) {
             return;
         }
 
         setIsSubmitting(true);
 
         try {
-            let coverUrl = "/fallback.webp"; // Default
+            let coverUrl = "/fallback.webp"; 
 
             // 1. Upload Cover Image (if selected)
             if (imageFile) {
@@ -92,14 +137,21 @@ export default function CreatePodcastShowPage() {
             // 2. Save Show Metadata
             await addDoc(collection(db, "podcast_shows"), {
                 ...formData,
+                title: formData.title.trim(),
+                description: formData.description.trim(),
                 cover: coverUrl,
                 status: "Active",
                 episodeCount: 0,
                 createdAt: serverTimestamp()
             });
 
-            alert("Podcast Show created successfully!");
-            router.push('/admin/podcasts'); 
+            // Show Success Modal
+            showSuccess({
+                title: "Podcast Show Created!",
+                message: "Your new podcast show has been launched successfully.",
+                confirmText: "Return to Library",
+                onConfirm: () => router.push('/admin/podcasts')
+            });
 
         } catch (error) {
             console.error("Error creating show:", error);
@@ -108,7 +160,6 @@ export default function CreatePodcastShowPage() {
             setIsSubmitting(false);
         }
     };
-
     return (
         <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto pb-12">
 
@@ -124,18 +175,36 @@ export default function CreatePodcastShowPage() {
             </div>
 
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
-                
+
                 {/* Title */}
                 <div>
                     <label className="block text-xs font-bold text-brand-brown mb-1">Show Title</label>
-                    <input 
-                        type="text" 
-                        name="title"
-                        value={formData.title}
-                        onChange={handleChange}
-                        placeholder="e.g. The Daily Reminders" 
-                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
-                    />
+                    <div className="relative">
+                        <input 
+                            type="text" 
+                            name="title"
+                            value={formData.title}
+                            onChange={handleChange}
+                            placeholder="e.g. The Daily Reminders" 
+                            className={`w-full bg-gray-50 border rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 ${
+                                duplicateWarning ? 'border-orange-300 bg-orange-50' : 'border-gray-200'
+                            }`}
+                            dir={getDir(formData.title)}
+                        />
+                        {isChecking && (
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* DUPLICATE WARNING */}
+                    {duplicateWarning && (
+                        <div className="mt-2 flex items-start gap-2 text-xs font-bold text-orange-700 animate-in fade-in slide-in-from-top-1">
+                            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                            <span>{duplicateWarning}</span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Host */}
@@ -147,6 +216,7 @@ export default function CreatePodcastShowPage() {
                         value={formData.host}
                         onChange={handleChange}
                         className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
+                        dir={getDir(formData.host)}
                     />
                 </div>
 
@@ -165,6 +235,20 @@ export default function CreatePodcastShowPage() {
                         <option>Q&A</option>
                         <option>Ramadan Special</option>
                     </select>
+                </div>
+
+                {/* Description */}
+                <div>
+                    <label className="block text-xs font-bold text-brand-brown mb-1">Description (Optional)</label>
+                    <textarea 
+                        name="description"
+                        value={formData.description}
+                        onChange={handleChange}
+                        rows="3"
+                        placeholder="What is this show about?" 
+                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
+                        dir={getDir(formData.description)}
+                    ></textarea>
                 </div>
 
                 {/* Cover Image Upload */}
@@ -216,8 +300,12 @@ export default function CreatePodcastShowPage() {
                     </Link>
                     <button 
                         type="submit" 
-                        disabled={isSubmitting}
-                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-colors shadow-md disabled:opacity-50"
+                        disabled={isSubmitting || !!duplicateWarning || !formData.title}
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 font-bold rounded-xl transition-colors shadow-md ${
+                            isSubmitting || !!duplicateWarning || !formData.title
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-brand-gold text-white hover:bg-brand-brown-dark'
+                        }`}
                     >
                         {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                         {isSubmitting ? 'Creating...' : 'Create Show'}
