@@ -17,7 +17,7 @@ export default function UpdatesPage() {
     const [allUpdates, setAllUpdates] = useState([]);
     const [filteredUpdates, setFilteredUpdates] = useState([]);
     const [loading, setLoading] = useState(true);
-    
+
     // Filters
     const [activeLang, setActiveLang] = useState('All');
     const languages = ["All", "English", "Hausa", "Arabic"];
@@ -26,12 +26,11 @@ export default function UpdatesPage() {
     useEffect(() => {
         const fetchUpdates = async () => {
             try {
-                // Query: Get all posts where category is 'News', ordered by newest
+                // Query: Get all items from 'news' collection
                 const q = query(
-                    collection(db, "posts"),
-                    where("category", "==", "News"),
+                    collection(db, "news"),
                     where("status", "==", "Published"), // Only show published
-                    orderBy("createdAt", "desc")
+                    orderBy("eventDate", "desc") // Order by Event Date, not creation date
                 );
 
                 const querySnapshot = await getDocs(q);
@@ -63,8 +62,8 @@ export default function UpdatesPage() {
     // --- HELPER: Parse Date for UI (Splits into Day and Month) ---
     const getDateParts = (dateInput) => {
         try {
-            if (!dateInput) return { day: '00', month: 'OCT', year: '0000', full: '' };
-            const date = dateInput.toDate ? dateInput.toDate() : new Date(dateInput);
+            if (!dateInput) return { day: '00', month: '---', year: '----', full: '' };
+            const date = new Date(dateInput); // eventDate is usually stored as YYYY-MM-DD string
             return {
                 day: date.getDate(),
                 month: date.toLocaleString('default', { month: 'short' }).toUpperCase(),
@@ -78,8 +77,7 @@ export default function UpdatesPage() {
 
     // --- HELPER: Get Display Category ---
     const getDisplayCategory = (item) => {
-        if (item.language) return item.language;
-        return item.category;
+        return item.language || 'Update';
     };
 
     // Split featured vs grid
@@ -128,8 +126,8 @@ export default function UpdatesPage() {
                                     {/* Image Side */}
                                     <div className="relative w-full md:w-1/2 aspect-video md:aspect-auto bg-gray-800">
                                         <Image 
-                                            src={featured.coverImage || "/fallback.webp"} 
-                                            alt={featured.title} 
+                                            src={featured.featuredImage || "/fallback.webp"} 
+                                            alt={featured.headline} 
                                             fill 
                                             className="object-cover transition-transform duration-700 group-hover:scale-105" 
                                         />
@@ -142,15 +140,15 @@ export default function UpdatesPage() {
                                     <div className="p-8 md:p-12 text-white flex flex-col justify-center md:w-1/2" dir={featured.language === 'Arabic' ? 'rtl' : 'ltr'}>
                                         <div className="flex items-center gap-2 mb-4 opacity-80" dir="ltr">
                                             <Calendar className="w-4 h-4" />
-                                            <span className="text-sm font-bold">{getDateParts(featured.date).full}</span>
+                                            <span className="text-sm font-bold">{getDateParts(featured.eventDate).full}</span>
                                         </div>
                                         <Link href={`/blogs/read/${featured.id}`}>
                                             <h2 className={`font-agency text-3xl md:text-5xl leading-tight mb-4 hover:text-brand-gold transition-colors cursor-pointer ${featured.language === 'Arabic' ? 'font-tajawal font-bold' : ''}`}>
-                                                {featured.title}
+                                                {featured.headline}
                                             </h2>
                                         </Link>
                                         <p className={`font-lato text-white/80 text-sm md:text-lg mb-8 leading-relaxed line-clamp-3 ${featured.language === 'Arabic' ? 'font-arabic' : ''}`}>
-                                            {featured.excerpt}
+                                            {featured.shortDescription}
                                         </p>
                                         <Link href={`/blogs/read/${featured.id}`} className="inline-flex items-center gap-2 text-brand-gold font-bold uppercase tracking-widest hover:text-white transition-colors group">
                                             {featured.language === 'Arabic' ? 'اقرأ المزيد' : 'Read Full Story'} <ArrowRight className={`w-4 h-4 transition-transform group-hover:translate-x-1 ${featured.language === 'Arabic' ? 'rotate-180' : ''}`} />
@@ -192,7 +190,7 @@ export default function UpdatesPage() {
                             {gridUpdates.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                                     {gridUpdates.map((item) => {
-                                        const date = getDateParts(item.date);
+                                        const date = getDateParts(item.eventDate);
                                         const displayCat = getDisplayCategory(item);
                                         const isArabic = item.language === 'Arabic';
 
@@ -216,10 +214,10 @@ export default function UpdatesPage() {
                                                         {displayCat}
                                                     </span>
                                                     <h3 className={`font-agency text-xl md:text-2xl text-brand-brown-dark leading-tight mb-3 group-hover:text-brand-gold transition-colors line-clamp-2 ${isArabic ? 'font-tajawal font-bold' : ''}`}>
-                                                        {item.title}
+                                                        {item.headline}
                                                     </h3>
                                                     <p className={`font-lato text-xs md:text-sm text-gray-600 leading-relaxed mb-4 line-clamp-3 flex-grow ${isArabic ? 'font-arabic' : ''}`}>
-                                                        {item.excerpt}
+                                                        {item.shortDescription}
                                                     </p>
                                                     <span className={`text-[10px] md:text-xs font-bold text-brand-brown-dark flex items-center gap-1 group-hover:underline decoration-brand-gold underline-offset-4 mt-auto ${isArabic ? 'flex-row-reverse' : ''}`}>
                                                         {isArabic ? 'التفاصيل' : 'See Details'} <ArrowRight className={`w-3 h-3 ${isArabic ? 'rotate-180' : ''}`} />
