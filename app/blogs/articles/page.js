@@ -9,32 +9,29 @@ import Loader from '@/components/Loader';
 // Firebase Imports
 import { db } from '@/lib/firebase';
 import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
-import { Clock, User, Tag, ChevronRight, Search, Mail, BookOpen, Globe } from 'lucide-react';
+import { Clock, User, Tag, ChevronRight, Search, Mail, Globe } from 'lucide-react';
 
 export default function ArticlesPage() {
 
     // --- STATE MANAGEMENT ---
     const [articles, setArticles] = useState([]);
-    const [series, setSeries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [visibleCount, setVisibleCount] = useState(6);
-    
+
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
     const [activeLang, setActiveLang] = useState('All'); 
 
     const languages = ["All", "English", "Hausa", "Arabic"];
-
-    const sidebarTags = ["Spirituality", "Fiqh", "History", "Community", "Lifestyle", "Family"];
+    const sidebarTags = ["Spirituality", "Fiqh", "History", "Community", "Lifestyle", "Reflections"];
 
     // --- FETCH DATA ---
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // 1. Fetch Articles
+                // 1. Fetch Articles from specific collection
                 const qArticles = query(
-                    collection(db, "posts"),
-                    where("category", "==", "Article"),
+                    collection(db, "articles"),
                     where("status", "==", "Published"),
                     orderBy("createdAt", "desc")
                 );
@@ -45,21 +42,8 @@ export default function ArticlesPage() {
                 }));
                 setArticles(fetchedArticles);
 
-                // 2. Fetch Series
-                const qSeries = query(
-                    collection(db, "blog_series"),
-                    where("category", "==", "Article"), 
-                    orderBy("createdAt", "desc")
-                );
-                const seriesSnapshot = await getDocs(qSeries);
-                const fetchedSeries = seriesSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                setSeries(fetchedSeries);
-
             } catch (error) {
-                console.error("Error fetching data:", error);
+                console.error("Error fetching articles:", error);
             } finally {
                 setLoading(false);
             }
@@ -68,39 +52,23 @@ export default function ArticlesPage() {
         fetchData();
     }, []);
 
-    // --- HELPER: Safe Date Format ---
-    const formatDate = (dateInput) => {
-        try {
-            if (!dateInput) return '';
-            const date = dateInput.toDate ? dateInput.toDate() : new Date(dateInput);
-            return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        } catch (e) {
-            return '';
-        }
-    };
-
     // --- HELPER: Read Time Formatter (Automated) ---
-    const getReadTime = (time, lang) => {
-        if (!time) return '';
-        // If old data (string like "5 min read"), return as is
-        if (isNaN(time)) return time;
-        
-        // If new data (number like 5), format it based on language
+    const getReadTime = (text, lang) => {
+        if (!text) return '';
+        const wpm = 200;
+        const words = text.trim().split(/\s+/).length;
+        const time = Math.ceil(words / wpm);
+
         if (lang === 'Arabic') return `${time} دقائق قراءة`;
         if (lang === 'Hausa') return `Minti ${time} karatu`;
         return `${time} min read`;
-    };
-
-    // --- HELPER: Get Series Count ---
-    const getSeriesCount = (seriesTitle) => {
-        return articles.filter(a => a.series === seriesTitle).length;
     };
 
     // --- FILTER LOGIC ---
     const filteredArticles = articles.filter(article => {
         const matchesSearch = article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                               (article.excerpt && article.excerpt.toLowerCase().includes(searchTerm.toLowerCase()));
-        
+
         const matchesLang = activeLang === 'All' || article.language === activeLang;
 
         return matchesSearch && matchesLang;
@@ -136,54 +104,11 @@ export default function ArticlesPage() {
                     </div>
                 </section>
 
-                {/* 2. DYNAMIC SERIES SECTION */}
-                {series.length > 0 && (
-                    <section className="px-6 md:px-12 lg:px-24 mb-12 md:mb-20 max-w-7xl mx-auto">
-                        <div className="flex justify-between items-end mb-6 border-b border-gray-200 pb-2">
-                            <h2 className="font-agency text-2xl md:text-3xl text-brand-brown-dark">
-                                Article Series
-                            </h2>
-                            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden md:block">
-                                Curated Collections
-                            </span>
-                        </div>
-
-                        <div className="flex overflow-x-auto gap-4 pb-4 md:grid md:grid-cols-3 md:gap-8 scrollbar-hide snap-x">
-                            {series.map((item) => (
-                                <Link 
-                                    href={`/blogs/series/${item.id}`} 
-                                    key={item.id} 
-                                    className="snap-center min-w-[260px] md:min-w-0 group cursor-pointer bg-white p-3 rounded-2xl shadow-sm hover:shadow-lg transition-all"
-                                >
-                                    <div className="relative w-full aspect-[16/9] rounded-xl overflow-hidden mb-3 bg-gray-100">
-                                        <Image 
-                                            src={item.cover || "/fallback.webp"} 
-                                            alt={item.title} 
-                                            fill 
-                                            className="object-cover transition-transform duration-700 group-hover:scale-110" 
-                                        />
-                                        <div className="absolute top-2 left-2 bg-white/90 text-brand-brown-dark text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 shadow-sm">
-                                            <BookOpen className="w-3 h-3" /> {getSeriesCount(item.title)} Parts
-                                        </div>
-                                    </div>
-                                    <h3 className="font-agency text-lg md:text-xl text-brand-brown-dark leading-tight px-1 group-hover:text-brand-gold transition-colors">
-                                        {item.title}
-                                    </h3>
-                                    {item.language && (
-                                        <span className="text-[10px] text-gray-400 uppercase tracking-wider block mt-1 px-1">{item.language} Series</span>
-                                    )}
-                                </Link>
-                            ))}
-                        </div>
-                    </section>
-                )}
-
-                {/* 3. MAIN CONTENT AREA */}
+                {/* 2. MAIN CONTENT AREA */}
                 <section className="px-6 md:px-12 lg:px-24 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12">
-
                     {/* LEFT COLUMN: ARTICLE LIST */}
                     <div className="lg:col-span-8 space-y-8">
-                        
+
                         {/* Horizontal Language Filter & Search */}
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
                             {/* Horizontal Looping Buttons */}
@@ -230,7 +155,7 @@ export default function ArticlesPage() {
                                                 {/* Image */}
                                                 <div className="relative w-full md:w-48 aspect-video md:aspect-square rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
                                                     <Image 
-                                                        src={item.coverImage || "/fallback.webp"} 
+                                                        src={item.featuredImage || "/fallback.webp"} 
                                                         alt={item.title} 
                                                         fill 
                                                         className="object-cover transition-transform duration-700 group-hover:scale-105" 
@@ -239,7 +164,7 @@ export default function ArticlesPage() {
 
                                                 {/* Content */}
                                                 <div className="flex flex-col justify-center flex-grow">
-                                                    {/* Meta Row - Fixed for Arabic to ensure correct icon order */}
+                                                    {/* Meta Row */}
                                                     <div className={`flex items-center gap-3 mb-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
                                                         <span className="text-[10px] font-bold text-white bg-brand-brown px-2 py-0.5 rounded-full uppercase tracking-wider">
                                                             {item.category}
@@ -251,7 +176,7 @@ export default function ArticlesPage() {
                                                         )}
                                                         {/* Force LTR for time/icon pair even in Arabic context */}
                                                         <span className={`text-[10px] text-gray-400 flex items-center gap-1 ${isArabic ? 'mr-auto' : 'ml-auto'}`} dir="ltr">
-                                                            <Clock className="w-3 h-3" /> {getReadTime(item.readTime, item.language)}
+                                                            <Clock className="w-3 h-3" /> {getReadTime(item.body || "", item.language)}
                                                         </span>
                                                     </div>
 
@@ -301,15 +226,15 @@ export default function ArticlesPage() {
 
                     {/* RIGHT COLUMN: SIDEBAR */}
                     <aside className="hidden lg:block lg:col-span-4 space-y-8">
-                        
+
                         {/* Topics Widget */}
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                             <h4 className="font-agency text-xl text-brand-brown-dark mb-4 border-b border-gray-200 pb-2">
-                                Topics
+                                Popular Topics
                             </h4>
                             <div className="flex flex-wrap gap-2">
                                 {sidebarTags.map((cat, idx) => (
-                                    <span key={idx} className="bg-brand-sand text-brand-brown text-xs px-3 py-1.5 rounded-lg hover:bg-brand-gold hover:text-white cursor-pointer transition-colors border border-transparent hover:border-brand-gold">
+                                    <span key={idx} className="bg-brand-sand text-brand-brown text-xs px-3 py-1.5 rounded-lg cursor-default border border-transparent">
                                         {cat}
                                     </span>
                                 ))}
