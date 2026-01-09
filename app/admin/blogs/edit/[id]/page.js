@@ -3,89 +3,110 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 // Firebase
 import { db, storage } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, serverTimestamp, collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-// Utilities
-import { compressImage } from '@/utils/compressImage';
-import Loader from '@/components/Loader';
+// Context
+import { useModal } from '@/context/ModalContext';
 
 import { 
-    ArrowLeft, 
-    Save, 
-    X, 
-    FileText, 
-    LayoutList, 
-    UploadCloud,
-    CheckCircle,
-    Globe
+    ArrowLeft, Save, Loader2, UploadCloud, FileText, Bell, BookOpen, 
+    Image as ImageIcon, X, AlertTriangle, CheckCircle, Calendar
 } from 'lucide-react';
 
-export default function EditBlogPage() {
+export default function EditContentPage() {
     const router = useRouter();
-    const params = useParams(); 
-    const postId = params.id;
+    const params = useParams();
+    const searchParams = useSearchParams();
+    const { showSuccess } = useModal();
+
+    const id = params?.id;
+    const type = searchParams.get('type'); // 'articles', 'news', or 'research'
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isSavingDraft, setIsSavingDraft] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [uploadProgress, setUploadProgress] = useState(0);
 
-    // Data State
-    const [allSeries, setAllSeries] = useState([]);
-    const [filteredSeries, setFilteredSeries] = useState([]);
-
+    // Form State
     const [formData, setFormData] = useState({
+        status: 'Draft',
+        language: 'English',
+        // Articles
         title: '',
+        slug: '',
+        author: '',
+        category: 'Faith',
+        body: '',
         excerpt: '',
-        content: '', 
-        category: 'Article',
-        language: 'English', 
-        series: '', 
-        author: '', 
-        readTime: '', // Will be number
-        date: '', 
-        tags: '',
-        status: 'Published',
-        coverImage: '',
-        pdfUrl: '',
-        pdfName: ''
+        // News
+        headline: '',
+        eventDate: '',
+        shortDescription: '',
+        // Research
+        researchTitle: '',
+        authors: '',
+        abstract: '',
+        researchType: 'Journal Article',
+        publicationStatus: 'Published',
+        doi: '',
     });
 
-    // File States (for new uploads)
-    const [newCoverFile, setNewCoverFile] = useState(null);
-    const [coverPreview, setCoverPreview] = useState(null);
-    const [newPdfFile, setNewPdfFile] = useState(null);
+    // File State
+    const [file, setFile] = useState(null); // New file to upload
+    const [existingFileUrl, setExistingFileUrl] = useState(null); // Current URL
+    const [filePreview, setFilePreview] = useState(null); // For new image preview
 
-    // 1. Fetch Data on Mount
+    // Helper: RTL
+    const getDir = (text) => {
+        if (!text) return 'ltr';
+        const arabicPattern = /[\u0600-\u06FF]/;
+        return arabicPattern.test(text) ? 'rtl' : 'ltr';
+    };
+
+    // 1. FETCH DATA
     useEffect(() => {
         const fetchData = async () => {
+            if (!id || !type) return;
+            setIsLoading(true);
             try {
-                // Fetch Series List
-                const qSeries = query(collection(db, "blog_series"), orderBy("createdAt", "desc"));
-                const seriesSnapshot = await getDocs(qSeries);
-                const seriesList = seriesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setAllSeries(seriesList);
+                const docRef = doc(db, type, id);
+                const docSnap = await getDoc(docRef);
 
-                // Fetch Post Data
-                if (postId) {
-                    const docRef = doc(db, "posts", postId);
-                    const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    // Populate Form
+                    setFormData({
+                        status: data.status || 'Draft',
+                        language: data.language || 'English',
+                        // Map fields based on what exists
+                        title: data.title || '',
+                        slug: data.slug || '',
+                        author: data.author || '',
+                        category: data.category || 'Faith',
+                        body: data.body || '',
+                        excerpt: data.excerpt || '',
+                        headline: data.headline || '',
+                        eventDate: data.eventDate || '',
+                        shortDescription: data.shortDescription || '',
+                        researchTitle: data.researchTitle || '',
+                        authors: data.authors || '',
+                        abstract: data.abstract || '',
+                        researchType: data.researchType || 'Journal Article',
+                        publicationStatus: data.publicationStatus || 'Published',
+                        doi: data.doi || '',
+                    });
 
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        setFormData({
-                            ...data,
-                            tags: Array.isArray(data.tags) ? data.tags.join(', ') : data.tags || '',
-                            language: data.language || 'English'
-                        });
-                        if (data.coverImage) setCoverPreview(data.coverImage);
+                    // Handle File
+                    if (type === 'research') {
+                        setExistingFileUrl(data.pdfUrl);
                     } else {
-                        alert("Post not found!");
-                        router.push('/admin/blogs');
+                        setExistingFileUrl(data.featuredImage);
                     }
+                } else {
+                    alert("Content not found");
+                    router.push('/admin/blogs');
                 }
             } catch (error) {
                 console.error("Error fetching data:", error);
@@ -93,322 +114,300 @@ export default function EditBlogPage() {
                 setIsLoading(false);
             }
         };
-
         fetchData();
-    }, [postId, router]);
+    }, [id, type, router]);
 
-    // 2. Filter Series
-    useEffect(() => {
-        const filtered = allSeries.filter(series => {
-            const catMatch = series.category === formData.category;
-            const langMatch = series.language ? series.language === formData.language : true;
-            return catMatch && langMatch;
-        });
-        setFilteredSeries(filtered);
-    }, [formData.category, formData.language, allSeries]);
-
+    // HANDLE CHANGE
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // Handle New Cover Image
-    const handleCoverChange = async (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            try {
-                const compressed = await compressImage(file);
-                setNewCoverFile(compressed);
-                setCoverPreview(URL.createObjectURL(compressed));
-            } catch (error) {
-                console.error("Compression failed", error);
-                setNewCoverFile(file);
-                setCoverPreview(URL.createObjectURL(file));
-            }
-        }
-    };
-
-    // Handle New PDF
-    const handlePdfChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            if (file.size > 20 * 1024 * 1024) {
-                alert("PDF too large (Max 20MB)");
+    // FILE HANDLER
+    const handleFileChange = (e) => {
+        const selected = e.target.files[0];
+        if (selected) {
+            if (type === 'research' && selected.type !== 'application/pdf') {
+                alert("Please upload a PDF for research.");
                 return;
             }
-            setNewPdfFile(file);
+            if ((type !== 'research') && !selected.type.startsWith('image/')) {
+                alert("Please upload an image file.");
+                return;
+            }
+            
+            setFile(selected);
+            if (selected.type.startsWith('image/')) {
+                setFilePreview(URL.createObjectURL(selected));
+            }
         }
     };
 
-    const removeCover = () => {
-        setFormData(prev => ({ ...prev, coverImage: '' }));
-        setCoverPreview(null);
-        setNewCoverFile(null);
+    const removeNewFile = () => {
+        setFile(null);
+        setFilePreview(null);
     };
 
-    const removePdf = () => {
-        setFormData(prev => ({ ...prev, pdfUrl: '', pdfName: '' }));
-        setNewPdfFile(null);
-    };
-
-    // Handle Update
-    const handleUpdate = async (e, status = 'Published') => {
-        if(e) e.preventDefault();
-        
-        if (status === 'Published') setIsSubmitting(true);
-        else setIsSavingDraft(true);
+    // SUBMIT LOGIC
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
 
         try {
-            let finalCoverUrl = formData.coverImage;
-            let finalPdfUrl = formData.pdfUrl;
-            let finalPdfName = formData.pdfName;
-
-            // 1. Upload New Cover
-            if (newCoverFile) {
-                const coverRef = ref(storage, `blog_covers/${Date.now()}_${newCoverFile.name}`);
-                const coverTask = uploadBytesResumable(coverRef, newCoverFile);
-
-                coverTask.on('state_changed', (snapshot) => {
+            let fileUrl = existingFileUrl;
+            
+            // Upload New File if selected
+            if (file) {
+                const folder = type === 'research' ? 'research_pdfs' : 'blog_images';
+                const storageRef = ref(storage, `${folder}/${Date.now()}_edited_${file.name}`);
+                const uploadTask = uploadBytesResumable(storageRef, file);
+                
+                uploadTask.on('state_changed', (snapshot) => {
                     const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
                     setUploadProgress(progress);
                 });
 
-                await coverTask;
-                finalCoverUrl = await getDownloadURL(coverTask.snapshot.ref);
+                await uploadTask;
+                fileUrl = await getDownloadURL(uploadTask.snapshot.ref);
             }
 
-            // 2. Upload New PDF
-            if (newPdfFile) {
-                const pdfRef = ref(storage, `blog_pdfs/${Date.now()}_${newPdfFile.name}`);
-                await uploadBytesResumable(pdfRef, newPdfFile);
-                finalPdfUrl = await getDownloadURL(pdfRef);
-                finalPdfName = newPdfFile.name;
-            }
-
-            // 3. Update Firestore
-            const docRef = doc(db, "posts", postId);
-            await updateDoc(docRef, {
-                ...formData,
-                status: status,
-                coverImage: finalCoverUrl,
-                pdfUrl: finalPdfUrl,
-                pdfName: finalPdfName,
+            // Construct Data Payload
+            let payload = {
                 updatedAt: serverTimestamp(),
-                tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '')
+                status: formData.status,
+                language: formData.language,
+                // Slug usually remains static or is edited manually if we added a slug field
+            };
+
+            if (type === 'articles') {
+                payload = { ...payload, title: formData.title, author: formData.author, category: formData.category, body: formData.body, excerpt: formData.excerpt, featuredImage: fileUrl };
+            } else if (type === 'news') {
+                payload = { ...payload, headline: formData.headline, eventDate: formData.eventDate, shortDescription: formData.shortDescription, body: formData.body, featuredImage: fileUrl };
+            } else if (type === 'research') {
+                payload = { ...payload, researchTitle: formData.researchTitle, authors: formData.authors, abstract: formData.abstract, researchType: formData.researchType, publicationStatus: formData.publicationStatus, doi: formData.doi, pdfUrl: fileUrl };
+            }
+
+            // Update Doc
+            const docRef = doc(db, type, id);
+            await updateDoc(docRef, payload);
+
+            showSuccess({
+                title: "Content Updated",
+                message: "Your changes have been saved successfully.",
+                confirmText: "Return to List",
+                onConfirm: () => router.push('/admin/blogs')
             });
 
-            alert(`Post ${status === 'Draft' ? 'saved as draft' : 'updated'} successfully!`);
-            router.push('/admin/blogs');
-
         } catch (error) {
-            console.error("Error updating post:", error);
-            alert("Failed to update post.");
+            console.error("Error updating:", error);
+            alert("Failed to update content.");
         } finally {
             setIsSubmitting(false);
-            setIsSavingDraft(false);
+            setUploadProgress(0);
         }
     };
 
-    if (isLoading) {
-        return <Loader size="lg" className="h-[50vh]" />;
-    }
-
-    return (
-        <form className="space-y-6 max-w-6xl mx-auto pb-12">
-
+    if (isLoading) return <div className="h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 text-brand-gold animate-spin" /></div>;
+return (
+        <div className="max-w-6xl mx-auto pb-12">
+            
             {/* HEADER */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-0 bg-gray-50 z-20 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between py-6 border-b border-gray-200 mb-6">
                 <div className="flex items-center gap-4">
-                    <Link href="/admin/blogs" className="p-2 hover:bg-gray-200 rounded-lg transition-colors">
-                        <ArrowLeft className="w-5 h-5 text-gray-600" />
-                    </Link>
+                    <Link href="/admin/blogs" className="p-2 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
                     <div>
-                        <h1 className="font-agency text-3xl text-brand-brown-dark">Edit Post</h1>
-                        <p className="font-lato text-sm text-gray-500">Update content, fix typos, or replace images.</p>
+                        <h1 className="font-agency text-3xl text-brand-brown-dark">Edit Content</h1>
+                        <p className="font-lato text-sm text-gray-500 capitalize">Editing {type?.slice(0, -1) || 'Item'}</p>
                     </div>
-                </div>
-                <div className="flex gap-3">
-                    <button 
-                        type="button" 
-                        onClick={(e) => handleUpdate(e, 'Draft')}
-                        disabled={isSavingDraft || isSubmitting}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 transition-colors disabled:opacity-50"
-                    >
-                        {isSavingDraft && <Loader size="xs" />} Save Draft
-                    </button>
-                    <button 
-                        type="button" 
-                        onClick={(e) => handleUpdate(e, 'Published')}
-                        disabled={isSubmitting || isSavingDraft}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-colors shadow-md disabled:opacity-50"
-                    >
-                        {isSubmitting ? <Loader size="xs" /> : <Save className="w-4 h-4" />}
-                        {isSubmitting ? 'Saving...' : 'Update Post'}
-                    </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-                {/* LEFT: CONTENT */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Post Title</label>
-                        <input 
-                            type="text" 
-                            name="title"
-                            value={formData.title}
-                            onChange={handleChange}
-                            className="w-full text-2xl font-agency font-bold text-brand-brown-dark placeholder-gray-300 border-none focus:ring-0 p-0 focus:outline-none"
-                        />
-                    </div>
-
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Excerpt</label>
-                        <textarea 
-                            name="excerpt"
-                            value={formData.excerpt}
-                            onChange={handleChange}
-                            rows="2"
-                            className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
-                        ></textarea>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 min-h-[500px] flex flex-col">
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Main Content</label>
-                        <textarea 
-                            name="content"
-                            value={formData.content}
-                            onChange={handleChange}
-                            className="flex-grow w-full resize-none border-none focus:ring-0 p-0 focus:outline-none text-base leading-relaxed text-gray-700"
-                        ></textarea>
-                    </div>
-
-                    {/* PDF Section */}
-                    <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100 border-dashed">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-blue-100 rounded-full text-blue-600"><FileText className="w-6 h-6" /></div>
-                            <div className="flex-grow">
-                                <h3 className="font-bold text-blue-800 text-sm">Attached PDF</h3>
-                                <p className="text-xs text-blue-600">
-                                    {formData.pdfName || (newPdfFile ? newPdfFile.name : "No PDF attached")}
-                                </p>
-                            </div>
-                            <div className="relative">
-                                {formData.pdfName || newPdfFile ? (
-                                    <button type="button" onClick={removePdf} className="text-red-500 hover:text-red-700 text-xs font-bold underline">Remove</button>
-                                ) : (
-                                    <>
-                                        <label htmlFor="pdf-upload" className="cursor-pointer bg-blue-600 text-white text-xs px-4 py-2 rounded-lg font-bold hover:bg-blue-700">Upload New</label>
-                                        <input id="pdf-upload" type="file" accept="application/pdf" onChange={handlePdfChange} className="hidden" />
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* RIGHT: METADATA */}
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                {/* LEFT COLUMN: UPLOADS & META */}
                 <div className="space-y-6">
+                    
+                    {/* Language & Status */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
-                        <h3 className="font-agency text-xl text-brand-brown-dark border-b border-gray-100 pb-2">Publishing</h3>
-
-                        {/* Language Selection */}
                         <div>
                             <label className="block text-xs font-bold text-brand-brown mb-1">Language</label>
-                            <div className="relative">
-                                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                <select 
-                                    name="language"
-                                    value={formData.language}
-                                    onChange={handleChange}
-                                    className="w-full bg-white border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer"
-                                >
-                                    <option value="English">English</option>
-                                    <option value="Hausa">Hausa</option>
-                                    <option value="Arabic">Arabic</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-bold text-brand-brown mb-1">Category</label>
-                            <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm">
-                                <option value="Article">Article</option>
-                                <option value="News">News</option>
-                                <option value="Research">Research</option>
+                            <select name="language" value={formData.language} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50">
+                                <option>English</option>
+                                <option>Hausa</option>
+                                <option>Arabic</option>
                             </select>
                         </div>
-
-                        {/* Series Selection (Filtered) */}
-                        <div className="bg-brand-sand/20 p-4 rounded-xl border border-brand-gold/20 mb-4">
-                            <label className="flex items-center gap-2 text-xs font-bold text-brand-brown-dark uppercase tracking-wider mb-2">
-                                <LayoutList className="w-4 h-4" /> Series
-                            </label>
-                            <select 
-                                name="series"
-                                value={formData.series}
-                                onChange={handleChange}
-                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer"
-                            >
-                                <option value="">None</option>
-                                {filteredSeries.length > 0 ? (
-                                    filteredSeries.map(s => <option key={s.id} value={s.title}>{s.title}</option>)
-                                ) : (
-                                    <option disabled>No matches found</option>
-                                )}
+                        <div>
+                            <label className="block text-xs font-bold text-brand-brown mb-1">Status</label>
+                            <select name="status" value={formData.status} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50">
+                                <option>Draft</option>
+                                <option>Published</option>
+                                <option>Archived</option>
                             </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-bold text-brand-brown mb-1">Date</label>
-                            <input type="date" name="date" value={formData.date} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm" />
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-bold text-brand-brown mb-1">Read Time (Minutes)</label>
-                            <input 
-                                type="number" 
-                                min="1"
-                                name="readTime" 
-                                value={formData.readTime} 
-                                onChange={handleChange} 
-                                placeholder="e.g. 5"
-                                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50" 
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-bold text-brand-brown mb-1">Author</label>
-                            <input type="text" name="author" value={formData.author} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm" />
                         </div>
                     </div>
 
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
-                        <h3 className="font-agency text-xl text-brand-brown-dark border-b border-gray-100 pb-2">Cover Image</h3>
-                        <div className="relative w-full aspect-video bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center overflow-hidden">
-                            {coverPreview ? (
-                                <>
-                                    <Image src={coverPreview} alt="Preview" fill className="object-cover" />
-                                    <button type="button" onClick={removeCover} className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600 z-10"><X className="w-4 h-4" /></button>
-                                </>
+                    {/* File Replacement */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <label className="block text-xs font-bold text-brand-brown mb-3">
+                            {type === 'research' ? 'Replace PDF' : 'Replace Featured Image'}
+                        </label>
+
+                        {/* Existing File Info */}
+                        {existingFileUrl && !file && (
+                            <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-3 mb-4">
+                                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 flex-shrink-0">
+                                    <CheckCircle className="w-4 h-4" />
+                                </div>
+                                <div className="flex-grow min-w-0">
+                                    <p className="font-bold text-green-700 text-xs">Current File Active</p>
+                                    {type !== 'research' && (
+                                        <div className="relative w-full h-20 mt-2 rounded overflow-hidden">
+                                            <Image src={existingFileUrl} alt="Current" fill className="object-cover" />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className={`border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center text-center transition-colors min-h-[150px] ${
+                            file ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-300 hover:border-brand-gold'
+                        }`}>
+                            {file ? (
+                                <div className="w-full relative">
+                                    {filePreview ? (
+                                        <div className="relative w-full aspect-video rounded-lg overflow-hidden mb-2">
+                                            <Image src={filePreview} alt="Preview" fill className="object-cover" />
+                                        </div>
+                                    ) : (
+                                        <FileText className="w-10 h-10 text-blue-600 mx-auto mb-2" />
+                                    )}
+                                    <p className="text-xs font-bold truncate px-2">{file.name}</p>
+                                    <button type="button" onClick={removeNewFile} className="text-red-500 text-xs font-bold hover:underline mt-2">
+                                        Remove New File
+                                    </button>
+                                </div>
                             ) : (
-                                <div className="flex flex-col items-center justify-center p-4 w-full h-full relative">
-                                    <UploadCloud className="w-8 h-8 text-gray-400 mb-2" />
-                                    <p className="text-xs text-gray-500 font-bold mb-1">Click to Replace</p>
-                                    <input type="file" accept="image/*" onChange={handleCoverChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                                <div className="relative w-full">
+                                    <UploadCloud className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                                    <p className="text-xs text-gray-500 font-bold">Upload New File</p>
+                                    <input 
+                                        type="file" 
+                                        accept={type === 'research' ? "application/pdf" : "image/*"}
+                                        onChange={handleFileChange}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                                    />
                                 </div>
                             )}
                         </div>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                        <label className="block text-xs font-bold text-brand-brown mb-1">Tags (Comma Separated)</label>
-                        <input type="text" name="tags" value={formData.tags} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+                        {isSubmitting && file && (
+                            <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                                <div className="bg-brand-gold h-full transition-all duration-300" style={{width: `${uploadProgress}%`}}></div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
-            </div>
-        </form>
+                {/* RIGHT COLUMN: CONTENT FIELDS */}
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+                        
+                        {/* --- ARTICLE FIELDS --- */}
+                        {type === 'articles' && (
+                            <>
+                                <div>
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">Title</label>
+                                    <input type="text" name="title" value={formData.title} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-gold/50" dir={getDir(formData.title)} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-brand-brown mb-1">Author</label>
+                                        <input type="text" name="author" value={formData.author} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-brand-brown mb-1">Category</label>
+                                        <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                                            <option>Faith</option><option>Education</option><option>Technology</option><option>Community</option><option>Reflections</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">Excerpt</label>
+                                    <textarea name="excerpt" value={formData.excerpt} onChange={handleChange} rows="3" className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm" dir={getDir(formData.excerpt)}></textarea>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">Body Content</label>
+                                    <textarea name="body" value={formData.body} onChange={handleChange} rows="10" className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm" dir={getDir(formData.body)}></textarea>
+                                </div>
+                            </>
+                        )}
+
+                        {/* --- NEWS FIELDS --- */}
+                        {type === 'news' && (
+                            <>
+                                <div>
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">Headline</label>
+                                    <input type="text" name="headline" value={formData.headline} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-gold/50" dir={getDir(formData.headline)} />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">Event Date</label>
+                                    <input type="date" name="eventDate" value={formData.eventDate} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">Short Description</label>
+                                    <textarea name="shortDescription" value={formData.shortDescription} onChange={handleChange} rows="3" className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm" dir={getDir(formData.shortDescription)}></textarea>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">Full Content (Optional)</label>
+                                    <textarea name="body" value={formData.body} onChange={handleChange} rows="6" className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm" dir={getDir(formData.body)}></textarea>
+                                </div>
+                            </>
+                        )}
+
+                        {/* --- RESEARCH FIELDS --- */}
+                        {type === 'research' && (
+                            <>
+                                <div>
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">Research Title</label>
+                                    <input type="text" name="researchTitle" value={formData.researchTitle} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-gold/50" dir={getDir(formData.researchTitle)} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-brand-brown mb-1">Authors</label>
+                                        <input type="text" name="authors" value={formData.authors} onChange={handleChange} placeholder="e.g. T. Salihu" className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-brand-brown mb-1">Type</label>
+                                        <select name="researchType" value={formData.researchType} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                                            <option>Journal Article</option><option>Conference Paper</option><option>Thesis</option><option>Report</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">Abstract</label>
+                                    <textarea name="abstract" value={formData.abstract} onChange={handleChange} rows="6" className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm" dir={getDir(formData.abstract)}></textarea>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">DOI / Link</label>
+                                    <input type="text" name="doi" value={formData.doi} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+                                </div>
+                            </>
+                        )}
+
+                        {/* Submit Button */}
+                        <div className="pt-4 border-t border-gray-100">
+                            <button 
+                                type="submit" 
+                                disabled={isSubmitting}
+                                className="w-full flex items-center justify-center gap-2 py-3 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-colors shadow-md disabled:opacity-50"
+                            >
+                                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                                {isSubmitting ? 'Saving Changes...' : 'Save Changes'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
     );
 }
