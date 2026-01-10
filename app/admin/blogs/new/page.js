@@ -28,6 +28,7 @@ export default function CreateContentPage() {
     const [duplicateWarning, setDuplicateWarning] = useState(null);
 
     // --- FORM DATA STATE ---
+    // We maintain a superset of fields but only use what is relevant for the active type
     const [formData, setFormData] = useState({
         // Cross-Cutting
         status: 'Draft',
@@ -40,19 +41,19 @@ export default function CreateContentPage() {
         category: 'Reflections',
         body: '',
         excerpt: '',
-        tags: '', 
+        tags: '', // Comma separated
 
         // News
         headline: '',
         eventDate: new Date().toISOString().split('T')[0],
-        location: '', 
-        source: '', 
+        location: '', // e.g., Lafia, Nigeria
+        source: '', // e.g., Foundation Press
         shortDescription: '',
         
         // Research
         researchTitle: '',
-        authors: '', 
-        institution: '', 
+        authors: '', // Academic listing: "T. Salihu, et al."
+        institution: '', // e.g., Islamic University of Madinah
         publicationYear: new Date().getFullYear(),
         abstract: '',
         researchType: 'Journal Article',
@@ -69,9 +70,9 @@ export default function CreateContentPage() {
             .toString()
             .toLowerCase()
             .trim()
-            .replace(/\s+/g, '-')     
-            .replace(/[^\w\-]+/g, '') 
-            .replace(/\-\-+/g, '-');  
+            .replace(/\s+/g, '-')     // Replace spaces with -
+            .replace(/[^\w\-]+/g, '') // Remove all non-word chars
+            .replace(/\-\-+/g, '-');  // Replace multiple - with single -
     };
 
     // --- HELPER: RTL Detection ---
@@ -85,6 +86,7 @@ export default function CreateContentPage() {
     const checkDuplicate = async (val, fieldName) => {
         if (!val.trim()) { setDuplicateWarning(null); return; }
         try {
+            // Check specific collection based on current contentType
             const q = query(collection(db, contentType), where(fieldName, "==", val.trim()));
             const snapshot = await getDocs(q);
             if (!snapshot.empty) {
@@ -141,6 +143,8 @@ export default function CreateContentPage() {
         setMainFile(null);
         setFilePreview(null);
         setUploadProgress(0);
+        // We preserve form data in case they switch back by mistake, 
+        // but typically you might want to reset it. Keeping it is safer for UX.
     };
 
     // --- SUBMIT LOGIC ---
@@ -185,7 +189,7 @@ export default function CreateContentPage() {
                     category: formData.category,
                     body: formData.body,
                     excerpt: formData.excerpt,
-                    tags: formData.tags ? formData.tags.split(',').map(t => t.trim()) : [],
+                    tags: formData.tags.split(',').map(t => t.trim()), // Array of tags
                     featuredImage: fileUrl,
                     readTime: Math.ceil(formData.body.split(' ').length / 200) // Auto-calc read time
                 };
@@ -231,6 +235,7 @@ export default function CreateContentPage() {
             setIsSubmitting(false);
         }
     };
+
     return (
         <div className="max-w-6xl mx-auto pb-20">
             
@@ -502,6 +507,7 @@ export default function CreateContentPage() {
                         )}
                     </div>
                 </div>
+
                 {/* --- RIGHT COLUMN: META & ACTIONS --- */}
                 <div className="space-y-6">
                     
@@ -537,11 +543,11 @@ export default function CreateContentPage() {
                                 <div>
                                     <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Category</label>
                                     <select name="category" value={formData.category} onChange={handleChange} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm">
-                                        <option>Reflections</option>
                                         <option>Faith</option>
                                         <option>Education</option>
                                         <option>Technology</option>
                                         <option>Community</option>
+                                        <option>Reflections</option>
                                         <option>History</option>
                                     </select>
                                 </div>
