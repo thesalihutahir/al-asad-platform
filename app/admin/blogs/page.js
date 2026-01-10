@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 // Firebase
@@ -14,8 +14,59 @@ import {
     PlusCircle, Search, Edit, Trash2, 
     FileText, Bell, BookOpen, 
     Filter, X, ArrowUpDown, Calendar,
-    Globe // Icon for Language
+    Globe, ChevronDown, Check // Added Icons
 } from 'lucide-react';
+
+// --- CUSTOM DROPDOWN COMPONENT ---
+const CustomSelect = ({ options, value, onChange, placeholder, icon: Icon, className }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    // Close on outside click
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const selectedOption = options.find(opt => opt.value === value);
+
+    return (
+        <div className={`relative ${className || ''}`} ref={dropdownRef}>
+            <div 
+                onClick={() => setIsOpen(!isOpen)}
+                className={`w-full pl-3 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm flex justify-between items-center cursor-pointer transition-all hover:border-brand-gold/50 ${isOpen ? 'ring-2 ring-brand-gold/20 border-brand-gold' : ''}`}
+            >
+                <div className="flex items-center gap-2 overflow-hidden">
+                    {Icon && <Icon className="w-4 h-4 text-brand-gold flex-shrink-0" />}
+                    <span className={`truncate ${!selectedOption ? 'text-gray-500' : 'text-gray-700 font-medium'}`}>
+                        {selectedOption ? selectedOption.label : placeholder}
+                    </span>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+            </div>
+
+            {isOpen && (
+                <div className="absolute z-20 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 min-w-[140px]">
+                    {options.map((opt) => (
+                        <div 
+                            key={opt.value}
+                            onClick={() => { onChange(opt.value); setIsOpen(false); }}
+                            className={`px-4 py-3 text-sm cursor-pointer hover:bg-brand-sand/10 flex justify-between items-center ${value === opt.value ? 'bg-brand-sand/20 text-brand-brown-dark font-bold' : 'text-gray-600'}`}
+                        >
+                            {opt.label}
+                            {value === opt.value && <Check className="w-3 h-3 text-brand-gold" />}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
 
 export default function ManageBlogsPage() {
     const router = useRouter();
@@ -101,6 +152,14 @@ export default function ManageBlogsPage() {
         router.push(`/admin/blogs/edit/${id}?type=${activeTab}`);
     };
 
+    // Options for Language Filter
+    const languageOptions = [
+        { value: "All", label: "All Langs" },
+        { value: "English", label: "English" },
+        { value: "Hausa", label: "Hausa" },
+        { value: "Arabic", label: "Arabic" }
+    ];
+
     return (
         <div className="space-y-6 relative max-w-full overflow-hidden">
             
@@ -121,7 +180,7 @@ export default function ManageBlogsPage() {
             {/* TABS & TOOLBAR */}
             <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                 
-                {/* Tabs - Optimized for single line display on mobile */}
+                {/* Tabs - Optimized for mobile */}
                 <div className="flex w-full xl:w-auto bg-gray-50 p-1 rounded-lg overflow-x-auto scrollbar-hide">
                     {['articles', 'news', 'research'].map((tab) => (
                         <button 
@@ -139,23 +198,19 @@ export default function ManageBlogsPage() {
                     ))}
                 </div>
 
-                {/* Filters - Stack vertically on mobile */}
+                {/* Filters */}
                 <div className="flex flex-col sm:flex-row w-full xl:w-auto gap-3">
                     
                     <div className="flex gap-2 w-full sm:w-auto">
-                        {/* Language Filter */}
-                        <div className="relative flex-grow sm:flex-grow-0 min-w-[120px]">
-                            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-gold" />
-                            <select 
+                        {/* Custom Language Filter */}
+                        <div className="relative flex-grow sm:flex-grow-0 min-w-[140px]">
+                            <CustomSelect 
+                                options={languageOptions} 
                                 value={languageFilter} 
-                                onChange={(e) => setLanguageFilter(e.target.value)} 
-                                className="w-full pl-9 pr-8 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer appearance-none"
-                            >
-                                <option value="All">All Langs</option>
-                                <option value="English">English</option>
-                                <option value="Hausa">Hausa</option>
-                                <option value="Arabic">Arabic</option>
-                            </select>
+                                onChange={setLanguageFilter} 
+                                icon={Filter}
+                                placeholder="Language"
+                            />
                         </div>
 
                         {/* Sort Button */}
@@ -164,7 +219,7 @@ export default function ManageBlogsPage() {
                         </button>
                     </div>
 
-                    {/* Search - Full width on mobile */}
+                    {/* Search */}
                     <div className="relative w-full sm:w-64">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input 
@@ -185,7 +240,7 @@ export default function ManageBlogsPage() {
                     <div className="flex items-center justify-center h-64"><Loader /></div>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left min-w-[600px]"> {/* Min-width forces scroll on small screens */}
+                        <table className="w-full text-left min-w-[600px]">
                             <thead className="bg-gray-50 border-b border-gray-100">
                                 <tr>
                                     <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider w-5/12">Title</th>
