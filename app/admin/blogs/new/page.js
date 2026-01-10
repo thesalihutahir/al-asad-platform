@@ -6,87 +6,85 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 // Firebase
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, getDocs, serverTimestamp, query, orderBy, where } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-// Context
-import { useModal } from '@/context/ModalContext';
+// Utilities
+import { useModal } from '@/context/ModalContext'; // Using Global Modal now
 
 import { 
-    ArrowLeft, Save, Loader2, UploadCloud, 
-    FileText, Bell, BookOpen, 
-    X, AlertTriangle, MapPin, Link as LinkIcon, Building
+    ArrowLeft, Save, X, FileText, LayoutList, Image as ImageIcon, 
+    UploadCloud, Globe, Bell, BookOpen, AlertTriangle, MapPin, Link as LinkIcon
 } from 'lucide-react';
 
-export default function CreateContentPage() {
+export default function CreateBlogPage() {
     const router = useRouter();
     const { showSuccess } = useModal();
-    
-    // --- UI STATE ---
-    const [contentType, setContentType] = useState('articles'); // Default mode
+
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSavingDraft, setIsSavingDraft] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [duplicateWarning, setDuplicateWarning] = useState(null);
 
-    // --- FORM DATA STATE ---
-    // We maintain a superset of fields but only use what is relevant for the active type
-    const [formData, setFormData] = useState({
-        // Cross-Cutting
-        status: 'Draft',
-        language: 'English',
-        slug: '',
-        
-        // Articles
-        title: '',
-        author: 'Sheikh Dr. Muneer Ja\'afar', // Default author
-        category: 'Reflections',
-        body: '',
-        excerpt: '',
-        tags: '', // Comma separated
+    // --- MODE STATE ---
+    const [contentType, setContentType] = useState('articles'); // 'articles', 'news', 'research'
 
-        // News
+    // --- FORM DATA ---
+    const [formData, setFormData] = useState({
+        // Common
+        title: '',
+        slug: '',
+        language: 'English',
+        status: 'Draft',
+        
+        // Article Specific
+        author: 'Sheikh Dr. Muneer Ja\'afar',
+        category: 'Reflections',
+        content: '', 
+        excerpt: '',
+        tags: '',
+        readTime: '', // Number
+
+        // News Specific
         headline: '',
         eventDate: new Date().toISOString().split('T')[0],
-        location: '', // e.g., Lafia, Nigeria
-        source: '', // e.g., Foundation Press
+        location: '',
+        source: '',
         shortDescription: '',
-        
-        // Research
+
+        // Research Specific
         researchTitle: '',
-        authors: '', // Academic listing: "T. Salihu, et al."
-        institution: '', // e.g., Islamic University of Madinah
-        publicationYear: new Date().getFullYear(),
-        abstract: '',
+        authors: '', // e.g. T. Salihu
+        institution: '',
         researchType: 'Journal Article',
+        abstract: '',
+        publicationYear: new Date().getFullYear(),
         doi: '',
     });
 
-    // --- FILES STATE ---
-    const [mainFile, setMainFile] = useState(null); // Image for Article/News, PDF for Research
-    const [filePreview, setFilePreview] = useState(null); // For Image Preview
+    // --- FILES ---
+    const [coverFile, setCoverFile] = useState(null); // Featured Image
+    const [coverPreview, setCoverPreview] = useState(null);
+    const [pdfFile, setPdfFile] = useState(null); // Research PDF
 
     // --- HELPER: Slugify ---
     const generateSlug = (text) => {
-        return text
-            .toString()
-            .toLowerCase()
-            .trim()
-            .replace(/\s+/g, '-')     // Replace spaces with -
-            .replace(/[^\w\-]+/g, '') // Remove all non-word chars
-            .replace(/\-\-+/g, '-');  // Replace multiple - with single -
+        return text.toString().toLowerCase().trim()
+            .replace(/\s+/g, '-')
+            .replace(/[^\w\-]+/g, '')
+            .replace(/\-\-+/g, '-');
     };
 
-    // --- HELPER: RTL Detection ---
+    // --- HELPER: RTL ---
     const getDir = (text) => {
         if (!text) return 'ltr';
         const arabicPattern = /[\u0600-\u06FF]/;
         return arabicPattern.test(text) ? 'rtl' : 'ltr';
     };
 
-    // --- CHECK DUPLICATE ---
+    // --- DUPLICATE CHECK ---
     const checkDuplicate = async (val, fieldName) => {
         if (!val.trim()) { setDuplicateWarning(null); return; }
         try {
-            // Check specific collection based on current contentType
             const q = query(collection(db, contentType), where(fieldName, "==", val.trim()));
             const snapshot = await getDocs(q);
             if (!snapshot.empty) {
@@ -103,7 +101,7 @@ export default function CreateContentPage() {
     const handleChange = (e) => {
         const { name, value } = e.target;
         
-        // Auto-Slug Logic
+        // Auto-Slug & Duplicate Check
         if (name === 'title' || name === 'headline' || name === 'researchTitle') {
             const slug = generateSlug(value);
             setFormData(prev => ({ ...prev, [name]: value, slug }));
@@ -113,70 +111,74 @@ export default function CreateContentPage() {
         }
     };
 
-    const handleFileChange = (e) => {
-        const selected = e.target.files[0];
-        if (!selected) return;
-
-        // Validation
-        if (contentType === 'research' && selected.type !== 'application/pdf') {
-            alert("Research requires a PDF document.");
-            return;
-        }
-        if (contentType !== 'research' && !selected.type.startsWith('image/')) {
-            alert("Please upload a valid image file (JPG, PNG, WEBP).");
-            return;
-        }
-
-        setMainFile(selected);
-        
-        // Preview logic
-        if (selected.type.startsWith('image/')) {
-            setFilePreview(URL.createObjectURL(selected));
-        } else {
-            setFilePreview(null);
+    const handleCoverChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (!file.type.startsWith('image/')) {
+                alert("Please upload a valid image file.");
+                return;
+            }
+            setCoverFile(file);
+            setCoverPreview(URL.createObjectURL(file));
         }
     };
 
-    const handleModeSwitch = (mode) => {
-        setContentType(mode);
-        setDuplicateWarning(null);
-        setMainFile(null);
-        setFilePreview(null);
-        setUploadProgress(0);
-        // We preserve form data in case they switch back by mistake, 
-        // but typically you might want to reset it. Keeping it is safer for UX.
+    const handlePdfChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.type !== 'application/pdf') {
+                alert("Please upload a PDF file.");
+                return;
+            }
+            setPdfFile(file);
+        }
     };
+
+    const removeCover = () => { setCoverFile(null); setCoverPreview(null); };
+    const removePdf = () => { setPdfFile(null); };
 
     // --- SUBMIT LOGIC ---
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async (e, status = 'Published') => {
+        if(e) e.preventDefault();
         if (duplicateWarning) return;
-
-        setIsSubmitting(true);
+        
+        if (status === 'Published') setIsSubmitting(true);
+        else setIsSavingDraft(true);
 
         try {
-            let fileUrl = "";
-            
-            // 1. Upload File
-            if (mainFile) {
-                const folder = contentType === 'research' ? 'research_pdfs' : 'blog_images';
-                const storageRef = ref(storage, `${folder}/${Date.now()}_${mainFile.name}`);
-                const uploadTask = uploadBytesResumable(storageRef, mainFile);
-                
-                uploadTask.on('state_changed', (snapshot) => {
+            let coverUrl = ""; 
+            let pdfUrl = "";
+
+            // 1. Upload Cover (if applicable)
+            if (coverFile) {
+                const coverRef = ref(storage, `blog_covers/${Date.now()}_${coverFile.name}`);
+                const coverTask = uploadBytesResumable(coverRef, coverFile);
+                coverTask.on('state_changed', (snapshot) => {
                     const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
                     setUploadProgress(progress);
                 });
-
-                await uploadTask;
-                fileUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                await coverTask;
+                coverUrl = await getDownloadURL(coverTask.snapshot.ref);
             }
 
-            // 2. Prepare Payload (Strict Separation)
+            // 2. Upload PDF (if research)
+            if (pdfFile && contentType === 'research') {
+                const pdfRef = ref(storage, `research_pdfs/${Date.now()}_${pdfFile.name}`);
+                const pdfTask = uploadBytesResumable(pdfRef, pdfFile);
+                // We track PDF progress if it exists, overriding image progress
+                pdfTask.on('state_changed', (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    setUploadProgress(progress);
+                });
+                await pdfTask;
+                pdfUrl = await getDownloadURL(pdfRef);
+            }
+
+            // 3. Prepare Payload
             let payload = {
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
-                status: formData.status,
+                status: status,
                 language: formData.language,
                 slug: formData.slug
             };
@@ -187,11 +189,11 @@ export default function CreateContentPage() {
                     title: formData.title,
                     author: formData.author,
                     category: formData.category,
-                    body: formData.body,
+                    content: formData.content, // Body
                     excerpt: formData.excerpt,
-                    tags: formData.tags.split(',').map(t => t.trim()), // Array of tags
-                    featuredImage: fileUrl,
-                    readTime: Math.ceil(formData.body.split(' ').length / 200) // Auto-calc read time
+                    tags: formData.tags.split(',').map(tag => tag.trim()).filter(t => t !== ''),
+                    featuredImage: coverUrl,
+                    readTime: formData.readTime || Math.ceil(formData.content.split(' ').length / 200)
                 };
             } else if (contentType === 'news') {
                 payload = {
@@ -201,8 +203,8 @@ export default function CreateContentPage() {
                     location: formData.location,
                     source: formData.source,
                     shortDescription: formData.shortDescription,
-                    body: formData.body, // Optional extended content
-                    featuredImage: fileUrl
+                    content: formData.content, // Optional Full Content
+                    featuredImage: coverUrl
                 };
             } else if (contentType === 'research') {
                 payload = {
@@ -210,458 +212,278 @@ export default function CreateContentPage() {
                     researchTitle: formData.researchTitle,
                     authors: formData.authors,
                     institution: formData.institution,
-                    publicationYear: formData.publicationYear,
                     researchType: formData.researchType,
                     abstract: formData.abstract,
+                    publicationYear: formData.publicationYear,
                     doi: formData.doi,
-                    pdfUrl: fileUrl
+                    pdfUrl: pdfUrl
                 };
             }
 
-            // 3. Save to Specific Collection
+            // 4. Save to Specific Collection
             await addDoc(collection(db, contentType), payload);
 
             showSuccess({
-                title: "Content Published!",
-                message: `Successfully added to ${contentType.toUpperCase()} library.`,
-                confirmText: "Go to Dashboard",
+                title: "Content Saved!",
+                message: `${contentType === 'news' ? 'News' : contentType} ${status === 'Draft' ? 'saved to drafts' : 'published'} successfully.`,
+                confirmText: "Back to Dashboard",
                 onConfirm: () => router.push('/admin/blogs')
             });
 
         } catch (error) {
-            console.error("Submission Error:", error);
-            alert("Failed to save content. Check console.");
+            console.error("Error creating post:", error);
+            alert("Failed. Check console.");
         } finally {
             setIsSubmitting(false);
+            setIsSavingDraft(false);
         }
     };
 
     return (
-        <div className="max-w-6xl mx-auto pb-20">
+        <form className="space-y-6 max-w-6xl mx-auto pb-12">
             
-            {/* HEADER */}
-            <div className="flex items-center gap-4 py-6 border-b border-gray-200 mb-8">
-                <Link href="/admin/blogs" className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-brand-brown-dark transition-colors">
-                    <ArrowLeft className="w-6 h-6" />
-                </Link>
-                <div>
-                    <h1 className="font-agency text-3xl text-brand-brown-dark">Content Studio</h1>
-                    <p className="font-lato text-sm text-gray-500">Select content type and fill in the details.</p>
+            {/* HEADER & ACTIONS */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-0 bg-gray-50 z-20 py-4 border-b border-gray-200">
+                <div className="flex items-center gap-4">
+                    <Link href="/admin/blogs" className="p-2 hover:bg-gray-200 rounded-lg transition-colors">
+                        <ArrowLeft className="w-5 h-5 text-gray-600" />
+                    </Link>
+                    <div>
+                        <h1 className="font-agency text-3xl text-brand-brown-dark">New Content</h1>
+                        <p className="font-lato text-sm text-gray-500">Create content for the foundation.</p>
+                    </div>
+                </div>
+                <div className="flex gap-3">
+                    <button type="button" onClick={(e) => handleSubmit(e, 'Draft')} disabled={isSavingDraft || isSubmitting} className="flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 transition-colors disabled:opacity-50">
+                        {isSavingDraft && <Loader2 className="w-4 h-4 animate-spin" />} Save Draft
+                    </button>
+                    <button type="button" onClick={(e) => handleSubmit(e, 'Published')} disabled={isSubmitting || isSavingDraft} className="flex items-center gap-2 px-6 py-2.5 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-colors shadow-md disabled:opacity-50">
+                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        {isSubmitting ? `Publishing ${Math.round(uploadProgress)}%` : 'Publish'}
+                    </button>
                 </div>
             </div>
 
-            {/* MODE SWITCHER */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
-                <button
-                    onClick={() => handleModeSwitch('articles')}
-                    className={`relative p-6 rounded-2xl border-2 text-left transition-all ${
-                        contentType === 'articles' 
-                        ? 'border-brand-gold bg-brand-gold/5 shadow-md' 
-                        : 'border-gray-100 bg-white hover:border-gray-200'
-                    }`}
-                >
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 ${contentType === 'articles' ? 'bg-brand-gold text-white' : 'bg-gray-100 text-gray-400'}`}>
-                        <FileText className="w-5 h-5" />
-                    </div>
-                    <h3 className={`font-agency text-xl ${contentType === 'articles' ? 'text-brand-brown-dark' : 'text-gray-500'}`}>Article</h3>
-                    <p className="text-xs text-gray-400 mt-1">Reflective, educational, and timeless content.</p>
-                </button>
-
-                <button
-                    onClick={() => handleModeSwitch('news')}
-                    className={`relative p-6 rounded-2xl border-2 text-left transition-all ${
-                        contentType === 'news' 
-                        ? 'border-orange-500 bg-orange-50 shadow-md' 
-                        : 'border-gray-100 bg-white hover:border-gray-200'
-                    }`}
-                >
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 ${contentType === 'news' ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-400'}`}>
-                        <Bell className="w-5 h-5" />
-                    </div>
-                    <h3 className={`font-agency text-xl ${contentType === 'news' ? 'text-orange-700' : 'text-gray-500'}`}>News & Update</h3>
-                    <p className="text-xs text-gray-400 mt-1">Time-sensitive announcements and reports.</p>
-                </button>
-
-                <button
-                    onClick={() => handleModeSwitch('research')}
-                    className={`relative p-6 rounded-2xl border-2 text-left transition-all ${
-                        contentType === 'research' 
-                        ? 'border-blue-600 bg-blue-50 shadow-md' 
-                        : 'border-gray-100 bg-white hover:border-gray-200'
-                    }`}
-                >
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 ${contentType === 'research' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
-                        <BookOpen className="w-5 h-5" />
-                    </div>
-                    <h3 className={`font-agency text-xl ${contentType === 'research' ? 'text-blue-800' : 'text-gray-500'}`}>Research</h3>
-                    <p className="text-xs text-gray-400 mt-1">Academic papers, theses, and formal documents.</p>
-                </button>
+            {/* CONTENT TYPE TOGGLE */}
+            <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-100 flex gap-2 w-fit mx-auto md:mx-0">
+                {['articles', 'news', 'research'].map((type) => (
+                    <button
+                        key={type}
+                        type="button"
+                        onClick={() => { setContentType(type); setDuplicateWarning(null); }}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-colors uppercase tracking-wider ${
+                            contentType === type 
+                            ? 'bg-brand-brown-dark text-white' 
+                            : 'text-gray-500 hover:bg-gray-50'
+                        }`}
+                    >
+                        {type === 'articles' && <FileText className="w-4 h-4" />}
+                        {type === 'news' && <Bell className="w-4 h-4" />}
+                        {type === 'research' && <BookOpen className="w-4 h-4" />}
+                        {type}
+                    </button>
+                ))}
             </div>
 
-            {/* THE FORM */}
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
-                {/* --- LEFT COLUMN: CONTENT INPUTS --- */}
+                {/* --- LEFT COLUMN (Main Content) --- */}
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6">
+                    
+                    {/* TITLE & SLUG */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                            {contentType === 'news' ? 'Headline' : contentType === 'research' ? 'Research Title' : 'Article Title'}
+                        </label>
+                        <input 
+                            type="text" 
+                            name={contentType === 'news' ? 'headline' : contentType === 'research' ? 'researchTitle' : 'title'}
+                            value={contentType === 'news' ? formData.headline : contentType === 'research' ? formData.researchTitle : formData.title} 
+                            onChange={handleChange} 
+                            placeholder="Enter title..." 
+                            className="w-full text-2xl font-agency font-bold text-brand-brown-dark placeholder-gray-300 border-none focus:ring-0 p-0 focus:outline-none" 
+                            dir={getDir(formData.title || formData.headline || formData.researchTitle)}
+                        />
+                        {duplicateWarning && <p className="text-xs text-red-500 mt-2 flex items-center gap-1"><AlertTriangle className="w-3 h-3"/> {duplicateWarning}</p>}
                         
-                        {/* ================= ARTICLES FORM ================= */}
-                        {contentType === 'articles' && (
-                            <>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Article Title</label>
-                                    <input 
-                                        type="text" 
-                                        name="title" 
-                                        value={formData.title} 
-                                        onChange={handleChange} 
-                                        placeholder="Enter an engaging title..."
-                                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-lg font-bold focus:outline-none focus:ring-2 focus:ring-brand-gold/50" 
-                                        dir={getDir(formData.title)}
-                                        required
-                                    />
-                                    {duplicateWarning && <p className="text-xs text-red-500 mt-2 flex items-center gap-1"><AlertTriangle className="w-3 h-3"/> {duplicateWarning}</p>}
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Excerpt (Summary)</label>
-                                    <textarea 
-                                        name="excerpt" 
-                                        value={formData.excerpt} 
-                                        onChange={handleChange} 
-                                        rows="3" 
-                                        placeholder="A short summary for search results and previews..."
-                                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
-                                        dir={getDir(formData.excerpt)}
-                                        required
-                                    ></textarea>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Body Content</label>
-                                    <textarea 
-                                        name="body" 
-                                        value={formData.body} 
-                                        onChange={handleChange} 
-                                        rows="15" 
-                                        placeholder="Write your article here..."
-                                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
-                                        dir={getDir(formData.body)}
-                                        required
-                                    ></textarea>
-                                </div>
-                            </>
-                        )}
-
-                        {/* ================= NEWS FORM ================= */}
-                        {contentType === 'news' && (
-                            <>
-                                <div>
-                                    <label className="block text-xs font-bold text-orange-600 uppercase mb-2">News Headline</label>
-                                    <input 
-                                        type="text" 
-                                        name="headline" 
-                                        value={formData.headline} 
-                                        onChange={handleChange} 
-                                        placeholder="Headlines should be catchy and precise..."
-                                        className="w-full p-4 bg-orange-50/50 border border-orange-100 rounded-xl text-lg font-bold focus:outline-none focus:ring-2 focus:ring-orange-500/50" 
-                                        dir={getDir(formData.headline)}
-                                        required
-                                    />
-                                    {duplicateWarning && <p className="text-xs text-red-500 mt-2 flex items-center gap-1"><AlertTriangle className="w-3 h-3"/> {duplicateWarning}</p>}
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Location</label>
-                                        <div className="relative">
-                                            <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                                            <input 
-                                                type="text" 
-                                                name="location" 
-                                                value={formData.location} 
-                                                onChange={handleChange} 
-                                                placeholder="e.g. Lafia, Nigeria"
-                                                className="w-full pl-10 p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Source / Attribution</label>
-                                        <input 
-                                            type="text" 
-                                            name="source" 
-                                            value={formData.source} 
-                                            onChange={handleChange} 
-                                            placeholder="e.g. Press Release"
-                                            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Short Description (Lead)</label>
-                                    <textarea 
-                                        name="shortDescription" 
-                                        value={formData.shortDescription} 
-                                        onChange={handleChange} 
-                                        rows="3" 
-                                        placeholder="The main point of the news story..."
-                                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50"
-                                        dir={getDir(formData.shortDescription)}
-                                        required
-                                    ></textarea>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Full Narrative (Optional)</label>
-                                    <textarea 
-                                        name="body" 
-                                        value={formData.body} 
-                                        onChange={handleChange} 
-                                        rows="10" 
-                                        placeholder="Extended details, quotes, and background info..."
-                                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/50"
-                                        dir={getDir(formData.body)}
-                                    ></textarea>
-                                </div>
-                            </>
-                        )}
-
-                        {/* ================= RESEARCH FORM ================= */}
-                        {contentType === 'research' && (
-                            <>
-                                <div>
-                                    <label className="block text-xs font-bold text-blue-700 uppercase mb-2">Research Title</label>
-                                    <input 
-                                        type="text" 
-                                        name="researchTitle" 
-                                        value={formData.researchTitle} 
-                                        onChange={handleChange} 
-                                        placeholder="Full academic title of the paper..."
-                                        className="w-full p-4 bg-blue-50/50 border border-blue-100 rounded-xl text-lg font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/50" 
-                                        dir={getDir(formData.researchTitle)}
-                                        required
-                                    />
-                                    {duplicateWarning && <p className="text-xs text-red-500 mt-2 flex items-center gap-1"><AlertTriangle className="w-3 h-3"/> {duplicateWarning}</p>}
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Authors / Contributors</label>
-                                        <input 
-                                            type="text" 
-                                            name="authors" 
-                                            value={formData.authors} 
-                                            onChange={handleChange} 
-                                            placeholder="e.g. T. Salihu, A. Bello"
-                                            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                                            required
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Institution / Affiliation</label>
-                                        <div className="relative">
-                                            <Building className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                                            <input 
-                                                type="text" 
-                                                name="institution" 
-                                                value={formData.institution} 
-                                                onChange={handleChange} 
-                                                placeholder="e.g. University of Madinah"
-                                                className="w-full pl-10 p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Abstract</label>
-                                    <textarea 
-                                        name="abstract" 
-                                        value={formData.abstract} 
-                                        onChange={handleChange} 
-                                        rows="6" 
-                                        placeholder="A concise summary of the research..."
-                                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                                        dir={getDir(formData.abstract)}
-                                        required
-                                    ></textarea>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">DOI / Permanent Link</label>
-                                    <div className="relative">
-                                        <LinkIcon className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                                        <input 
-                                            type="text" 
-                                            name="doi" 
-                                            value={formData.doi} 
-                                            onChange={handleChange} 
-                                            placeholder="https://doi.org/10.1000/xyz123"
-                                            className="w-full pl-10 p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                                        />
-                                    </div>
-                                </div>
-                            </>
-                        )}
+                        <div className="mt-4 pt-4 border-t border-gray-50 flex gap-2 items-center text-xs text-gray-400">
+                            <span className="font-bold">Slug:</span>
+                            <span className="bg-gray-50 px-2 py-1 rounded text-gray-500 font-mono">{formData.slug || 'auto-generated'}</span>
+                        </div>
                     </div>
+
+                    {/* SUMMARY / ABSTRACT */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                            {contentType === 'research' ? 'Abstract' : contentType === 'news' ? 'Short Description' : 'Excerpt'}
+                        </label>
+                        <textarea 
+                            name={contentType === 'research' ? 'abstract' : contentType === 'news' ? 'shortDescription' : 'excerpt'}
+                            value={contentType === 'research' ? formData.abstract : contentType === 'news' ? formData.shortDescription : formData.excerpt} 
+                            onChange={handleChange} 
+                            rows="4" 
+                            placeholder="Summary or abstract..." 
+                            className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
+                            dir={getDir(formData.excerpt || formData.shortDescription || formData.abstract)}
+                        ></textarea>
+                    </div>
+
+                    {/* MAIN CONTENT / BODY (Hidden for Research if PDF provided) */}
+                    {contentType !== 'research' && (
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 min-h-[500px] flex flex-col">
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                                {contentType === 'news' ? 'Full Content (Optional)' : 'Body Content'}
+                            </label>
+                            <div className="border-b border-gray-100 pb-2 mb-4 flex gap-2 text-gray-400 text-sm"><span>Markdown Supported</span></div>
+                            <textarea 
+                                name="content" 
+                                value={formData.content} 
+                                onChange={handleChange} 
+                                className="flex-grow w-full resize-none border-none focus:ring-0 p-0 focus:outline-none text-base leading-relaxed text-gray-700" 
+                                placeholder="Write here..."
+                                dir={getDir(formData.content)}
+                            ></textarea>
+                        </div>
+                    )}
+
+                    {/* PDF UPLOAD (Research Only) */}
+                    {contentType === 'research' && (
+                        <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100 border-dashed">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-blue-100 rounded-full text-blue-600"><FileText className="w-6 h-6" /></div>
+                                <div className="flex-grow">
+                                    <h3 className="font-bold text-blue-800 text-sm">Research Document (PDF)</h3>
+                                    <p className="text-xs text-blue-600">Max 20MB. Required.</p>
+                                </div>
+                                <div className="relative">
+                                    {pdfFile ? (
+                                        <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg shadow-sm">
+                                            <span className="text-xs font-bold text-blue-800 truncate max-w-[150px]">{pdfFile.name}</span>
+                                            <button type="button" onClick={removePdf} className="text-red-500 hover:bg-red-50 p-1 rounded"><X className="w-4 h-4" /></button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <label htmlFor="pdf-upload" className="cursor-pointer bg-blue-600 text-white text-xs px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors">Select PDF</label>
+                                            <input id="pdf-upload" type="file" accept="application/pdf" onChange={handlePdfChange} className="hidden" />
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
-                {/* --- RIGHT COLUMN: META & ACTIONS --- */}
+                {/* --- RIGHT COLUMN (Sidebar) --- */}
                 <div className="space-y-6">
                     
-                    {/* Publishing Meta */}
-                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-5">
-                        <h4 className="font-bold text-brand-brown-dark text-sm border-b border-gray-100 pb-2">Publishing Meta</h4>
+                    {/* SETTINGS CARD */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+                        <h3 className="font-agency text-xl text-brand-brown-dark border-b border-gray-100 pb-2">Settings</h3>
                         
+                        {/* Language */}
                         <div>
-                            <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Language</label>
-                            <select name="language" value={formData.language} onChange={handleChange} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none">
-                                <option>English</option>
-                                <option>Hausa</option>
-                                <option>Arabic</option>
-                            </select>
+                            <label className="block text-xs font-bold text-brand-brown mb-1">Language</label>
+                            <div className="relative">
+                                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <select name="language" value={formData.language} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer">
+                                    <option value="English">English</option>
+                                    <option value="Hausa">Hausa</option>
+                                    <option value="Arabic">Arabic</option>
+                                </select>
+                            </div>
                         </div>
 
-                        <div>
-                            <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Status</label>
-                            <select name="status" value={formData.status} onChange={handleChange} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none">
-                                <option>Draft</option>
-                                <option>Published</option>
-                                <option>Archived</option>
-                            </select>
-                        </div>
-
-                        {/* Article Specific Meta */}
+                        {/* === ARTICLE SPECIFIC === */}
                         {contentType === 'articles' && (
                             <>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Author</label>
-                                    <input type="text" name="author" value={formData.author} onChange={handleChange} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm" />
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">Author</label>
+                                    <input type="text" name="author" value={formData.author} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50" />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Category</label>
-                                    <select name="category" value={formData.category} onChange={handleChange} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">Category</label>
+                                    <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50">
+                                        <option>Reflections</option>
                                         <option>Faith</option>
                                         <option>Education</option>
                                         <option>Technology</option>
                                         <option>Community</option>
-                                        <option>Reflections</option>
                                         <option>History</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Tags</label>
-                                    <input type="text" name="tags" value={formData.tags} onChange={handleChange} placeholder="comma, separated" className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm" />
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">Tags (Comma Sep)</label>
+                                    <input type="text" name="tags" value={formData.tags} onChange={handleChange} placeholder="faith, quran, life..." className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">Read Time (Mins)</label>
+                                    <input type="number" min="1" name="readTime" value={formData.readTime} onChange={handleChange} placeholder="e.g. 5" className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50" />
                                 </div>
                             </>
                         )}
 
-                        {/* News Specific Meta */}
+                        {/* === NEWS SPECIFIC === */}
                         {contentType === 'news' && (
-                            <div>
-                                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Event Date</label>
-                                <input type="date" name="eventDate" value={formData.eventDate} onChange={handleChange} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm" />
-                            </div>
+                            <>
+                                <div>
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">Event Date</label>
+                                    <input type="date" name="eventDate" value={formData.eventDate} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">Location</label>
+                                    <input type="text" name="location" value={formData.location} onChange={handleChange} placeholder="Lafia, Nigeria" className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">Source</label>
+                                    <input type="text" name="source" value={formData.source} onChange={handleChange} placeholder="Foundation Press" className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50" />
+                                </div>
+                            </>
                         )}
 
-                        {/* Research Specific Meta */}
+                        {/* === RESEARCH SPECIFIC === */}
                         {contentType === 'research' && (
                             <>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Publication Year</label>
-                                    <input type="number" name="publicationYear" value={formData.publicationYear} onChange={handleChange} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm" />
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">Authors</label>
+                                    <input type="text" name="authors" value={formData.authors} onChange={handleChange} placeholder="T. Salihu, et al." className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50" />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Research Type</label>
-                                    <select name="researchType" value={formData.researchType} onChange={handleChange} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm">
-                                        <option>Journal Article</option>
-                                        <option>Conference Paper</option>
-                                        <option>Thesis</option>
-                                        <option>Report</option>
-                                        <option>Working Paper</option>
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">Institution</label>
+                                    <input type="text" name="institution" value={formData.institution} onChange={handleChange} placeholder="Islamic University" className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">Type</label>
+                                    <select name="researchType" value={formData.researchType} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50">
+                                        <option>Journal Article</option><option>Conference Paper</option><option>Thesis</option><option>Report</option><option>Working Paper</option>
                                     </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">Year</label>
+                                    <input type="number" name="publicationYear" value={formData.publicationYear} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-brand-brown mb-1">DOI / Link</label>
+                                    <input type="text" name="doi" value={formData.doi} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50" />
                                 </div>
                             </>
                         )}
                     </div>
 
-                    {/* File Upload */}
-                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                        <label className="block text-xs font-bold text-brand-brown mb-3 uppercase">
-                            {contentType === 'research' ? 'Research Document (PDF)' : 'Featured Image'}
-                        </label>
-                        
-                        <div className={`border-2 border-dashed rounded-2xl p-4 flex flex-col items-center justify-center text-center transition-colors min-h-[180px] ${
-                            mainFile ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200 hover:border-brand-gold'
-                        }`}>
-                            {mainFile ? (
-                                <div className="w-full relative">
-                                    {filePreview ? (
-                                        <div className="relative w-full aspect-video rounded-lg overflow-hidden mb-2 shadow-sm">
-                                            <Image src={filePreview} alt="Preview" fill className="object-cover" />
-                                        </div>
-                                    ) : (
-                                        <FileText className="w-12 h-12 text-green-600 mx-auto mb-2" />
-                                    )}
-                                    <p className="text-xs font-bold truncate px-2 text-brand-brown-dark">{mainFile.name}</p>
-                                    <p className="text-[10px] text-gray-400">{(mainFile.size / 1024 / 1024).toFixed(2)} MB</p>
-                                    <button 
-                                        type="button" 
-                                        onClick={() => { setMainFile(null); setFilePreview(null); }} 
-                                        className="mt-3 text-red-500 text-xs font-bold hover:underline"
-                                    >
-                                        Remove & Replace
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="relative w-full">
-                                    <UploadCloud className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                                    <p className="text-sm text-gray-500 font-bold">Click to Upload</p>
-                                    <p className="text-xs text-gray-400 mt-1">
-                                        {contentType === 'research' ? 'PDF only (Max 20MB)' : 'JPG, PNG, WEBP (Max 5MB)'}
-                                    </p>
-                                    <input 
-                                        type="file" 
-                                        accept={contentType === 'research' ? "application/pdf" : "image/*"}
-                                        onChange={handleFileChange}
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
-                                    />
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Progress Bar */}
-                        {isSubmitting && mainFile && (
-                            <div className="mt-4">
-                                <div className="flex justify-between text-[10px] font-bold text-gray-500 mb-1">
-                                    <span>Uploading...</span>
-                                    <span>{Math.round(uploadProgress)}%</span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
-                                    <div className="bg-brand-gold h-full transition-all duration-300" style={{width: `${uploadProgress}%`}}></div>
-                                </div>
+                    {/* FEATURED IMAGE (Hidden for Research) */}
+                    {contentType !== 'research' && (
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+                            <h3 className="font-agency text-xl text-brand-brown-dark border-b border-gray-100 pb-2">Featured Image</h3>
+                            <div className="relative w-full aspect-video bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center overflow-hidden">
+                                {coverPreview ? (
+                                    <><Image src={coverPreview} alt="Preview" fill className="object-cover" /><button type="button" onClick={removeCover} className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full"><X className="w-4 h-4" /></button></>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center p-4 w-full h-full relative"><UploadCloud className="w-8 h-8 text-gray-400 mb-2" /><p className="text-xs text-gray-500 font-bold mb-1">Upload Cover</p><input type="file" accept="image/*" onChange={handleCoverChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" /></div>
+                                )}
                             </div>
-                        )}
-                    </div>
-
-                    {/* Submit Button */}
-                    <button 
-                        type="submit" 
-                        disabled={isSubmitting || duplicateWarning || (!mainFile && contentType === 'research')} // Require PDF for research
-                        className={`w-full flex items-center justify-center gap-2 py-4 font-bold rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 ${
-                            isSubmitting || duplicateWarning 
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                            : 'bg-brand-gold text-white hover:bg-brand-brown-dark'
-                        }`}
-                    >
-                        {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                        {isSubmitting ? 'Publishing...' : 'Publish Content'}
-                    </button>
-
+                        </div>
+                    )}
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
     );
 }
