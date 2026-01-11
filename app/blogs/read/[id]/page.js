@@ -47,7 +47,7 @@ const timeAgo = (date) => {
     if (!date) return 'Just now';
     const d = date.toDate ? date.toDate() : new Date(date);
     const seconds = Math.floor((new Date() - d) / 1000);
-    
+
     let interval = seconds / 31536000;
     if (interval > 1) return Math.floor(interval) + " years ago";
     interval = seconds / 2592000;
@@ -220,7 +220,7 @@ const ArticleLayout = ({ post, collectionName }) => {
                         <div className={`flex flex-wrap items-center gap-4 text-xs md:text-sm text-gray-500 mb-8 pb-6 border-b border-gray-100 ${isArabic ? 'justify-end' : 'justify-start'}`}>
                             <div className="flex items-center gap-2" dir="ltr">
                                 <User className="w-4 h-4 text-brand-gold" />
-                                <span className="font-bold text-brand-brown-dark">{post.author || "Al-Asad Foundation"}</span>
+                                <span className="font-bold text-brand-brown-dark">{post.author || "Salihu Tahir"}</span>
                             </div>
                             <span className="text-gray-300">|</span>
                             <div className="flex items-center gap-2" dir="ltr">
@@ -346,7 +346,7 @@ const ResearchLayout = ({ post, collectionName }) => {
                         <h4 className={`text-xl text-gray-900 mb-4 flex items-center gap-2 ${isArabic ? 'font-tajawal font-bold' : 'font-agency'}`}><Layers className="w-5 h-5 text-blue-600" /> {isArabic ? 'تفاصيل البحث' : 'Details'}</h4>
                         <div className={`space-y-4 text-sm ${isArabic ? 'text-right' : 'text-left'}`}>
                             <div className="pb-3 border-b border-gray-100"><span className="block text-xs text-gray-400 uppercase font-bold">{isArabic ? 'تاريخ النشر' : 'Published'}</span> <span className="font-bold text-gray-700">{formatDate(publishDate)}</span></div>
-                            <div className="pb-3 border-b border-gray-100"><span className="block text-xs text-gray-400 uppercase font-bold">{isArabic ? 'المؤلف' : 'Authors'}</span> <span className="font-bold text-gray-700">{post.authors}</span></div>
+                            <div className="pb-3 border-b border-gray-100"><span className="block text-xs text-gray-400 uppercase font-bold">{isArabic ? 'المؤلف' : 'Authors'}</span> <span className="font-bold text-gray-700">{post.authors || "S. I. Tahir"}</span></div>
                             <div><span className="block text-xs text-gray-400 uppercase font-bold">{isArabic ? 'النوع' : 'Type'}</span> <span className="font-bold text-blue-600">{post.researchType}</span></div>
                         </div>
                     </div>
@@ -356,7 +356,7 @@ const ResearchLayout = ({ post, collectionName }) => {
                 <div className="lg:col-span-9 order-1 lg:order-2">
                     <div className="bg-white p-8 md:p-12 rounded-[2rem] shadow-xl border border-gray-200" dir={isArabic ? 'rtl' : 'ltr'}>
                         <div className={`flex gap-3 mb-6 ${isArabic ? 'justify-start' : ''}`}>
-                            <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider border border-blue-100">{post.publicationStatus}</span>
+                            <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider border border-blue-100">{post.status || "Published"}</span>
                             <span className="bg-gray-50 text-gray-600 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider border border-gray-200">{post.language}</span>
                         </div>
                         <h1 className={`text-3xl md:text-5xl text-gray-900 leading-tight mb-8 ${isArabic ? 'font-tajawal font-bold text-right' : 'font-serif'}`}>{post.researchTitle}</h1>
@@ -438,7 +438,7 @@ export default function BlogPostPage() {
     }, [id]);
 
     if (loading) return <Loader size="lg" className="h-screen bg-brand-sand" />;
-    
+
     if (!post) return (
         <div className="min-h-screen bg-brand-sand flex flex-col items-center justify-center">
             <h1 className="font-agency text-4xl text-brand-brown-dark mb-4">Post Not Found</h1>
