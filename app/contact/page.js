@@ -1,43 +1,119 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { MapPin, Phone, Mail, Globe, Facebook, Youtube, Instagram, Twitter, MessageCircle } from 'lucide-react';
+import CustomSelect from '@/components/CustomSelect'; // Using our custom dropdown
+import { useModal } from '@/context/ModalContext'; // For success messages
+// Firebase
+import { db } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp, query, orderBy, getDocs, doc, getDoc } from 'firebase/firestore';
+import { MapPin, Phone, Mail, Globe, Facebook, Youtube, Instagram, Twitter, MessageCircle, Loader2, Send } from 'lucide-react';
 
 export default function ContactPage() {
+    const { showSuccess } = useModal();
+    
+    // --- STATE ---
+    const [loading, setLoading] = useState(true);
+    
+    // Dynamic Data
+    const [teamLead, setTeamLead] = useState(null);
+    const [teamMembers, setTeamMembers] = useState([]);
+    const [contactInfo, setContactInfo] = useState({
+        address: 'Loading address...',
+        email: 'Loading email...',
+        phone: 'Loading phone...',
+        facebook: '', twitter: '', instagram: '', youtube: '', whatsapp: ''
+    });
 
-    // Mock Data for Media Team (11 Members)
-    const teamMembers = [
-        { id: 1, name: "Lead Name", role: "Head of Media", image: "/hero.jpg" },
-        { id: 2, name: "Member Name", role: "Content Strategist", image: "/hero.jpg" },
-        { id: 3, name: "Member Name", role: "Videographer", image: "/hero.jpg" },
-        { id: 4, name: "Member Name", role: "Editor", image: "/hero.jpg" },
-        { id: 5, name: "Member Name", role: "Social Media Manager", image: "/hero.jpg" },
-        { id: 6, name: "Member Name", role: "Graphic Designer", image: "/hero.jpg" },
-        { id: 7, name: "Member Name", role: "Photographer", image: "/hero.jpg" },
-        { id: 8, name: "Member Name", role: "IT Support", image: "/hero.jpg" },
-        { id: 9, name: "Member Name", role: "Audio Engineer", image: "/hero.jpg" },
-        { id: 10, name: "Member Name", role: "Writer", image: "/hero.jpg" },
-        { id: 11, name: "Member Name", role: "Community Manager", image: "/hero.jpg" },
-    ];
+    // Form State
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [formData, setFormData] = useState({
+        fullName: '',
+        email: '',
+        subject: 'General Inquiry',
+        message: ''
+    });
 
-    // Split the team: Lead (first person) vs. The Rest
-    const teamLead = teamMembers[0];
-    const teamRest = teamMembers.slice(1);
+    const subjects = ["General Inquiry", "Media & Press", "Volunteering", "Donation Support", "Other"];
 
-    // Official Social Links
+    // --- 1. FETCH DATA (Team & Contact Info) ---
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                // A. Fetch Contact Settings
+                const infoSnap = await getDoc(doc(db, "general_settings", "contact_info"));
+                if (infoSnap.exists()) {
+                    setContactInfo(infoSnap.data());
+                }
+
+                // B. Fetch Team Members
+                const teamQ = query(collection(db, "team_members"), orderBy("createdAt", "desc"));
+                const teamSnap = await getDocs(teamQ);
+                const allMembers = teamSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                // Separate Lead from others
+                const lead = allMembers.find(m => m.isLead);
+                const rest = allMembers.filter(m => m.id !== lead?.id);
+
+                setTeamLead(lead || null);
+                setTeamMembers(rest);
+
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    // --- 2. HANDLE FORM SUBMISSION ---
+    const handleFormSubmit = async (e) => {
+        e.preventDefault();
+        
+        if (!formData.fullName || !formData.email || !formData.message) {
+            alert("Please fill in all required fields.");
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        try {
+            await addDoc(collection(db, "contact_messages"), {
+                ...formData,
+                status: "New",
+                createdAt: serverTimestamp()
+            });
+
+            // Reset & Show Success
+            setFormData({ fullName: '', email: '', subject: 'General Inquiry', message: '' });
+            showSuccess({
+                title: "Message Sent!",
+                message: "Thank you for reaching out. Our team will get back to you shortly.",
+                confirmText: "Close"
+            });
+
+        } catch (error) {
+            console.error("Error sending message:", error);
+            alert("Failed to send message. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // Helper to map dynamic links to icons
     const socialLinks = [
-        { icon: Facebook, href: "https://www.facebook.com/share/1D438MVXpQ/" },
-        { icon: Youtube, href: "https://youtube.com/@alasadeducation" },
-        { icon: Instagram, href: "https://www.instagram.com/alasad_education_foundation" },
-        { icon: Twitter, href: "https://x.com/AsadEducation" }, // Lucide doesn't have X icon, Twitter is fine or custom SVG
-        { icon: MessageCircle, href: "https://whatsapp.com/channel/0029VawdL4n6xCSHyUsMzc2V" }, // WhatsApp
-    ];
-
-    return (
+        { icon: Facebook, href: contactInfo.facebook },
+        { icon: Twitter, href: contactInfo.twitter },
+        { icon: Instagram, href: contactInfo.instagram },
+        { icon: Youtube, href: contactInfo.youtube },
+        { icon: MessageCircle, href: contactInfo.whatsapp },
+    ].filter(link => link.href && link.href.length > 5); // Only show valid links
+return (
         <div className="min-h-screen flex flex-col bg-white font-lato">
             <Header />
 
@@ -53,7 +129,6 @@ export default function ContactPage() {
                             className="object-cover object-center"
                             priority
                         />
-                        {/* Gradient Overlay - FIXED NESTING */}
                         <div className="absolute inset-0 bg-gradient-to-t from-white via-brand-gold/40 to-transparent "></div>
                     </div>
 
@@ -72,10 +147,9 @@ export default function ContactPage() {
                 <section className="px-6 md:px-12 lg:px-24 mb-16 md:mb-24 max-w-7xl mx-auto">
                     <div className="flex flex-col lg:flex-row gap-12 lg:gap-20">
 
-                        {/* LEFT: Contact Information */}
+                        {/* LEFT: Contact Information (Dynamic) */}
                         <div className="flex-1 space-y-8 md:space-y-10">
 
-                            {/* General Inquiries Card */}
                             <div className="bg-brand-sand/30 p-8 rounded-3xl border border-brand-gold/10 relative overflow-hidden">
                                 <h2 className="font-agency text-3xl text-brand-brown-dark mb-6">
                                     Get in Touch
@@ -88,8 +162,8 @@ export default function ContactPage() {
                                         </div>
                                         <div>
                                             <p className="font-agency text-xl text-brand-brown-dark leading-none mb-1">Office Address</p>
-                                            <p className="font-lato text-base text-brand-brown leading-relaxed">
-                                                Mani Road, Opposite Gidan Dawa<br />Primary School, Katsina, Katsina State.
+                                            <p className="font-lato text-base text-brand-brown leading-relaxed whitespace-pre-wrap">
+                                                {contactInfo.address}
                                             </p>
                                         </div>
                                     </div>
@@ -101,40 +175,42 @@ export default function ContactPage() {
                                         </div>
                                         <div>
                                             <p className="font-agency text-xl text-brand-brown-dark leading-none mb-1">Direct Contacts</p>
-                                            <a href="mailto:alasadeducationfoundation@gmail.com" className="block font-lato text-base text-brand-brown hover:text-brand-gold transition-colors break-all">
-                                                alasadeducationfoundation@gmail.com
+                                            <a href={`mailto:${contactInfo.email}`} className="block font-lato text-base text-brand-brown hover:text-brand-gold transition-colors break-all">
+                                                {contactInfo.email}
                                             </a>
-                                            <a href="tel:+2348067168669" className="block font-lato text-base text-brand-brown mt-1 hover:text-brand-gold transition-colors">
-                                                +234 806 716 8669
+                                            <a href={`tel:${contactInfo.phone}`} className="block font-lato text-base text-brand-brown mt-1 hover:text-brand-gold transition-colors">
+                                                {contactInfo.phone}
                                             </a>
                                         </div>
                                     </div>
 
                                     {/* Socials */}
-                                    <div className="flex items-start gap-4 pt-2">
-                                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-brand-gold shadow-sm mt-1 flex-shrink-0">
-                                            <Globe className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <p className="font-agency text-xl text-brand-brown-dark leading-none mb-3">Connect Online</p>
-                                            <div className="flex gap-3 flex-wrap">
-                                                {socialLinks.map((social, idx) => {
-                                                    const Icon = social.icon;
-                                                    return (
-                                                        <Link 
-                                                            key={idx} 
-                                                            href={social.href}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="w-10 h-10 rounded-full bg-brand-gold text-white flex items-center justify-center hover:bg-brand-brown-dark transition-all transform hover:scale-110 shadow-sm"
-                                                        >
-                                                            <Icon className="w-5 h-5" />
-                                                        </Link>
-                                                    );
-                                                })}
+                                    {socialLinks.length > 0 && (
+                                        <div className="flex items-start gap-4 pt-2">
+                                            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-brand-gold shadow-sm mt-1 flex-shrink-0">
+                                                <Globe className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <p className="font-agency text-xl text-brand-brown-dark leading-none mb-3">Connect Online</p>
+                                                <div className="flex gap-3 flex-wrap">
+                                                    {socialLinks.map((social, idx) => {
+                                                        const Icon = social.icon;
+                                                        return (
+                                                            <Link 
+                                                                key={idx} 
+                                                                href={social.href}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="w-10 h-10 rounded-full bg-brand-gold text-white flex items-center justify-center hover:bg-brand-brown-dark transition-all transform hover:scale-110 shadow-sm"
+                                                            >
+                                                                <Icon className="w-5 h-5" />
+                                                            </Link>
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -144,49 +220,74 @@ export default function ContactPage() {
                                     For Press & Media
                                 </h2>
                                 <p className="font-lato text-base text-brand-brown mb-2">
-                                    Need logos, brand assets, or interviews? Reach out directly via the above mentioned email.
+                                    Need logos, brand assets, or interviews? Reach out directly via the email above.
                                 </p>
-                               
                             </div>
                         </div>
 
-                        {/* RIGHT: Contact Form */}
+                        {/* RIGHT: Contact Form (Functional) */}
                         <div className="flex-1 bg-white rounded-3xl shadow-2xl p-8 md:p-12 border-t-8 border-brand-gold h-fit relative">
                             <h2 className="font-agency text-3xl md:text-4xl text-brand-brown-dark mb-6">
                                 Send us a Message
                             </h2>
-                            <form className="space-y-6">
+                            <form onSubmit={handleFormSubmit} className="space-y-6">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Full Name</label>
-                                    <input type="text" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:bg-white" placeholder="Enter your name" />
+                                    <input 
+                                        type="text" 
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:bg-white" 
+                                        placeholder="Enter your name" 
+                                        value={formData.fullName}
+                                        onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                                        required
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Email Address</label>
-                                    <input type="email" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:bg-white" placeholder="Enter your email" />
+                                    <input 
+                                        type="email" 
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:bg-white" 
+                                        placeholder="Enter your email" 
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                        required
+                                    />
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Subject</label>
-                                    <select className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:bg-white cursor-pointer">
-                                        <option>General Inquiry</option>
-                                        <option>Media & Press</option>
-                                        <option>Volunteering</option>
-                                        <option>Donation Support</option>
-                                        <option>Other</option>
-                                    </select>
-                                </div>
+                                
+                                {/* Custom Select for Subject */}
+                                <CustomSelect 
+                                    label="Subject"
+                                    options={subjects}
+                                    value={formData.subject}
+                                    onChange={(val) => setFormData({...formData, subject: val})}
+                                    placeholder="Select Subject"
+                                />
+
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Message</label>
-                                    <textarea rows="5" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:bg-white resize-none" placeholder="How can we help you?"></textarea>
+                                    <textarea 
+                                        rows="5" 
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:bg-white resize-none" 
+                                        placeholder="How can we help you?"
+                                        value={formData.message}
+                                        onChange={(e) => setFormData({...formData, message: e.target.value})}
+                                        required
+                                    ></textarea>
                                 </div>
-                                <button type="button" className="w-full py-4 bg-brand-brown-dark text-white font-agency text-xl rounded-xl hover:bg-brand-gold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-                                    Send Message
+                                
+                                <button 
+                                    type="submit" 
+                                    disabled={isSubmitting}
+                                    className="w-full py-4 bg-brand-brown-dark text-white font-agency text-xl rounded-xl hover:bg-brand-gold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                                >
+                                    {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Send Message <Send className="w-4 h-4" /></>}
                                 </button>
                             </form>
                         </div>
                     </div>
                 </section>
 
-                {/* 3. MEET THE MEDIA TEAM SECTION */}
+                {/* 3. DYNAMIC MEDIA TEAM */}
                 <section className="px-6 md:px-12 lg:px-24 mb-16 md:mb-24 max-w-7xl mx-auto">
                     <div className="text-center mb-12 md:mb-16">
                         <h2 className="font-agency text-3xl md:text-5xl text-brand-brown-dark mb-3">
@@ -198,55 +299,60 @@ export default function ContactPage() {
                         </p>
                     </div>
 
-                    {/* 3a. TEAM LEAD (Centered & Highlighted) */}
-                    <div className="flex justify-center mb-12 md:mb-16">
-                        <div className="group flex flex-col items-center w-full max-w-[280px]">
-                            {/* Image Card */}
-                            <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden mb-6 shadow-2xl border-4 border-brand-gold bg-brand-sand transform group-hover:scale-105 transition-transform duration-500">
-                                <Image 
-                                    src={teamLead.image} 
-                                    alt={teamLead.name} 
-                                    fill 
-                                    className="object-cover" 
-                                />
-                                {/* Gradient Overlay */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
-                            </div>
-
-                            {/* Info */}
-                            <h3 className="font-agency text-3xl text-brand-brown-dark leading-none mb-2">
-                                {teamLead.name}
-                            </h3>
-                            <p className="font-lato text-sm text-brand-gold font-bold uppercase tracking-widest bg-brand-gold/10 px-4 py-1.5 rounded-full">
-                                {teamLead.role}
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* 3b. THE REST OF THE TEAM (Grid) */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8">
-                        {teamRest.map((member) => (
-                            <div key={member.id} className="group flex flex-col items-center">
-                                {/* Image Card */}
-                                <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden mb-4 shadow-md bg-brand-sand transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-2">
-                                    <Image 
-                                        src={member.image} 
-                                        alt={member.name} 
-                                        fill 
-                                        className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500" 
-                                    />
+                    {loading ? (
+                        <div className="flex justify-center py-12"><Loader2 className="w-10 h-10 animate-spin text-brand-gold" /></div>
+                    ) : (
+                        <>
+                            {/* 3a. TEAM LEAD */}
+                            {teamLead && (
+                                <div className="flex justify-center mb-12 md:mb-16">
+                                    <div className="group flex flex-col items-center w-full max-w-[280px]">
+                                        <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden mb-6 shadow-2xl border-4 border-brand-gold bg-brand-sand transform group-hover:scale-105 transition-transform duration-500">
+                                            <Image 
+                                                src={teamLead.image || "/fallback.webp"} 
+                                                alt={teamLead.name} 
+                                                fill 
+                                                className="object-cover" 
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
+                                        </div>
+                                        <h3 className="font-agency text-3xl text-brand-brown-dark leading-none mb-2">
+                                            {teamLead.name}
+                                        </h3>
+                                        <p className="font-lato text-sm text-brand-gold font-bold uppercase tracking-widest bg-brand-gold/10 px-4 py-1.5 rounded-full">
+                                            {teamLead.role}
+                                        </p>
+                                    </div>
                                 </div>
+                            )}
 
-                                {/* Info */}
-                                <h3 className="font-agency text-lg md:text-xl text-brand-brown-dark leading-none text-center mb-1">
-                                    {member.name}
-                                </h3>
-                                <p className="font-lato text-[10px] md:text-xs text-brand-brown font-bold uppercase tracking-wider text-center opacity-70">
-                                    {member.role}
-                                </p>
-                            </div>
-                        ))}
-                    </div>
+                            {/* 3b. REST OF THE TEAM */}
+                            {teamMembers.length > 0 ? (
+                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8">
+                                    {teamMembers.map((member) => (
+                                        <div key={member.id} className="group flex flex-col items-center">
+                                            <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden mb-4 shadow-md bg-brand-sand transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-2">
+                                                <Image 
+                                                    src={member.image || "/fallback.webp"} 
+                                                    alt={member.name} 
+                                                    fill 
+                                                    className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500" 
+                                                />
+                                            </div>
+                                            <h3 className="font-agency text-lg md:text-xl text-brand-brown-dark leading-none text-center mb-1">
+                                                {member.name}
+                                            </h3>
+                                            <p className="font-lato text-[10px] md:text-xs text-brand-brown font-bold uppercase tracking-wider text-center opacity-70">
+                                                {member.role}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                !teamLead && <p className="text-center text-gray-400 italic">Team members will be listed here.</p>
+                            )}
+                        </>
+                    )}
                 </section>
 
                 {/* 4. MAP PLACEHOLDER */}
