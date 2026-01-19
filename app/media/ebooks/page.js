@@ -9,7 +9,7 @@ import Loader from '@/components/Loader';
 // Firebase Imports
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
-import { Book, Download, Library, Filter, Loader2, ChevronRight } from 'lucide-react';
+import { Book, Download, Library, Filter, Loader2, ChevronRight, Globe, Lock, Building2 } from 'lucide-react';
 
 export default function EbooksPage() {
 
@@ -22,12 +22,15 @@ export default function EbooksPage() {
     const [filteredCollections, setFilteredCollections] = useState([]);
     
     const [loading, setLoading] = useState(true);
+    
+    // Filters
     const [activeLang, setActiveLang] = useState("English");
-    const [activeCategory, setActiveCategory] = useState("All");
+    const [activeAccess, setActiveAccess] = useState("All"); // Free, Members Only
+    const [activePublisher, setActivePublisher] = useState("All"); // Foundation, External
+    
     const [visibleCount, setVisibleCount] = useState(10);
 
     const languages = ["English", "Hausa", "Arabic"];
-    const categories = ["All", "Tafsir", "Fiqh", "Aqeedah", "History", "General"];
 
     // --- FETCH DATA ---
     useEffect(() => {
@@ -63,20 +66,29 @@ export default function EbooksPage() {
 
     // --- FILTER LOGIC ---
     useEffect(() => {
-        // 1. Filter by Language
-        const langBooks = allBooks.filter(b => b.language === activeLang);
-        const langCollections = allCollections.filter(c => c.category === activeLang); // Collection category maps to language in Admin
+        // 1. Base Filter by Language (Primary)
+        let results = allBooks.filter(b => b.language === activeLang);
+        const langCollections = allCollections.filter(c => c.category === activeLang);
 
-        // 2. Filter Books by Category (if selected)
-        const finalBooks = activeCategory === "All" 
-            ? langBooks 
-            : langBooks.filter(b => b.category === activeCategory);
+        // 2. Filter by Access Type
+        if (activeAccess !== "All") {
+            results = results.filter(b => b.access === activeAccess);
+        }
 
-        setFilteredBooks(finalBooks);
+        // 3. Filter by Publisher
+        if (activePublisher !== "All") {
+            if (activePublisher === "Foundation") {
+                results = results.filter(b => b.publisher === "Al-Asad Foundation");
+            } else {
+                results = results.filter(b => b.publisher !== "Al-Asad Foundation");
+            }
+        }
+
+        setFilteredBooks(results);
         setFilteredCollections(langCollections);
         setVisibleCount(10); // Reset pagination
 
-    }, [activeLang, activeCategory, allBooks, allCollections]);
+    }, [activeLang, activeAccess, activePublisher, allBooks, allCollections]);
 
     // Helper: Get Book Count per Collection
     const getCollectionBookCount = (collectionTitle, storedCount) => {
@@ -124,14 +136,14 @@ export default function EbooksPage() {
                     </div>
                 ) : (
                     <>
-                        {/* 2. LANGUAGE FILTER */}
+                        {/* 2. PRIMARY LANGUAGE FILTER */}
                         <section className="px-6 md:px-12 lg:px-24 mb-10 max-w-7xl mx-auto">
                             <div className="flex justify-center">
                                 <div className="bg-white p-2 rounded-full shadow-sm border border-gray-100 flex gap-2">
                                     {languages.map((lang) => (
                                         <button 
                                             key={lang} 
-                                            onClick={() => { setActiveLang(lang); setActiveCategory("All"); }}
+                                            onClick={() => setActiveLang(lang)}
                                             className={`px-6 py-2 rounded-full text-xs font-bold transition-all ${
                                                 activeLang === lang 
                                                 ? 'bg-brand-brown-dark text-white shadow-md' 
@@ -171,6 +183,7 @@ export default function EbooksPage() {
                                                     fill 
                                                     className="object-cover rounded-md"
                                                 />
+                                                {/* Stack Effect */}
                                                 <div className="absolute top-1 -right-1 w-full h-full bg-gray-200 rounded-md -z-10 border border-gray-300"></div>
                                                 <div className="absolute top-2 -right-2 w-full h-full bg-gray-100 rounded-md -z-20 border border-gray-300"></div>
                                             </div>
@@ -189,31 +202,43 @@ export default function EbooksPage() {
                             </section>
                         )}
 
-                        {/* 4. CATEGORY FILTER */}
-                        <section className="px-6 md:px-12 lg:px-24 mb-8 max-w-7xl mx-auto">
-                            <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-hide">
-                                {categories.map((cat, index) => (
-                                    <button 
-                                        key={index}
-                                        onClick={() => setActiveCategory(cat)}
-                                        className={`px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors border ${
-                                            activeCategory === cat 
-                                            ? 'bg-brand-brown-dark text-white border-brand-brown-dark shadow-md' 
-                                            : 'bg-white text-gray-500 border-gray-200 hover:border-brand-gold hover:text-brand-gold'
-                                        }`}
-                                    >
-                                        {cat}
-                                    </button>
-                                ))}
-                            </div>
-                        </section>
-
-                        {/* 5. BOOK GRID */}
+                        {/* 4. SOFT FILTERS & BOOKS GRID */}
                         <section className="px-6 md:px-12 lg:px-24 max-w-7xl mx-auto">
-                             <div className="flex justify-between items-end mb-6 md:mb-8">
+                             <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 md:mb-8 gap-4">
                                 <h2 className="font-agency text-2xl md:text-3xl text-brand-brown-dark">
                                     Recent Uploads
                                 </h2>
+                                
+                                {/* Soft Filters */}
+                                <div className="flex flex-wrap gap-2">
+                                    {/* Access Filter */}
+                                    <div className="relative">
+                                        <select 
+                                            value={activeAccess}
+                                            onChange={(e) => setActiveAccess(e.target.value)}
+                                            className="appearance-none bg-white border border-gray-200 text-gray-600 text-xs font-bold py-2 pl-8 pr-4 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer hover:border-brand-gold transition-colors"
+                                        >
+                                            <option value="All">All Access</option>
+                                            <option value="Free">Free</option>
+                                            <option value="Members Only">Members Only</option>
+                                        </select>
+                                        <Lock className="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                    </div>
+
+                                    {/* Publisher Filter */}
+                                    <div className="relative">
+                                        <select 
+                                            value={activePublisher}
+                                            onChange={(e) => setActivePublisher(e.target.value)}
+                                            className="appearance-none bg-white border border-gray-200 text-gray-600 text-xs font-bold py-2 pl-8 pr-4 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer hover:border-brand-gold transition-colors"
+                                        >
+                                            <option value="All">All Publishers</option>
+                                            <option value="Foundation">Al-Asad Foundation</option>
+                                            <option value="External">External</option>
+                                        </select>
+                                        <Building2 className="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                    </div>
+                                </div>
                             </div>
 
                             {visibleBooks.length > 0 ? (
@@ -252,14 +277,19 @@ export default function EbooksPage() {
                                                 <h3 className="font-agency text-lg md:text-xl text-brand-brown-dark leading-tight mb-1 group-hover:text-brand-gold transition-colors line-clamp-2">
                                                     {book.title}
                                                 </h3>
-                                                <p className="font-lato text-xs md:text-sm text-gray-500 mb-3 line-clamp-1">
+                                                <p className="font-lato text-xs md:text-sm text-gray-500 mb-2 line-clamp-1">
                                                     by {book.author}
                                                 </p>
 
-                                                <div className="mt-auto flex items-center gap-2">
-                                                    <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded border border-gray-200">
-                                                        PDF • {book.fileSize || 'Unknown'}
+                                                <div className="mt-auto flex flex-wrap items-center gap-2">
+                                                    <span className="text-[9px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 uppercase">
+                                                        {book.fileFormat || 'PDF'}
                                                     </span>
+                                                    {book.year && (
+                                                        <span className="text-[9px] font-bold text-gray-400">
+                                                            {book.year}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </Link>
                                         </div>
