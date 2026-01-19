@@ -7,7 +7,7 @@ import Footer from '@/components/Footer';
 // Firebase
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { BookOpen, Truck, Laptop, HeartHandshake, Calendar, User, Phone, Mail, MapPin, Loader2, CheckCircle } from 'lucide-react';
+import { BookOpen, Truck, Laptop, HeartHandshake, Calendar, User, Phone, Mail, MapPin, Loader2, CheckCircle, Globe, Map } from 'lucide-react';
 
 export default function VolunteerPage() {
 
@@ -18,11 +18,21 @@ export default function VolunteerPage() {
         fullName: '',
         email: '',
         phone: '',
-        location: '',
+        nationality: 'Nigeria',
+        state: '',
         department: 'Teaching & Education',
         availability: 'Weekends Only',
         experience: ''
     });
+
+    // Lists for Dropdowns
+    const countries = [
+        "Nigeria", "Niger", "Ghana", "Cameroon", "Chad", "Benin", "Togo", "United Kingdom", "United States", "Saudi Arabia", "Other"
+    ];
+
+    const states = [
+        "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT - Abuja", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara", "Outside Nigeria"
+    ];
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -32,8 +42,8 @@ export default function VolunteerPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!formData.fullName || !formData.phone || !formData.location) {
-            alert("Please fill in all required fields (Name, Phone, Location).");
+        if (!formData.fullName || !formData.phone || !formData.state) {
+            alert("Please fill in all required fields.");
             return;
         }
 
@@ -51,7 +61,8 @@ export default function VolunteerPage() {
                 fullName: '',
                 email: '',
                 phone: '',
-                location: '',
+                nationality: 'Nigeria',
+                state: '',
                 department: 'Teaching & Education',
                 availability: 'Weekends Only',
                 experience: ''
@@ -233,19 +244,44 @@ export default function VolunteerPage() {
                                                         <Mail className="absolute left-3 top-3.5 text-gray-400 w-4 h-4" />
                                                     </div>
                                                 </div>
+                                                
+                                                {/* NATIONALITY DROPDOWN */}
                                                 <div>
-                                                    <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">City/Location *</label>
+                                                    <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">Nationality</label>
                                                     <div className="relative">
-                                                        <input 
-                                                            type="text" 
-                                                            name="location"
-                                                            value={formData.location}
+                                                        <select
+                                                            name="nationality"
+                                                            value={formData.nationality}
                                                             onChange={handleChange}
-                                                            required
-                                                            className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/20 focus:border-brand-gold transition-all"
-                                                            placeholder="e.g. Katsina GRA"
-                                                        />
-                                                        <MapPin className="absolute left-3 top-3.5 text-gray-400 w-4 h-4" />
+                                                            className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-8 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/20 focus:border-brand-gold transition-all appearance-none cursor-pointer text-gray-700"
+                                                        >
+                                                            {countries.map(c => <option key={c} value={c}>{c}</option>)}
+                                                        </select>
+                                                        <Globe className="absolute left-3 top-3.5 text-gray-400 w-4 h-4" />
+                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* STATE DROPDOWN */}
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">State of Residence *</label>
+                                                <div className="relative">
+                                                    <select
+                                                        name="state"
+                                                        value={formData.state}
+                                                        onChange={handleChange}
+                                                        required
+                                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-8 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/20 focus:border-brand-gold transition-all appearance-none cursor-pointer text-gray-700"
+                                                    >
+                                                        <option value="">Select State</option>
+                                                        {states.map(s => <option key={s} value={s}>{s}</option>)}
+                                                    </select>
+                                                    <MapPin className="absolute left-3 top-3.5 text-gray-400 w-4 h-4" />
+                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                                                     </div>
                                                 </div>
                                             </div>
