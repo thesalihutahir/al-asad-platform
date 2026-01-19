@@ -106,7 +106,7 @@ export default function CommunityDevelopmentPage() {
                         </div>
                         <div className="relative h-[400px] w-full rounded-3xl overflow-hidden shadow-2xl border-8 border-white">
                             <Image 
-                                src="/images/placeholders/community-food-bank.webp" 
+                                src="/fallback.webp" 
                                 alt="Food Distribution" 
                                 fill 
                                 className="object-cover"
