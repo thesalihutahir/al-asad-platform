@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Heart, DollarSign, Banknote, Users, CheckCircle, Loader2, Target, Wallet } from 'lucide-react';
+import { Heart, DollarSign, Banknote, Users, CheckCircle, Loader2, Target, Wallet, Mail} from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 // Firebase
