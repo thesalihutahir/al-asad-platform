@@ -8,8 +8,8 @@ import Footer from '@/components/Footer';
 import Loader from '@/components/Loader';
 // Firebase Imports
 import { db } from '@/lib/firebase';
-import { collection, query, orderBy, getDocs, where } from 'firebase/firestore';
-import { Play, Download, ListMusic, Mic, Clock, Calendar, Filter, Loader2, Globe, ChevronRight } from 'lucide-react';
+import { collection, query, orderBy, getDocs } from 'firebase/firestore';
+import { Play, Download, ListMusic, Mic, Clock, Calendar, ChevronRight } from 'lucide-react';
 
 export default function AudiosPage() {
 
@@ -23,11 +23,9 @@ export default function AudiosPage() {
     
     const [loading, setLoading] = useState(true);
     const [activeLang, setActiveLang] = useState("English");
-    const [activeGenre, setActiveGenre] = useState("All");
     const [visibleCount, setVisibleCount] = useState(6);
 
     const languages = ["English", "Hausa", "Arabic"];
-    const genres = ["All", "Friday Sermon", "Tafsir Series", "Fiqh Class", "General Lecture", "Seerah"];
 
     // --- FETCH DATA ---
     useEffect(() => {
@@ -63,20 +61,15 @@ export default function AudiosPage() {
 
     // --- FILTER LOGIC ---
     useEffect(() => {
-        // 1. Filter by Language
+        // 1. Filter by Language (Category)
         const langAudios = allAudios.filter(a => a.category === activeLang);
         const langSeries = allSeries.filter(s => s.category === activeLang);
 
-        // 2. Filter Audios by Genre (if selected)
-        const finalAudios = activeGenre === "All" 
-            ? langAudios 
-            : langAudios.filter(a => a.genre === activeGenre);
-
-        setFilteredAudios(finalAudios);
+        setFilteredAudios(langAudios);
         setFilteredSeries(langSeries);
         setVisibleCount(6); // Reset pagination
 
-    }, [activeLang, activeGenre, allAudios, allSeries]);
+    }, [activeLang, allAudios, allSeries]);
 
     // --- HELPER: Format Date ---
     const formatDate = (dateString) => {
@@ -136,7 +129,7 @@ export default function AudiosPage() {
                                     {languages.map((lang) => (
                                         <button 
                                             key={lang} 
-                                            onClick={() => { setActiveLang(lang); setActiveGenre("All"); }}
+                                            onClick={() => setActiveLang(lang)}
                                             className={`px-6 py-2 rounded-full text-xs font-bold transition-all ${
                                                 activeLang === lang 
                                                 ? 'bg-brand-brown-dark text-white shadow-md' 
@@ -196,26 +189,7 @@ export default function AudiosPage() {
                             </section>
                         )}
 
-                        {/* 4. GENRE FILTER BAR */}
-                        <section className="px-6 md:px-12 lg:px-24 mb-8 max-w-7xl mx-auto">
-                            <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-hide">
-                                {genres.map((genre, index) => (
-                                    <button 
-                                        key={index}
-                                        onClick={() => setActiveGenre(genre)}
-                                        className={`px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors border ${
-                                            activeGenre === genre 
-                                            ? 'bg-brand-brown-dark text-white border-brand-brown-dark shadow-md' 
-                                            : 'bg-white text-gray-500 border-gray-200 hover:border-brand-gold hover:text-brand-gold'
-                                        }`}
-                                    >
-                                        {genre}
-                                    </button>
-                                ))}
-                            </div>
-                        </section>
-
-                        {/* 5. AUDIO LIST */}
+                        {/* 4. AUDIO LIST */}
                         <section className="px-6 md:px-12 lg:px-24 space-y-4 max-w-7xl mx-auto">
                             <div className="flex justify-between items-end mb-4">
                                  <h2 className="font-agency text-2xl md:text-3xl text-brand-brown-dark">
@@ -238,10 +212,7 @@ export default function AudiosPage() {
 
                                             {/* Content */}
                                             <div className="flex-grow min-w-0" dir={getDir(audio.title)}>
-                                                <div className="flex justify-between items-start mb-1" dir="ltr">
-                                                    <span className="text-[10px] md:text-xs font-bold text-brand-brown px-2 py-0.5 rounded bg-brand-sand uppercase tracking-wider">
-                                                        {audio.genre}
-                                                    </span>
+                                                <div className="flex justify-end items-start mb-1" dir="ltr">
                                                     <span className="text-[10px] md:text-xs text-gray-400 font-lato flex items-center gap-1">
                                                         <Clock className="w-3 h-3" /> {audio.fileSize}
                                                     </span>
