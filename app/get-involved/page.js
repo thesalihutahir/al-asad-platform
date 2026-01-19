@@ -8,14 +8,14 @@ import Footer from '@/components/Footer';
 import { Heart, Users, Handshake, ArrowRight, ShieldCheck, Globe, Star } from 'lucide-react';
 
 export default function GetInvolvedPage() {
-    
+
     const actions = [
         {
             id: 'donate',
             title: "Make a Donation",
             description: "Your Sadaqah and Zakat help us sustain our schools, feed the hungry, and spread beneficial knowledge to those who need it most.",
             link: "/get-involved/donate",
-            icon: Heart, // Using Lucide Icon
+            icon: Heart, 
             color: "text-red-500",
             bgColor: "bg-red-50",
             btnText: "Donate Now",
@@ -55,13 +55,12 @@ export default function GetInvolvedPage() {
                 <section className="w-full relative bg-white mb-12 md:mb-20">
                     <div className="relative w-full aspect-[2.5/1] md:aspect-[3.5/1] lg:aspect-[4/1]">
                         <Image
-                            src="/images/heroes/get-involved-overview-hero.webp" // Placeholder
+                            src="/images/heroes/get-involved-overview-hero.webp" 
                             alt="Get Involved Hero"
                             fill
                             className="object-cover object-center"
                             priority
                         />
-                        {/* Gradient Overlay - FIXED NESTING */}
                         <div className="absolute inset-0 bg-gradient-to-t from-white via-brand-gold/40 to-transparent "></div>
                     </div>
 
@@ -83,8 +82,7 @@ export default function GetInvolvedPage() {
                             const Icon = action.icon;
                             return (
                                 <div key={action.id} className="group bg-white rounded-3xl p-8 border border-gray-100 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 flex flex-col items-center text-center h-full">
-                                    
-                                    {/* Icon Circle */}
+
                                     <div className={`w-20 h-20 md:w-24 md:h-24 rounded-full ${action.bgColor} flex items-center justify-center mb-6 md:mb-8 group-hover:scale-110 transition-transform`}>
                                         <Icon className={`w-10 h-10 md:w-12 md:h-12 ${action.color}`} />
                                     </div>
@@ -92,7 +90,7 @@ export default function GetInvolvedPage() {
                                     <h2 className="font-agency text-2xl md:text-3xl text-brand-brown-dark mb-4">
                                         {action.title}
                                     </h2>
-                                    
+
                                     <p className="font-lato text-sm md:text-base text-gray-600 leading-relaxed mb-8 flex-grow max-w-xs mx-auto">
                                         {action.description}
                                     </p>
@@ -112,16 +110,15 @@ export default function GetInvolvedPage() {
                 {/* 3. IMPACT PREVIEW / MOTIVATION */}
                 <section className="px-6 md:px-12 lg:px-24 max-w-7xl mx-auto">
                     <div className="bg-brand-brown-dark rounded-3xl p-10 md:p-16 text-center text-white relative overflow-hidden shadow-2xl">
-                        {/* Decorative Circles */}
                         <div className="absolute top-0 left-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -ml-20 -mt-20"></div>
                         <div className="absolute bottom-0 right-0 w-64 h-64 bg-brand-gold opacity-10 rounded-full blur-3xl -mr-20 -mb-20"></div>
-                        
+
                         <h2 className="font-agency text-3xl md:text-4xl mb-8 relative z-10">
                             Why Support Al-Asad?
                         </h2>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 mt-8 md:mt-12 relative z-10 divide-y md:divide-y-0 md:divide-x divide-white/10">
-                            
+
                             {/* Stat 1 */}
                             <div className="flex flex-col items-center pt-8 md:pt-0">
                                 <div className="mb-4 bg-white/10 p-3 rounded-full text-brand-gold">
