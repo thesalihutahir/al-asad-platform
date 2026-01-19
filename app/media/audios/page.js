@@ -2,36 +2,45 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import Loader from '@/components/Loader';
 // Firebase Imports
 import { db } from '@/lib/firebase';
-import { collection, query, orderBy, getDocs } from 'firebase/firestore';
-import { Play, Download, ListMusic, Mic, Clock, Calendar, Filter, Loader2 } from 'lucide-react';
+import { collection, query, orderBy, getDocs, where } from 'firebase/firestore';
+import { Play, Download, ListMusic, Mic, Clock, Calendar, Filter, Loader2, Globe, ChevronRight } from 'lucide-react';
 
 export default function AudiosPage() {
 
     // --- STATE ---
-    const [audios, setAudios] = useState([]);
-    const [series, setSeries] = useState([]); // Real Series Data
+    const [allAudios, setAllAudios] = useState([]);
+    const [allSeries, setAllSeries] = useState([]);
+    
+    // Filtered State
+    const [filteredAudios, setFilteredAudios] = useState([]);
+    const [filteredSeries, setFilteredSeries] = useState([]);
+    
     const [loading, setLoading] = useState(true);
-    const [activeFilter, setActiveFilter] = useState("All Audios");
+    const [activeLang, setActiveLang] = useState("English");
+    const [activeGenre, setActiveGenre] = useState("All");
     const [visibleCount, setVisibleCount] = useState(6);
 
-    const filters = ["All Audios", "Friday Sermon", "Tafsir Series", "Fiqh Class", "General Lecture", "Seerah"];
+    const languages = ["English", "Hausa", "Arabic"];
+    const genres = ["All", "Friday Sermon", "Tafsir Series", "Fiqh Class", "General Lecture", "Seerah"];
 
     // --- FETCH DATA ---
     useEffect(() => {
         const fetchData = async () => {
             try {
                 // 1. Fetch Audios
-                const qAudios = query(collection(db, "audios"), orderBy("createdAt", "desc"));
+                const qAudios = query(collection(db, "audios"), orderBy("date", "desc"));
                 const audiosSnapshot = await getDocs(qAudios);
                 const fetchedAudios = audiosSnapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 }));
-                setAudios(fetchedAudios);
+                setAllAudios(fetchedAudios);
 
                 // 2. Fetch Audio Series
                 const qSeries = query(collection(db, "audio_series"), orderBy("createdAt", "desc"));
@@ -40,7 +49,7 @@ export default function AudiosPage() {
                     id: doc.id,
                     ...doc.data()
                 }));
-                setSeries(fetchedSeries);
+                setAllSeries(fetchedSeries);
 
             } catch (error) {
                 console.error("Error fetching audio data:", error);
@@ -52,6 +61,23 @@ export default function AudiosPage() {
         fetchData();
     }, []);
 
+    // --- FILTER LOGIC ---
+    useEffect(() => {
+        // 1. Filter by Language
+        const langAudios = allAudios.filter(a => a.category === activeLang);
+        const langSeries = allSeries.filter(s => s.category === activeLang);
+
+        // 2. Filter Audios by Genre (if selected)
+        const finalAudios = activeGenre === "All" 
+            ? langAudios 
+            : langAudios.filter(a => a.genre === activeGenre);
+
+        setFilteredAudios(finalAudios);
+        setFilteredSeries(langSeries);
+        setVisibleCount(6); // Reset pagination
+
+    }, [activeLang, activeGenre, allAudios, allSeries]);
+
     // --- HELPER: Format Date ---
     const formatDate = (dateString) => {
         if (!dateString) return '';
@@ -59,26 +85,16 @@ export default function AudiosPage() {
         return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     };
 
-    // --- HELPER: Get Count for Series ---
-    // (Optional: If you want to count dynamically based on actual uploaded audios instead of the 'count' field in series)
-    const getRealCount = (seriesTitle, storedCount) => {
-        // If you want to rely on the manual count saved in the series doc, just return storedCount.
-        // If you want to count actual files in the 'audios' collection matching the series name:
-        if (audios.length > 0) {
-            return audios.filter(a => a.series === seriesTitle).length;
-        }
-        return storedCount || 0;
+    const getDir = (text) => {
+        if (!text) return 'ltr';
+        const arabicPattern = /[\u0600-\u06FF]/;
+        return arabicPattern.test(text) ? 'rtl' : 'ltr';
     };
-
-    // --- FILTER LOGIC ---
-    const filteredAudios = activeFilter === "All Audios" 
-        ? audios 
-        : audios.filter(audio => audio.category === activeFilter);
 
     const visibleAudios = filteredAudios.slice(0, visibleCount);
 
     return (
-        <div className="min-h-screen flex flex-col bg-white font-lato">
+        <div className="min-h-screen flex flex-col bg-brand-sand font-lato">
             <Header />
 
             <main className="flex-grow pb-16">
@@ -102,34 +118,56 @@ export default function AudiosPage() {
                         </h1>
                         <div className="w-16 md:w-24 h-1 bg-brand-gold mx-auto rounded-full mb-6"></div>
                         <p className="font-lato text-brand-brown text-sm md:text-xl max-w-2xl mx-auto leading-relaxed font-medium">
-                            Listen to sermons, tafsir, and educational series on the go. Download lectures to build your personal library of knowledge.
+                            Listen to sermons, tafsir, and educational series on the go. Build your personal library of knowledge.
                         </p>
                     </div>
                 </section>
 
                 {loading ? (
                     <div className="flex justify-center items-center py-20">
-                        <Loader2 className="w-10 h-10 text-brand-gold animate-spin" />
+                        <Loader size="md" />
                     </div>
                 ) : (
                     <>
-                        {/* 2. AUDIO SERIES (Real Data) */}
-                        {series.length > 0 && (
-                            <section className="px-6 md:px-12 lg:px-24 mb-12">
-                                <div className="flex justify-between items-end mb-6 border-b border-gray-100 pb-2">
-                                    <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark">
+                        {/* 2. LANGUAGE FILTER */}
+                        <section className="px-6 md:px-12 lg:px-24 mb-10 max-w-7xl mx-auto">
+                            <div className="flex justify-center">
+                                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-100 flex gap-2">
+                                    {languages.map((lang) => (
+                                        <button 
+                                            key={lang} 
+                                            onClick={() => { setActiveLang(lang); setActiveGenre("All"); }}
+                                            className={`px-6 py-2 rounded-full text-xs font-bold transition-all ${
+                                                activeLang === lang 
+                                                ? 'bg-brand-brown-dark text-white shadow-md' 
+                                                : 'bg-transparent text-gray-500 hover:bg-gray-50'
+                                            }`}
+                                        >
+                                            {lang}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* 3. FEATURED SERIES */}
+                        {filteredSeries.length > 0 && (
+                            <section className="px-6 md:px-12 lg:px-24 mb-12 max-w-7xl mx-auto">
+                                <div className="flex justify-between items-end mb-6">
+                                    <h2 className="font-agency text-2xl md:text-3xl text-brand-brown-dark">
                                         Featured Series
                                     </h2>
-                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden md:block">
-                                        Complete Sets
-                                    </span>
+                                    <Link href="/media/audios/series" className="text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-brand-gold transition-colors flex items-center gap-1">
+                                        View All <ChevronRight className="w-3 h-3" />
+                                    </Link>
                                 </div>
 
                                 <div className="flex overflow-x-auto gap-4 pb-4 md:grid md:grid-cols-3 md:gap-8 scrollbar-hide snap-x">
-                                    {series.map((item) => (
-                                        <div 
+                                    {filteredSeries.slice(0, 3).map((item) => (
+                                        <Link 
                                             key={item.id} 
-                                            className="snap-center min-w-[160px] md:min-w-0 bg-brand-sand/30 rounded-2xl overflow-hidden cursor-pointer group hover:shadow-lg transition-all"
+                                            href={`/media/audios/series/${item.id}`}
+                                            className="snap-center min-w-[200px] md:min-w-0 bg-white rounded-2xl overflow-hidden cursor-pointer group hover:shadow-xl transition-all border border-gray-100"
                                         >
                                             <div className="relative w-full aspect-square bg-gray-200">
                                                 <Image 
@@ -138,94 +176,90 @@ export default function AudiosPage() {
                                                     fill 
                                                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                                                 />
-                                                <div className="absolute inset-0 bg-brand-brown-dark/40 flex items-center justify-center group-hover:bg-brand-brown-dark/30 transition-colors">
+                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <div className="bg-white/20 backdrop-blur-sm p-3 rounded-full">
                                                         <ListMusic className="w-8 h-8 text-white" />
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="p-4">
-                                                <h3 className="font-agency text-base md:text-xl text-brand-brown-dark leading-tight group-hover:text-brand-gold transition-colors line-clamp-2 h-10 md:h-auto">
+                                            <div className="p-5 text-center">
+                                                <h3 className={`font-agency text-lg md:text-xl text-brand-brown-dark leading-tight group-hover:text-brand-gold transition-colors truncate ${getDir(item.title) === 'rtl' ? 'font-tajawal font-bold' : ''}`}>
                                                     {item.title}
                                                 </h3>
-                                                <p className="text-[10px] md:text-xs text-gray-500 mt-2 font-bold uppercase tracking-wider flex items-center gap-1">
-                                                    <Mic className="w-3 h-3" /> {getRealCount(item.title, item.count)} Episodes
+                                                <p className="text-[10px] md:text-xs text-gray-500 mt-2 font-bold uppercase tracking-wider flex items-center justify-center gap-1">
+                                                    <Mic className="w-3 h-3" /> {item.host || "Sheikh Goni"}
                                                 </p>
                                             </div>
-                                        </div>
+                                        </Link>
                                     ))}
                                 </div>
                             </section>
                         )}
 
-                        {/* 3. FILTER BAR */}
-                        <section className="px-6 md:px-12 lg:px-24 mb-8">
-                             <div className="flex items-center gap-2 mb-4 md:hidden">
-                                <Filter className="w-4 h-4 text-brand-brown" />
-                                <span className="text-xs font-bold uppercase tracking-widest text-brand-brown">Filter Audio</span>
-                            </div>
-                            <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-hide md:justify-center md:flex-wrap">
-                                {filters.map((filter, index) => (
+                        {/* 4. GENRE FILTER BAR */}
+                        <section className="px-6 md:px-12 lg:px-24 mb-8 max-w-7xl mx-auto">
+                            <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-hide">
+                                {genres.map((genre, index) => (
                                     <button 
                                         key={index}
-                                        onClick={() => setActiveFilter(filter)}
-                                        className={`px-5 py-2 md:px-6 md:py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${
-                                            activeFilter === filter 
-                                            ? 'bg-brand-gold text-white shadow-md transform md:scale-105' 
-                                            : 'bg-brand-sand text-brand-brown-dark hover:bg-brand-gold/10 hover:text-brand-gold'
+                                        onClick={() => setActiveGenre(genre)}
+                                        className={`px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors border ${
+                                            activeGenre === genre 
+                                            ? 'bg-brand-brown-dark text-white border-brand-brown-dark shadow-md' 
+                                            : 'bg-white text-gray-500 border-gray-200 hover:border-brand-gold hover:text-brand-gold'
                                         }`}
                                     >
-                                        {filter}
+                                        {genre}
                                     </button>
                                 ))}
                             </div>
                         </section>
 
-                        {/* 4. AUDIO LIST */}
+                        {/* 5. AUDIO LIST */}
                         <section className="px-6 md:px-12 lg:px-24 space-y-4 max-w-7xl mx-auto">
                             <div className="flex justify-between items-end mb-4">
                                  <h2 className="font-agency text-2xl md:text-3xl text-brand-brown-dark">
-                                    Recent Uploads
+                                    Latest Uploads
                                 </h2>
                             </div>
 
                             {visibleAudios.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {visibleAudios.map((audio) => (
-                                        <div key={audio.id} className="group bg-white rounded-2xl p-4 md:p-6 shadow-md border border-gray-100 flex items-center gap-4 transition-all hover:-translate-y-1 hover:shadow-lg hover:border-brand-gold/30">
+                                        <div key={audio.id} className="group bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-gray-100 flex items-center gap-4 transition-all hover:-translate-y-1 hover:shadow-lg hover:border-brand-gold/30">
 
                                             {/* Play Icon */}
-                                            <a 
-                                                href={audio.audioUrl} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer"
+                                            <Link 
+                                                href={`/media/audios/play/${audio.id}`}
                                                 className="flex-shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-full bg-brand-sand text-brand-gold flex items-center justify-center group-hover:bg-brand-gold group-hover:text-white transition-colors shadow-sm"
                                             >
                                                 <Play className="w-5 h-5 md:w-6 md:h-6 ml-1 fill-current" />
-                                            </a>
+                                            </Link>
 
                                             {/* Content */}
-                                            <div className="flex-grow min-w-0">
-                                                <div className="flex justify-between items-start mb-1">
-                                                    <span className="text-[10px] md:text-xs font-bold text-brand-gold uppercase tracking-widest bg-brand-gold/10 px-2 py-0.5 rounded">
-                                                        {audio.category}
+                                            <div className="flex-grow min-w-0" dir={getDir(audio.title)}>
+                                                <div className="flex justify-between items-start mb-1" dir="ltr">
+                                                    <span className="text-[10px] md:text-xs font-bold text-brand-brown px-2 py-0.5 rounded bg-brand-sand uppercase tracking-wider">
+                                                        {audio.genre}
                                                     </span>
                                                     <span className="text-[10px] md:text-xs text-gray-400 font-lato flex items-center gap-1">
-                                                        <Clock className="w-3 h-3" /> MP3
+                                                        <Clock className="w-3 h-3" /> {audio.fileSize}
                                                     </span>
                                                 </div>
 
-                                                <h3 className="font-agency text-lg md:text-xl text-brand-brown-dark leading-tight truncate pr-2 group-hover:text-brand-gold transition-colors">
-                                                    {audio.title}
-                                                </h3>
+                                                <Link href={`/media/audios/play/${audio.id}`}>
+                                                    <h3 className={`font-agency text-lg md:text-xl text-brand-brown-dark leading-tight truncate pr-2 group-hover:text-brand-gold transition-colors cursor-pointer ${getDir(audio.title) === 'rtl' ? 'font-tajawal font-bold text-right' : ''}`}>
+                                                        {audio.title}
+                                                    </h3>
+                                                </Link>
 
-                                                <div className="flex items-center gap-3 mt-2">
+                                                <div className="flex items-center gap-3 mt-2" dir="ltr">
                                                     <p className="text-[10px] md:text-xs text-gray-500 font-lato flex items-center gap-1">
                                                         <Calendar className="w-3 h-3" /> {formatDate(audio.date)}
                                                     </p>
                                                     <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                                                    <p className="text-[10px] md:text-xs text-gray-500 font-lato">
-                                                        {audio.fileSize || 'Audio File'}
+                                                    <p className="text-[10px] md:text-xs text-gray-500 font-lato truncate max-w-[120px]">
+                                                        {audio.speaker}
                                                     </p>
                                                 </div>
                                             </div>
@@ -236,7 +270,7 @@ export default function AudiosPage() {
                                                 download 
                                                 target="_blank" 
                                                 rel="noopener noreferrer"
-                                                className="flex-shrink-0 text-gray-300 hover:text-brand-brown-dark hover:bg-gray-100 p-2 rounded-full transition-colors" 
+                                                className="flex-shrink-0 text-gray-300 hover:text-brand-brown-dark hover:bg-gray-50 p-2 rounded-full transition-colors" 
                                                 title="Download Audio"
                                             >
                                                 <Download className="w-5 h-5 md:w-6 md:h-6" />
@@ -258,7 +292,7 @@ export default function AudiosPage() {
                             <section className="py-12 text-center">
                                 <button 
                                     onClick={() => setVisibleCount(prev => prev + 6)}
-                                    className="px-8 py-3 border-2 border-brand-sand text-brand-brown-dark rounded-full font-agency text-lg hover:bg-brand-brown-dark hover:text-white transition-colors uppercase tracking-wide"
+                                    className="px-8 py-3 bg-white border border-gray-200 text-brand-brown-dark rounded-full font-bold text-sm hover:bg-brand-brown-dark hover:text-white transition-colors shadow-sm uppercase tracking-wide"
                                 >
                                     Load More Audios
                                 </button>
