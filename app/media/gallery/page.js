@@ -5,10 +5,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import Loader from '@/components/Loader';
 // Firebase Imports
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
-import { Image as ImageIcon, FolderOpen, MapPin, Calendar, Loader2 } from 'lucide-react';
+import { 
+    Image as ImageIcon, FolderOpen, MapPin, Calendar, 
+    Loader2, X, Download, Share2, ChevronRight 
+} from 'lucide-react';
 
 export default function GalleryPage() {
 
@@ -16,15 +20,18 @@ export default function GalleryPage() {
     const [albums, setAlbums] = useState([]);
     const [photos, setPhotos] = useState([]);
     const [loading, setLoading] = useState(true);
+    
+    // Lightbox State
+    const [selectedPhoto, setSelectedPhoto] = useState(null);
 
-    // Aspect ratios to cycle through for the "Masonry" look
+    // Aspect ratios for Masonry
     const aspectRatios = ["aspect-[3/4]", "aspect-[4/3]", "aspect-square", "aspect-[3/5]"];
 
     // --- FETCH DATA ---
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // 1. Fetch Photos
+                // 1. Fetch Photos (Limit to recent 20 for overview)
                 const qPhotos = query(collection(db, "gallery_photos"), orderBy("createdAt", "desc"));
                 const photoSnapshot = await getDocs(qPhotos);
                 const fetchedPhotos = photoSnapshot.docs.map(doc => ({
@@ -32,7 +39,7 @@ export default function GalleryPage() {
                     ...doc.data()
                 }));
 
-                // 2. Fetch Albums
+                // 2. Fetch Albums (Limit to recent 4)
                 const qAlbums = query(collection(db, "gallery_albums"), orderBy("createdAt", "desc"));
                 const albumSnapshot = await getDocs(qAlbums);
                 const fetchedAlbums = albumSnapshot.docs.map(doc => ({
@@ -40,7 +47,7 @@ export default function GalleryPage() {
                     ...doc.data()
                 }));
 
-                // 3. Calculate Photo Counts for Albums
+                // 3. Count Photos per Album
                 const enrichedAlbums = fetchedAlbums.map(album => {
                     const count = fetchedPhotos.filter(p => p.albumId === album.id).length;
                     return { ...album, count };
@@ -59,7 +66,41 @@ export default function GalleryPage() {
         fetchData();
     }, []);
 
-    // Helper: Get Album Name for a Photo
+    // --- HELPER: Lightbox Actions ---
+    const openLightbox = (photo) => setSelectedPhoto(photo);
+    const closeLightbox = () => setSelectedPhoto(null);
+
+    const handleDownload = async (url, name) => {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = name || 'gallery-photo.jpg';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error("Download failed:", error);
+            window.open(url, '_blank'); // Fallback
+        }
+    };
+
+    const handleShare = (url) => {
+        if (navigator.share) {
+            navigator.share({
+                title: 'Al-Asad Gallery',
+                text: 'Check out this photo from Al-Asad Foundation',
+                url: window.location.href, // Or photo URL if preferred
+            }).catch(console.error);
+        } else {
+            navigator.clipboard.writeText(window.location.href);
+            alert("Link copied to clipboard!");
+        }
+    };
+
+    // Helper: Get Album Name
     const getAlbumName = (albumId) => {
         if (!albumId || albumId === 'uncategorized') return 'Recent Capture';
         const album = albums.find(a => a.id === albumId);
@@ -69,7 +110,6 @@ export default function GalleryPage() {
     // Helper: Format Date
     const formatDate = (timestamp) => {
         if (!timestamp) return '2024';
-        // Handle Firestore Timestamp or Date String
         const date = timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp);
         return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
     };
@@ -90,7 +130,6 @@ export default function GalleryPage() {
                             className="object-cover object-center"
                             priority
                         />
-                        {/* Gradient Overlay */}
                         <div className="absolute inset-0 bg-gradient-to-t from-white via-brand-gold/40 to-transparent "></div>
                     </div>
 
@@ -107,7 +146,7 @@ export default function GalleryPage() {
 
                 {loading ? (
                     <div className="flex justify-center items-center py-20">
-                        <Loader2 className="w-10 h-10 text-brand-gold animate-spin" />
+                        <Loader size="md" />
                     </div>
                 ) : (
                     <>
@@ -118,21 +157,21 @@ export default function GalleryPage() {
                                     <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark">
                                         Event Albums
                                     </h2>
-                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden md:block">
-                                        View Collections
-                                    </span>
+                                    <Link href="/media/gallery/albums" className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden md:flex items-center gap-1 hover:text-brand-gold transition-colors">
+                                        View All Collections <ChevronRight className="w-3 h-3" />
+                                    </Link>
                                 </div>
 
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-                                    {albums.map((album) => (
-                                        <div key={album.id} className="group cursor-pointer">
-                                            {/* Folder Visual (Stacked effect) */}
+                                    {albums.slice(0, 4).map((album) => (
+                                        <Link href={`/media/gallery/albums/${album.id}`} key={album.id} className="group cursor-pointer">
+                                            {/* Folder Visual */}
                                             <div className="relative w-full aspect-[4/3] mb-3">
-                                                {/* Background Stack Cards */}
+                                                {/* Stack Effects */}
                                                 <div className="absolute top-0 left-2 right-2 bottom-2 bg-gray-200 rounded-2xl transform translate-y-2 translate-x-1 group-hover:translate-x-2 group-hover:translate-y-3 transition-transform duration-300"></div>
                                                 <div className="absolute top-1 left-1 right-1 bottom-1 bg-gray-300 rounded-2xl transform translate-y-1 translate-x-0.5 group-hover:translate-x-1 group-hover:translate-y-1.5 transition-transform duration-300"></div>
 
-                                                {/* Main Cover Image */}
+                                                {/* Main Cover */}
                                                 <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-md group-hover:shadow-xl transition-shadow border-2 border-white bg-gray-100">
                                                     <Image
                                                         src={album.cover || "/fallback.webp"}
@@ -140,15 +179,12 @@ export default function GalleryPage() {
                                                         fill
                                                         className="object-cover transition-transform duration-700 group-hover:scale-110"
                                                     />
-                                                    {/* Overlay */}
                                                     <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
 
-                                                    {/* Icon Badge */}
                                                     <div className="absolute top-2 right-2 bg-white/90 backdrop-blur rounded-lg p-1.5 text-brand-brown-dark">
                                                         <FolderOpen className="w-4 h-4" />
                                                     </div>
 
-                                                    {/* Count Badge */}
                                                     <div className="absolute bottom-2 left-2 bg-black/70 text-white text-[10px] font-bold px-2 py-1 rounded backdrop-blur-sm flex items-center gap-1">
                                                         <ImageIcon className="w-3 h-3" /> {album.count}
                                                     </div>
@@ -162,7 +198,7 @@ export default function GalleryPage() {
                                             <p className="text-[10px] md:text-xs text-gray-400 mt-1 uppercase tracking-wide flex items-center gap-1">
                                                 <Calendar className="w-3 h-3" /> {formatDate(album.createdAt)}
                                             </p>
-                                        </div>
+                                        </Link>
                                     ))}
                                 </div>
                             </section>
@@ -177,12 +213,14 @@ export default function GalleryPage() {
                             {photos.length > 0 ? (
                                 <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
                                     {photos.map((photo, index) => {
-                                        // Assign a cyclical aspect ratio for the masonry look
                                         const aspectRatio = aspectRatios[index % aspectRatios.length];
 
                                         return (
-                                            <div key={photo.id} className="relative w-full break-inside-avoid rounded-2xl overflow-hidden shadow-md group cursor-zoom-in bg-gray-200">
-                                                {/* Aspect Ratio Controlled by Class */}
+                                            <div 
+                                                key={photo.id} 
+                                                onClick={() => openLightbox(photo)}
+                                                className="relative w-full break-inside-avoid rounded-2xl overflow-hidden shadow-md group cursor-zoom-in bg-gray-200"
+                                            >
                                                 <div className={`relative w-full ${aspectRatio}`}>
                                                     <Image
                                                         src={photo.url}
@@ -190,11 +228,8 @@ export default function GalleryPage() {
                                                         fill
                                                         className="object-cover transition-transform duration-700 group-hover:scale-110"
                                                     />
-
-                                                    {/* Hover Overlay */}
                                                     <div className="absolute inset-0 bg-brand-brown-dark/0 group-hover:bg-brand-brown-dark/60 transition-colors duration-300"></div>
 
-                                                    {/* Content on Hover (Desktop) */}
                                                     <div className="absolute inset-0 flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-y-4 group-hover:translate-y-0">
                                                         <p className="text-white font-agency text-lg leading-none mb-1 line-clamp-2">
                                                             {getAlbumName(photo.albumId)}
@@ -219,23 +254,51 @@ export default function GalleryPage() {
                     </>
                 )}
 
-                {/* 4. CTA */}
-                <section className="mt-16 md:mt-24 text-center px-6 mb-8">
-                    <p className="font-lato text-sm md:text-lg text-brand-brown mb-6">
-                        Follow us on social media for daily updates and live coverage.
-                    </p>
-                    <div className="flex justify-center gap-4 md:gap-6">
-                        <Link href="#" className="w-12 h-12 rounded-full bg-brand-sand flex items-center justify-center text-brand-brown-dark hover:bg-brand-gold hover:text-white transition-all transform hover:scale-110 shadow-sm">
-                            <span className="font-agency font-bold text-lg">Fb</span>
-                        </Link>
-                        <Link href="#" className="w-12 h-12 rounded-full bg-brand-sand flex items-center justify-center text-brand-brown-dark hover:bg-brand-gold hover:text-white transition-all transform hover:scale-110 shadow-sm">
-                            <span className="font-agency font-bold text-lg">Ig</span>
-                        </Link>
-                        <Link href="#" className="w-12 h-12 rounded-full bg-brand-sand flex items-center justify-center text-brand-brown-dark hover:bg-brand-gold hover:text-white transition-all transform hover:scale-110 shadow-sm">
-                            <span className="font-agency font-bold text-lg">X</span>
-                        </Link>
+                {/* 4. LIGHTBOX MODAL */}
+                {selectedPhoto && (
+                    <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+                        {/* Close Button */}
+                        <button 
+                            onClick={closeLightbox}
+                            className="absolute top-4 right-4 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors z-50"
+                        >
+                            <X className="w-8 h-8" />
+                        </button>
+
+                        {/* Image Container */}
+                        <div className="relative w-full h-full max-w-5xl max-h-[85vh] flex items-center justify-center">
+                            <Image 
+                                src={selectedPhoto.url} 
+                                alt="Gallery View" 
+                                fill 
+                                className="object-contain"
+                            />
+                        </div>
+
+                        {/* Bottom Bar (Actions) */}
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent p-6 md:p-8 flex justify-between items-end">
+                            <div className="text-white">
+                                <h3 className="font-agency text-xl md:text-2xl mb-1">{getAlbumName(selectedPhoto.albumId)}</h3>
+                                <p className="text-xs text-white/60 font-lato">{formatDate(selectedPhoto.createdAt)}</p>
+                            </div>
+                            
+                            <div className="flex gap-4">
+                                <button 
+                                    onClick={() => handleDownload(selectedPhoto.url, selectedPhoto.name)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-full font-bold text-xs uppercase tracking-wider hover:bg-brand-gold hover:text-white transition-colors"
+                                >
+                                    <Download className="w-4 h-4" /> <span className="hidden md:inline">Download</span>
+                                </button>
+                                <button 
+                                    onClick={() => handleShare(selectedPhoto.url)}
+                                    className="p-2 bg-white/10 text-white rounded-full hover:bg-white/20 transition-colors"
+                                >
+                                    <Share2 className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                </section>
+                )}
 
             </main>
 
