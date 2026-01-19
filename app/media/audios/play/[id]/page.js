@@ -232,10 +232,10 @@ export default function AudioPlayPage() {
                             .filter(a => a.id !== id);
                         setRelatedAudios(related);
                     } else {
-                        // If no series, fetch same genre
+                        // 3B. If no series, fetch SAME CATEGORY (Language) instead of Genre
                         const qRelated = query(
                             collection(db, "audios"), 
-                            where("genre", "==", data.genre),
+                            where("category", "==", data.category),
                             orderBy("date", "desc"),
                             limit(5)
                         );
@@ -328,7 +328,7 @@ export default function AudioPlayPage() {
                         <div className="flex-grow w-full text-center md:text-left">
                             <div className="mb-6">
                                 <span className="inline-block px-3 py-1 bg-brand-gold text-white text-[10px] font-bold uppercase rounded mb-2 tracking-widest">
-                                    {audio.genre}
+                                    {audio.category}
                                 </span>
                                 <h1 className={`text-2xl md:text-4xl font-bold leading-tight mb-2 ${isArabic ? 'font-tajawal' : 'font-agency'}`} dir={isArabic ? 'rtl' : 'ltr'}>
                                     {audio.title}
