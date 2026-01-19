@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import CustomSelect from '@/components/CustomSelect'; // Custom Dropdown
-import { useModal } from '@/context/ModalContext'; // Custom Modal
+import CustomSelect from '@/components/CustomSelect'; // Using your FIXED component
+import { useModal } from '@/context/ModalContext'; 
 // Firebase
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -24,8 +24,8 @@ export default function VolunteerPage() {
         phone: '',
         nationality: '',
         state: '',
-        department: 'Teaching & Education',
-        availability: 'Weekends Only',
+        department: '',
+        availability: '',
         experience: ''
     });
 
@@ -49,14 +49,9 @@ export default function VolunteerPage() {
     // --- EFFECT: Fetch States when Country Changes ---
     useEffect(() => {
         const fetchStates = async () => {
-            if (!formData.nationality) {
+            // Reset state list if no country or "Other"
+            if (!formData.nationality || formData.nationality === "Other") {
                 setAvailableStates([]); 
-                return;
-            }
-
-            // Fallback for "Other" or non-API supported countries if needed
-            if (formData.nationality === "Other") {
-                setAvailableStates([]); // Clear states, will trigger fallback input in render
                 return;
             }
 
@@ -74,8 +69,7 @@ export default function VolunteerPage() {
                     const stateNames = data.data.states.map(s => s.name);
                     setAvailableStates(stateNames);
                 } else {
-                    // Fallback if API has no states for this country
-                    setAvailableStates([]);
+                    setAvailableStates([]); // No states found via API
                 }
             } catch (error) {
                 console.error("Failed to fetch states:", error);
@@ -94,10 +88,11 @@ export default function VolunteerPage() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    // Handler for CustomSelect
     const handleSelectChange = (name, value) => {
         setFormData(prev => ({ ...prev, [name]: value }));
         
-        // Reset state if country changes
+        // Reset state field if country changes
         if (name === 'nationality') {
             setFormData(prev => ({ ...prev, state: '' }));
         }
@@ -127,8 +122,8 @@ export default function VolunteerPage() {
                 phone: '',
                 nationality: '',
                 state: '',
-                department: 'Teaching & Education',
-                availability: 'Weekends Only',
+                department: '',
+                availability: '',
                 experience: ''
             });
 
@@ -145,7 +140,8 @@ export default function VolunteerPage() {
             setIsSubmitting(false);
         }
     };
-return (
+
+    return (
         <div className="min-h-screen flex flex-col bg-white font-lato">
             <Header />
 
@@ -216,17 +212,17 @@ return (
                                         <h3 className="font-agency text-lg text-brand-brown-dark uppercase tracking-wider border-b border-gray-100 pb-2 flex items-center gap-2"><User className="w-4 h-4 text-brand-gold" /> Personal Details</h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">Full Name *</label>
-                                                <div className="relative"><input type="text" name="fullName" value={formData.fullName} onChange={handleChange} required className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/20" placeholder="Enter name" /><User className="absolute left-3 top-3.5 text-gray-400 w-4 h-4" /></div>
+                                                <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Full Name *</label>
+                                                <div className="relative"><input type="text" name="fullName" value={formData.fullName} onChange={handleChange} required className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/20" placeholder="Enter name" /><User className="absolute left-3 top-3.5 text-gray-400 w-4 h-4" /></div>
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">Phone *</label>
-                                                <div className="relative"><input type="tel" name="phone" value={formData.phone} onChange={handleChange} required className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/20" placeholder="080..." /><Phone className="absolute left-3 top-3.5 text-gray-400 w-4 h-4" /></div>
+                                                <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Phone *</label>
+                                                <div className="relative"><input type="tel" name="phone" value={formData.phone} onChange={handleChange} required className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/20" placeholder="080..." /><Phone className="absolute left-3 top-3.5 text-gray-400 w-4 h-4" /></div>
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">Email</label>
-                                            <div className="relative"><input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/20" placeholder="you@example.com" /><Mail className="absolute left-3 top-3.5 text-gray-400 w-4 h-4" /></div>
+                                            <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Email</label>
+                                            <div className="relative"><input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/20" placeholder="you@example.com" /><Mail className="absolute left-3 top-3.5 text-gray-400 w-4 h-4" /></div>
                                         </div>
 
                                         {/* Country & State */}
@@ -240,16 +236,18 @@ return (
                                                 placeholder="Select Country"
                                             />
                                             
-                                            {/* Dynamic State Selection */}
+                                            {/* Dynamic State Selection Logic */}
                                             <div>
                                                 {isLoadingStates ? (
+                                                    // Loading State
                                                     <div className="w-full">
-                                                        <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">State/Province</label>
-                                                        <div className="w-full h-[46px] bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-center">
+                                                        <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">State/Province</label>
+                                                        <div className="w-full h-[45px] bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-center">
                                                             <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
                                                         </div>
                                                     </div>
                                                 ) : availableStates.length > 0 ? (
+                                                    // API Returned States -> Show Dropdown
                                                     <CustomSelect 
                                                         label="State/Province *" 
                                                         icon={MapPin} 
@@ -257,12 +255,11 @@ return (
                                                         value={formData.state} 
                                                         onChange={(val) => handleSelectChange('state', val)} 
                                                         placeholder="Select State"
-                                                        disabled={!formData.nationality}
                                                     />
                                                 ) : (
-                                                    // Fallback input if "Other" or no states found
+                                                    // Fallback: Text Input (For "Other" or failed API)
                                                     <div>
-                                                        <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">State / City *</label>
+                                                        <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">State / City *</label>
                                                         <div className="relative">
                                                             <input 
                                                                 type="text" 
@@ -270,7 +267,8 @@ return (
                                                                 value={formData.state}
                                                                 onChange={handleChange}
                                                                 required
-                                                                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/20"
+                                                                disabled={!formData.nationality}
+                                                                className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/20 disabled:bg-gray-100 disabled:cursor-not-allowed"
                                                                 placeholder="Enter your location"
                                                             />
                                                             <MapPin className="absolute left-3 top-3.5 text-gray-400 w-4 h-4" />
@@ -285,12 +283,12 @@ return (
                                     <div className="space-y-5 pt-2">
                                         <h3 className="font-agency text-lg text-brand-brown-dark uppercase tracking-wider border-b border-gray-100 pb-2 flex items-center gap-2"><Calendar className="w-4 h-4 text-brand-gold" /> Skills & Availability</h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                            <CustomSelect label="Department" options={departments} value={formData.department} onChange={(val) => handleSelectChange('department', val)} />
-                                            <CustomSelect label="Availability" options={availabilityOptions} value={formData.availability} onChange={(val) => handleSelectChange('availability', val)} />
+                                            <CustomSelect label="Department" options={departments} value={formData.department} onChange={(val) => handleSelectChange('department', val)} placeholder="Select Department" />
+                                            <CustomSelect label="Availability" options={availabilityOptions} value={formData.availability} onChange={(val) => handleSelectChange('availability', val)} placeholder="Select Availability" />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">Experience</label>
-                                            <textarea name="experience" value={formData.experience} onChange={handleChange} rows="4" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/20" placeholder="Tell us about your skills..."></textarea>
+                                            <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Experience</label>
+                                            <textarea name="experience" value={formData.experience} onChange={handleChange} rows="4" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/20" placeholder="Tell us about your skills..."></textarea>
                                         </div>
                                     </div>
 
