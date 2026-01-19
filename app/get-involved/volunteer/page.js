@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import CustomSelect from '@/components/CustomSelect'; // Using your FIXED component
-import { useModal } from '@/context/ModalContext'; 
+import CustomSelect from '@/components/CustomSelect'; // Custom Dropdown
+import { useModal } from '@/context/ModalContext'; // Custom Modal
 // Firebase
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -31,7 +31,7 @@ export default function VolunteerPage() {
 
     const [availableStates, setAvailableStates] = useState([]);
     
-    // Lists
+    // Static Lists
     const countries = [
         "Nigeria", "Niger", "Ghana", "Cameroon", "Chad", "Benin", "Togo", 
         "United Kingdom", "United States", "Saudi Arabia", "Canada", "Other"
@@ -46,15 +46,20 @@ export default function VolunteerPage() {
         "Weekends Only", "Weekdays (Part-time)", "Remote / Online", "Flexible / Event based"
     ];
 
-    // --- EFFECT: Fetch States when Country Changes ---
+    // --- EFFECT: Dynamic State Fetching ---
     useEffect(() => {
         const fetchStates = async () => {
-            // Reset state list if no country or "Other"
-            if (!formData.nationality || formData.nationality === "Other") {
+            // 1. If no nationality or "Other", clear states
+            if (!formData.nationality) {
                 setAvailableStates([]); 
                 return;
             }
+            if (formData.nationality === "Other") {
+                setAvailableStates([]); // Triggers manual input fallback
+                return;
+            }
 
+            // 2. Fetch from API
             setIsLoadingStates(true);
             try {
                 const response = await fetch('https://countriesnow.space/api/v0.1/countries/states', {
@@ -69,7 +74,7 @@ export default function VolunteerPage() {
                     const stateNames = data.data.states.map(s => s.name);
                     setAvailableStates(stateNames);
                 } else {
-                    setAvailableStates([]); // No states found via API
+                    setAvailableStates([]); // No states found
                 }
             } catch (error) {
                 console.error("Failed to fetch states:", error);
@@ -88,7 +93,6 @@ export default function VolunteerPage() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // Handler for CustomSelect
     const handleSelectChange = (name, value) => {
         setFormData(prev => ({ ...prev, [name]: value }));
         
@@ -127,6 +131,7 @@ export default function VolunteerPage() {
                 experience: ''
             });
 
+            // Custom Success Modal
             showSuccess({
                 title: "Jazakumullahu Khairan!",
                 message: "Your application has been received. We will contact you soon.",
@@ -140,14 +145,13 @@ export default function VolunteerPage() {
             setIsSubmitting(false);
         }
     };
-
-    return (
+return (
         <div className="min-h-screen flex flex-col bg-white font-lato">
             <Header />
 
             <main className="flex-grow pb-16">
 
-                {/* HERO SECTION */}
+                {/* 1. HERO SECTION */}
                 <section className="w-full relative bg-white mb-10 md:mb-16">
                     <div className="relative w-full aspect-[2.5/1] md:aspect-[3.5/1] lg:aspect-[4/1]">
                         <Image
@@ -170,10 +174,10 @@ export default function VolunteerPage() {
                     </div>
                 </section>
 
-                {/* CONTENT SPLIT */}
+                {/* 2. CONTENT SPLIT */}
                 <div className="px-6 md:px-12 lg:px-24 flex flex-col lg:flex-row gap-12 lg:gap-20 max-w-7xl mx-auto">
 
-                    {/* LEFT INFO */}
+                    {/* LEFT: INFO */}
                     <div className="flex-1 lg:sticky lg:top-32 lg:self-start space-y-8">
                         <div>
                             <h2 className="font-agency text-3xl text-brand-brown-dark mb-4 relative inline-block">
@@ -186,20 +190,25 @@ export default function VolunteerPage() {
                         </div>
                         {/* Info Cards */}
                         <div className="space-y-4">
-                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex gap-4">
+                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex gap-4 hover:border-brand-gold/50 transition-colors">
                                 <div className="w-10 h-10 bg-brand-sand/50 rounded-full flex items-center justify-center text-brand-brown-dark flex-shrink-0"><BookOpen className="w-5 h-5" /></div>
                                 <div><h3 className="font-agency text-xl text-brand-brown-dark mb-1">Education Unit</h3><p className="font-lato text-xs text-gray-500">Tutoring & Mentoring.</p></div>
                             </div>
-                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex gap-4">
+                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex gap-4 hover:border-brand-gold/50 transition-colors">
                                 <div className="w-10 h-10 bg-brand-sand/50 rounded-full flex items-center justify-center text-brand-brown-dark flex-shrink-0"><Truck className="w-5 h-5" /></div>
                                 <div><h3 className="font-agency text-xl text-brand-brown-dark mb-1">Welfare & Aid</h3><p className="font-lato text-xs text-gray-500">Food distribution & Logistics.</p></div>
                             </div>
+                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex gap-4 hover:border-brand-gold/50 transition-colors">
+                                <div className="w-10 h-10 bg-brand-sand/50 rounded-full flex items-center justify-center text-brand-brown-dark flex-shrink-0"><Laptop className="w-5 h-5" /></div>
+                                <div><h3 className="font-agency text-xl text-brand-brown-dark mb-1">Professional Skills</h3><p className="font-lato text-xs text-gray-500">Medical, Tech/IT, Legal, or Media support.</p></div>
+                            </div>
                         </div>
                     </div>
-
-                    {/* RIGHT FORM */}
+{/* RIGHT: FORM */}
                     <div className="flex-[1.5]">
                         <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 md:p-12 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-brand-sand/30 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
+
                             <div className="relative z-10">
                                 <div className="flex items-center gap-3 mb-2">
                                     <div className="p-2 bg-brand-gold/10 rounded-lg text-brand-brown-dark"><HeartHandshake className="w-6 h-6" /></div>
@@ -210,22 +219,23 @@ export default function VolunteerPage() {
                                 <form onSubmit={handleSubmit} className="space-y-8">
                                     <div className="space-y-5">
                                         <h3 className="font-agency text-lg text-brand-brown-dark uppercase tracking-wider border-b border-gray-100 pb-2 flex items-center gap-2"><User className="w-4 h-4 text-brand-gold" /> Personal Details</h3>
+                                        
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Full Name *</label>
+                                                <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">Full Name *</label>
                                                 <div className="relative"><input type="text" name="fullName" value={formData.fullName} onChange={handleChange} required className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/20" placeholder="Enter name" /><User className="absolute left-3 top-3.5 text-gray-400 w-4 h-4" /></div>
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Phone *</label>
+                                                <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">Phone *</label>
                                                 <div className="relative"><input type="tel" name="phone" value={formData.phone} onChange={handleChange} required className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/20" placeholder="080..." /><Phone className="absolute left-3 top-3.5 text-gray-400 w-4 h-4" /></div>
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Email</label>
+                                            <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">Email</label>
                                             <div className="relative"><input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/20" placeholder="you@example.com" /><Mail className="absolute left-3 top-3.5 text-gray-400 w-4 h-4" /></div>
                                         </div>
 
-                                        {/* Country & State */}
+                                        {/* Dynamic Nationality & State */}
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                             <CustomSelect 
                                                 label="Nationality *" 
@@ -236,18 +246,15 @@ export default function VolunteerPage() {
                                                 placeholder="Select Country"
                                             />
                                             
-                                            {/* Dynamic State Selection Logic */}
                                             <div>
                                                 {isLoadingStates ? (
-                                                    // Loading State
                                                     <div className="w-full">
-                                                        <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">State/Province</label>
+                                                        <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">State/Province</label>
                                                         <div className="w-full h-[45px] bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-center">
                                                             <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
                                                         </div>
                                                     </div>
                                                 ) : availableStates.length > 0 ? (
-                                                    // API Returned States -> Show Dropdown
                                                     <CustomSelect 
                                                         label="State/Province *" 
                                                         icon={MapPin} 
@@ -257,9 +264,9 @@ export default function VolunteerPage() {
                                                         placeholder="Select State"
                                                     />
                                                 ) : (
-                                                    // Fallback: Text Input (For "Other" or failed API)
+                                                    // Fallback input if "Other" or no states found
                                                     <div>
-                                                        <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">State / City *</label>
+                                                        <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">State / City *</label>
                                                         <div className="relative">
                                                             <input 
                                                                 type="text" 
@@ -287,7 +294,7 @@ export default function VolunteerPage() {
                                             <CustomSelect label="Availability" options={availabilityOptions} value={formData.availability} onChange={(val) => handleSelectChange('availability', val)} placeholder="Select Availability" />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Experience</label>
+                                            <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">Experience</label>
                                             <textarea name="experience" value={formData.experience} onChange={handleChange} rows="4" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/20" placeholder="Tell us about your skills..."></textarea>
                                         </div>
                                     </div>
