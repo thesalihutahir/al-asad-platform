@@ -1,13 +1,53 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Heart, Users, Droplets, Gift } from 'lucide-react';
+import Loader from '@/components/Loader';
+// Firebase Imports
+import { db } from '@/lib/firebase';
+import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { Heart, Users, Droplets, Gift, MapPin, ArrowRight } from 'lucide-react';
 
 export default function CommunityDevelopmentPage() {
+
+    // --- STATE ---
+    const [programs, setPrograms] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    // --- FETCH DATA ---
+    useEffect(() => {
+        const fetchPrograms = async () => {
+            try {
+                // Fetch only 'Community Development' programs
+                const q = query(
+                    collection(db, "programs"),
+                    where("category", "==", "Community Development"),
+                    orderBy("createdAt", "desc")
+                );
+                
+                const snapshot = await getDocs(q);
+                const data = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                setPrograms(data);
+            } catch (error) {
+                console.error("Error fetching community programs:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPrograms();
+    }, []);
+
+    // Helper: Split programs for featured vs list view
+    const featuredProgram = programs.find(p => p.status === 'Active') || programs[0];
+    const otherPrograms = programs.filter(p => p.id !== featuredProgram?.id);
+
     return (
         <div className="min-h-screen flex flex-col bg-white font-lato">
             <Header />
@@ -18,13 +58,12 @@ export default function CommunityDevelopmentPage() {
                 <section className="w-full relative bg-white mb-12 md:mb-20">
                     <div className="relative w-full aspect-[2.5/1] md:aspect-[3.5/1] lg:aspect-[4/1]">
                         <Image
-                            src="/images/heroes/programs-community-development-hero.webp" // Placeholder
+                            src="/images/heroes/programs-community-development-hero.webp" 
                             alt="Community Development Hero"
                             fill
                             className="object-cover object-center"
                             priority
                         />
-                        {/* Gradient Overlay - FIXED NESTING */}
                         <div className="absolute inset-0 bg-gradient-to-t from-white via-brand-gold/40 to-transparent "></div>
                     </div>
 
@@ -56,118 +95,156 @@ export default function CommunityDevelopmentPage() {
                     </div>
                 </section>
 
-                {/* 3. KEY INITIATIVES (Grid Layout on Desktop) */}
-                <section className="px-6 md:px-12 lg:px-24 space-y-12 max-w-7xl mx-auto">
+                {/* 3. ACTIVE PROJECTS */}
+                <section className="px-6 md:px-12 lg:px-24 space-y-12 max-w-7xl mx-auto mb-20">
                     <div className="text-center md:text-left border-b border-gray-100 pb-4 mb-8">
                         <h3 className="font-agency text-3xl md:text-5xl text-brand-brown-dark">
                             Active Projects
                         </h3>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {loading ? (
+                        <div className="flex justify-center py-20"><Loader size="md" /></div>
+                    ) : (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                        {/* Initiative 1: Food Bank (Featured - Spans 2 cols on Large screens) */}
-                        <div className="lg:col-span-2 bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100 flex flex-col md:flex-row group h-full">
-                            <div className="relative w-full md:w-1/2 h-64 md:h-auto">
-                                <Image 
-                                    src="/hero.jpg" 
-                                    alt="Ramadan Iftar & Food Bank" 
-                                    fill 
-                                    className="object-cover transition-transform duration-700 group-hover:scale-110"
-                                />
-                                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur rounded-full p-2 text-brand-brown-dark">
-                                    <Gift className="w-5 h-5" />
+                            {/* Featured Program (Spans 2 cols on Large screens) */}
+                            {featuredProgram ? (
+                                <div className="lg:col-span-2 bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100 flex flex-col md:flex-row group h-full transition-transform hover:-translate-y-1">
+                                    <div className="relative w-full md:w-1/2 h-64 md:h-auto bg-gray-200">
+                                        <Image 
+                                            src={featuredProgram.coverImage || "/fallback.webp"} 
+                                            alt={featuredProgram.title} 
+                                            fill 
+                                            className="object-cover transition-transform duration-700 group-hover:scale-110"
+                                        />
+                                        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur rounded-full p-2 text-brand-brown-dark shadow-sm">
+                                            <Gift className="w-5 h-5" />
+                                        </div>
+                                    </div>
+                                    <div className="p-8 md:p-10 flex flex-col justify-center w-full md:w-1/2">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <span className={`text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full w-fit ${
+                                                featuredProgram.status === 'Active' ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'
+                                            }`}>
+                                                {featuredProgram.status}
+                                            </span>
+                                            {featuredProgram.location && (
+                                                <span className="text-xs text-gray-400 flex items-center gap-1">
+                                                    <MapPin className="w-3 h-3" /> {featuredProgram.location}
+                                                </span>
+                                            )}
+                                        </div>
+                                        
+                                        <h4 className="font-agency text-3xl text-brand-brown-dark mb-4 leading-tight">
+                                            {featuredProgram.title}
+                                        </h4>
+                                        <p className="font-lato text-sm md:text-base text-gray-600 leading-relaxed mb-6">
+                                            {featuredProgram.excerpt}
+                                        </p>
+                                        
+                                        <div className="mt-auto flex flex-col gap-4">
+                                            {featuredProgram.beneficiaries && (
+                                                <div className="flex items-center gap-2 text-sm font-bold text-brand-brown">
+                                                    <Users className="w-4 h-4 text-brand-gold" />
+                                                    Target: {featuredProgram.beneficiaries}
+                                                </div>
+                                            )}
+                                            <Link href={`/programs/${featuredProgram.id}`} className="inline-flex items-center gap-2 text-sm font-bold text-brand-gold uppercase tracking-widest hover:underline">
+                                                View Project Details <ArrowRight className="w-4 h-4" />
+                                            </Link>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="p-8 md:p-10 flex flex-col justify-center w-full md:w-1/2">
-                                <span className="text-xs font-bold text-green-600 uppercase tracking-widest bg-green-100 px-3 py-1 rounded-full w-fit mb-4">
-                                    Seasonal & Ongoing
-                                </span>
-                                <h4 className="font-agency text-3xl text-brand-brown-dark mb-4">
-                                    Food Relief & Ramadan Iftar
-                                </h4>
-                                <p className="font-lato text-sm md:text-base text-gray-600 leading-relaxed mb-6">
-                                    Our flagship program providing annual Ramadan feeding packages (Iftar/Sahur) and emergency food distribution for families facing critical food insecurity within our locality.
-                                </p>
-                                <div className="mt-auto">
-                                    <Link href="/get-involved/donate" className="text-sm font-bold text-brand-gold uppercase tracking-widest hover:underline">
-                                        Support a Family →
-                                    </Link>
+                            ) : (
+                                <div className="lg:col-span-2 flex items-center justify-center bg-gray-50 rounded-3xl h-64 border border-dashed border-gray-200">
+                                    <p className="text-gray-400">No active community projects found.</p>
                                 </div>
+                            )}
+
+                            {/* Other Programs List (Right Column) */}
+                            <div className="flex flex-col gap-6">
+                                {otherPrograms.length > 0 ? (
+                                    otherPrograms.slice(0, 2).map((prog) => (
+                                        <Link key={prog.id} href={`/programs/${prog.id}`} className="bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100 flex flex-col group h-full hover:shadow-lg transition-all">
+                                            <div className="relative w-full h-40 bg-gray-200">
+                                                <Image 
+                                                    src={prog.coverImage || "/fallback.webp"} 
+                                                    alt={prog.title} 
+                                                    fill 
+                                                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                                />
+                                                <div className="absolute top-3 left-3 bg-white/90 backdrop-blur rounded-full p-1.5 text-brand-brown-dark">
+                                                    <Heart className="w-4 h-4" />
+                                                </div>
+                                            </div>
+                                            <div className="p-6 flex-col flex flex-grow">
+                                                <h4 className="font-agency text-xl text-brand-brown-dark mb-2 line-clamp-2">
+                                                    {prog.title}
+                                                </h4>
+                                                <p className="font-lato text-xs text-gray-500 leading-relaxed mb-4 flex-grow line-clamp-3">
+                                                    {prog.excerpt}
+                                                </p>
+                                                <div className="flex justify-between items-center mt-auto">
+                                                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded ${
+                                                        prog.status === 'Active' ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'
+                                                    }`}>
+                                                        {prog.status}
+                                                    </span>
+                                                    <span className="text-[10px] font-bold text-brand-gold">Read More</span>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))
+                                ) : (
+                                    // Placeholder Card if no other programs
+                                    <div className="bg-white rounded-3xl overflow-hidden shadow-lg border border-gray-100 flex flex-col group h-full opacity-70">
+                                        <div className="relative w-full h-40 grayscale bg-gray-200">
+                                            <Image 
+                                                src="/images/placeholders/water-project.webp" 
+                                                alt="Clean Water Project" 
+                                                fill 
+                                                className="object-cover"
+                                            />
+                                            <div className="absolute inset-0 bg-brand-brown-dark/40 flex items-center justify-center backdrop-blur-[1px]">
+                                                <span className="text-white font-agency text-lg tracking-widest border border-white px-4 py-1 rounded-full">
+                                                    COMING SOON
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="p-6 flex-col flex flex-grow bg-gray-50">
+                                            <h4 className="font-agency text-xl text-brand-brown-dark mb-2">
+                                                More Initiatives
+                                            </h4>
+                                            <p className="font-lato text-xs text-gray-500 mb-4 flex-grow">
+                                                We are continuously working on new projects like clean water stations and seasonal relief. Stay tuned.
+                                            </p>
+                                            <div className="flex items-center gap-2 text-brand-gold">
+                                                <Droplets className="w-4 h-4" />
+                                                <span className="text-[10px] font-bold uppercase tracking-widest">In Development</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
+
                         </div>
-
-                        {/* Initiative 2: Orphan Support */}
-                        <div className="bg-white rounded-3xl overflow-hidden shadow-lg border border-gray-100 flex flex-col group h-full">
-                            <div className="relative w-full h-56">
-                                <Image 
-                                    src="/hero.jpg" 
-                                    alt="Orphan Support" 
-                                    fill 
-                                    className="object-cover transition-transform duration-700 group-hover:scale-110"
-                                />
-                                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur rounded-full p-2 text-brand-brown-dark">
-                                    <Heart className="w-5 h-5" />
-                                </div>
-                            </div>
-                            <div className="p-8 flex-col flex flex-grow">
-                                <h4 className="font-agency text-2xl text-brand-brown-dark mb-3">
-                                    Orphan & Widow Support
-                                </h4>
-                                <p className="font-lato text-sm text-gray-600 leading-relaxed mb-4 flex-grow">
-                                    Providing financial aid, clothing, and emotional support to widows and orphans to ensure they live with dignity and care.
-                                </p>
-                                <span className="inline-block px-3 py-1 bg-brand-brown-dark/5 text-brand-brown-dark text-xs font-bold uppercase rounded-md w-fit">
-                                    Active Program
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Initiative 3: Water Projects (Planned) */}
-                        <div className="bg-white rounded-3xl overflow-hidden shadow-lg border border-gray-100 flex flex-col group h-full opacity-90">
-                            <div className="relative w-full h-56 grayscale-[30%]">
-                                <Image 
-                                    src="/hero.jpg" 
-                                    alt="Clean Water Project" 
-                                    fill 
-                                    className="object-cover transition-transform duration-700 group-hover:scale-110"
-                                />
-                                <div className="absolute inset-0 bg-brand-brown-dark/60 flex items-center justify-center backdrop-blur-[2px]">
-                                    <span className="text-white font-agency text-xl tracking-widest border border-white px-6 py-2 rounded-full">
-                                        PLANNED
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="p-8 flex-col flex flex-grow bg-gray-50">
-                                <h4 className="font-agency text-2xl text-brand-brown-dark mb-3">
-                                    Clean Water Initiatives
-                                </h4>
-                                <p className="font-lato text-sm text-gray-600 leading-relaxed mb-4 flex-grow">
-                                    Future plans to construct boreholes and water stations in remote areas lacking access to clean drinking water.
-                                </p>
-                                <div className="flex items-center gap-2 text-brand-gold">
-                                    <Droplets className="w-4 h-4" />
-                                    <span className="text-xs font-bold uppercase tracking-widest">In Development</span>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
+                    )}
                 </section>
 
                 {/* 4. IMPACT / STATS */}
                 <section className="mt-20 md:mt-32 px-6 py-16 bg-brand-sand">
-                    <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-2 gap-8 md:gap-16 text-center">
-                        <div className="p-6">
+                    <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-2 gap-8 md:gap-16 text-center divide-x divide-brand-brown-dark/10">
+                        <div className="p-4">
                             <h3 className="font-agency text-5xl md:text-7xl text-brand-gold mb-2">1000+</h3>
                             <p className="font-lato text-brand-brown-dark text-sm md:text-lg uppercase tracking-widest font-bold">
-                                Meals Served
+                                Families Reached
                             </p>
                         </div>
-                        <div className="p-6 border-l border-brand-brown-dark/10">
-                            <h3 className="font-agency text-5xl md:text-7xl text-brand-gold mb-2">50+</h3>
+                        <div className="p-4">
+                            <h3 className="font-agency text-5xl md:text-7xl text-brand-gold mb-2">5+</h3>
                             <p className="font-lato text-brand-brown-dark text-sm md:text-lg uppercase tracking-widest font-bold">
-                                Families Supported
+                                Local Communities
                             </p>
                         </div>
                     </div>
