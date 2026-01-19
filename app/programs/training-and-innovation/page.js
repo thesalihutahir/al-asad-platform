@@ -1,13 +1,53 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Laptop, Briefcase, Cpu, Code } from 'lucide-react';
+import Loader from '@/components/Loader';
+// Firebase Imports
+import { db } from '@/lib/firebase';
+import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { Laptop, Briefcase, Cpu, Code, ArrowRight, Zap, Target } from 'lucide-react';
 
 export default function TrainingInnovationPage() {
+
+    // --- STATE ---
+    const [programs, setPrograms] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    // --- FETCH DATA ---
+    useEffect(() => {
+        const fetchPrograms = async () => {
+            try {
+                // Fetch only 'Training & Innovation' programs
+                const q = query(
+                    collection(db, "programs"),
+                    where("category", "==", "Training & Innovation"),
+                    orderBy("createdAt", "desc")
+                );
+                
+                const snapshot = await getDocs(q);
+                const data = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                setPrograms(data);
+            } catch (error) {
+                console.error("Error fetching training programs:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPrograms();
+    }, []);
+
+    // Helper: Split programs for featured vs list view
+    const featuredProgram = programs.find(p => p.status === 'Active') || programs[0];
+    const otherPrograms = programs.filter(p => p.id !== featuredProgram?.id);
+
     return (
         <div className="min-h-screen flex flex-col bg-white font-lato">
             <Header />
@@ -18,13 +58,12 @@ export default function TrainingInnovationPage() {
                 <section className="w-full relative bg-white mb-12 md:mb-20">
                     <div className="relative w-full aspect-[2.5/1] md:aspect-[3.5/1] lg:aspect-[4/1]">
                         <Image
-                            src="/images/heroes/programs-training-innovation-hero.webp" // Placeholder
+                            src="/images/heroes/programs-training-innovation-hero.webp" 
                             alt="Training & Innovation Hero"
                             fill
                             className="object-cover object-center"
                             priority
                         />
-                        {/* Gradient Overlay - FIXED NESTING */}
                         <div className="absolute inset-0 bg-gradient-to-t from-white via-brand-gold/40 to-transparent "></div>
                     </div>
 
@@ -56,101 +95,135 @@ export default function TrainingInnovationPage() {
                     </div>
                 </section>
 
-                {/* 3. KEY INITIATIVES (Horizontal Grid on Desktop) */}
-                <section className="px-6 md:px-12 lg:px-24 space-y-12 max-w-7xl mx-auto">
+                {/* 3. ACTIVE INITIATIVES */}
+                <section className="px-6 md:px-12 lg:px-24 space-y-12 max-w-7xl mx-auto mb-20">
                     <div className="text-center md:text-left border-b border-gray-100 pb-4 mb-8">
                         <h3 className="font-agency text-3xl md:text-5xl text-brand-brown-dark">
                             Skill Development
                         </h3>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {loading ? (
+                        <div className="flex justify-center py-20"><Loader size="md" /></div>
+                    ) : (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                        {/* Initiative 1: Digital Literacy */}
-                        <div className="bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100 flex flex-col group h-full hover:shadow-2xl transition-all hover:-translate-y-2">
-                            <div className="relative w-full h-56">
-                                <Image 
-                                    src="/hero.jpg" 
-                                    alt="Digital Literacy" 
-                                    fill 
-                                    className="object-cover transition-transform duration-700 group-hover:scale-110"
-                                />
-                                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur rounded-full p-2 text-brand-brown-dark">
-                                    <Laptop className="w-5 h-5" />
+                            {/* Featured Program (Active - Spans 2 cols) */}
+                            {featuredProgram ? (
+                                <div className="lg:col-span-2 bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100 flex flex-col group h-full hover:shadow-2xl transition-all hover:-translate-y-1">
+                                    <div className="relative w-full h-64 md:h-80 bg-gray-200">
+                                        <Image 
+                                            src={featuredProgram.coverImage || "/fallback.webp"} 
+                                            alt={featuredProgram.title} 
+                                            fill 
+                                            className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                        />
+                                        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur rounded-full p-2 text-brand-brown-dark">
+                                            <Laptop className="w-5 h-5" />
+                                        </div>
+                                        <div className="absolute bottom-4 left-4">
+                                            <span className={`px-3 py-1 text-xs font-bold uppercase rounded-md tracking-wider ${
+                                                featuredProgram.status === 'Active' ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'
+                                            }`}>
+                                                {featuredProgram.status} Program
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="p-8 md:p-10 flex flex-col justify-center flex-grow">
+                                        <h4 className="font-agency text-3xl text-brand-brown-dark mb-4 leading-tight">
+                                            {featuredProgram.title}
+                                        </h4>
+                                        <p className="font-lato text-base md:text-lg text-gray-600 leading-relaxed mb-6">
+                                            {featuredProgram.excerpt}
+                                        </p>
+                                        
+                                        <div className="mt-auto flex flex-col sm:flex-row gap-6 justify-between items-start sm:items-center">
+                                            {featuredProgram.beneficiaries && (
+                                                <div className="flex items-center gap-2 text-sm font-bold text-brand-brown">
+                                                    <Target className="w-4 h-4 text-brand-gold" />
+                                                    Target: {featuredProgram.beneficiaries}
+                                                </div>
+                                            )}
+                                            <Link href={`/programs/${featuredProgram.id}`} className="inline-flex items-center gap-2 px-6 py-2 bg-brand-brown-dark text-white rounded-full text-sm font-bold uppercase tracking-widest hover:bg-brand-gold transition-colors">
+                                                View Details <ArrowRight className="w-4 h-4" />
+                                            </Link>
+                                        </div>
+                                    </div>
                                 </div>
+                            ) : (
+                                <div className="lg:col-span-2 flex items-center justify-center bg-gray-50 rounded-3xl h-64 border border-dashed border-gray-200">
+                                    <p className="text-gray-400">No active training programs found.</p>
+                                </div>
+                            )}
+
+                            {/* Other Initiatives (Right Column) */}
+                            <div className="flex flex-col gap-6">
+                                {otherPrograms.length > 0 ? (
+                                    otherPrograms.slice(0, 2).map((prog) => (
+                                        <Link key={prog.id} href={`/programs/${prog.id}`} className="bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100 flex flex-col group h-full hover:shadow-lg transition-all">
+                                            <div className="relative w-full h-40 bg-gray-200">
+                                                <Image 
+                                                    src={prog.coverImage || "/fallback.webp"} 
+                                                    alt={prog.title} 
+                                                    fill 
+                                                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                                />
+                                                <div className="absolute top-3 left-3 bg-white/90 backdrop-blur rounded-full p-1.5 text-brand-brown-dark">
+                                                    <Briefcase className="w-4 h-4" />
+                                                </div>
+                                            </div>
+                                            <div className="p-6 flex-col flex flex-grow">
+                                                <h4 className="font-agency text-xl text-brand-brown-dark mb-2 line-clamp-2">
+                                                    {prog.title}
+                                                </h4>
+                                                <p className="font-lato text-xs text-gray-500 leading-relaxed mb-4 flex-grow line-clamp-3">
+                                                    {prog.excerpt}
+                                                </p>
+                                                <div className="flex justify-between items-center mt-auto">
+                                                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded ${
+                                                        prog.status === 'Active' ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'
+                                                    }`}>
+                                                        {prog.status}
+                                                    </span>
+                                                    <span className="text-[10px] font-bold text-brand-gold">Read More</span>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))
+                                ) : (
+                                    // Placeholder for "Future Innovation"
+                                    <div className="bg-white rounded-3xl overflow-hidden shadow-lg border border-gray-100 flex flex-col group h-full opacity-80">
+                                        <div className="relative w-full h-40 grayscale bg-gray-200">
+                                            <Image 
+                                                src="/images/placeholders/tech-hub.webp" 
+                                                alt="Innovation Hub" 
+                                                fill 
+                                                className="object-cover"
+                                            />
+                                            <div className="absolute inset-0 bg-brand-brown-dark/50 flex items-center justify-center backdrop-blur-[1px]">
+                                                <span className="text-white font-agency text-lg tracking-widest border border-white px-4 py-1 rounded-full">
+                                                    FUTURE GOAL
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="p-6 flex-col flex flex-grow bg-gray-50">
+                                            <h4 className="font-agency text-xl text-brand-brown-dark mb-2">
+                                                Al-Asad Tech Hub
+                                            </h4>
+                                            <p className="font-lato text-xs text-gray-500 mb-4 flex-grow">
+                                                Planned dedicated space for coding, robotics, and design thinking to nurture future innovators.
+                                            </p>
+                                            <div className="flex items-center gap-2 text-brand-gold">
+                                                <Cpu className="w-4 h-4" />
+                                                <span className="text-[10px] font-bold uppercase tracking-widest">In Development</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                            <div className="p-8 flex flex-col flex-grow">
-                                <h4 className="font-agency text-2xl text-brand-brown-dark mb-3">
-                                    Digital Literacy Bootcamp
-                                </h4>
-                                <p className="font-lato text-sm text-gray-600 leading-relaxed mb-6 flex-grow">
-                                    Fundamental computer training, internet safety, and introduction to modern productivity tools for students. We ensure every student is computer literate.
-                                </p>
-                                <span className="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs font-bold uppercase rounded-md w-fit">
-                                    Active Program
-                                </span>
-                            </div>
+
                         </div>
-
-                        {/* Initiative 2: Vocational Workshops */}
-                        <div className="bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100 flex flex-col group h-full hover:shadow-2xl transition-all hover:-translate-y-2">
-                            <div className="relative w-full h-56">
-                                <Image 
-                                    src="/hero.jpg" 
-                                    alt="Vocational Skills" 
-                                    fill 
-                                    className="object-cover transition-transform duration-700 group-hover:scale-110"
-                                />
-                                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur rounded-full p-2 text-brand-brown-dark">
-                                    <Briefcase className="w-5 h-5" />
-                                </div>
-                            </div>
-                            <div className="p-8 flex flex-col flex-grow">
-                                <h4 className="font-agency text-2xl text-brand-brown-dark mb-3">
-                                    Entrepreneurship Workshops
-                                </h4>
-                                <p className="font-lato text-sm text-gray-600 leading-relaxed mb-6 flex-grow">
-                                    Seminars on small business management, trade skills, and financial independence for youth and women. Building the next generation of business owners.
-                                </p>
-                                <span className="inline-block px-3 py-1 bg-brand-sand text-brand-brown-dark text-xs font-bold uppercase rounded-md w-fit">
-                                    Periodic Events
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Initiative 3: Innovation Hub (Future) */}
-                        <div className="bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100 flex flex-col group h-full opacity-90 hover:opacity-100 transition-all hover:-translate-y-2">
-                            <div className="relative w-full h-56 grayscale-[50%] group-hover:grayscale-0 transition-all duration-500">
-                                <Image 
-                                    src="/hero.jpg" 
-                                    alt="Tech Innovation Hub" 
-                                    fill 
-                                    className="object-cover"
-                                />
-                                 <div className="absolute inset-0 bg-brand-brown-dark/60 flex items-center justify-center backdrop-blur-[1px]">
-                                    <span className="text-white font-agency text-xl tracking-widest border border-white px-4 py-2 rounded group-hover:bg-white group-hover:text-brand-brown-dark transition-colors">
-                                        FUTURE GOAL
-                                    </span>
-                                </div>
-                                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur rounded-full p-2 text-brand-brown-dark">
-                                    <Cpu className="w-5 h-5" />
-                                </div>
-                            </div>
-                            <div className="p-8 flex flex-col flex-grow bg-gray-50">
-                                <h4 className="font-agency text-2xl text-brand-brown-dark mb-3">
-                                    Al-Asad Tech Hub
-                                </h4>
-                                <p className="font-lato text-sm text-gray-600 leading-relaxed mb-6 flex-grow">
-                                    A planned dedicated space for advanced coding, robotics, and design thinking to nurture the next generation of Muslim innovators and problem solvers.
-                                </p>
-                                <div className="flex items-center gap-2 text-brand-gold">
-                                    <Code className="w-4 h-4" />
-                                    <span className="text-xs font-bold uppercase tracking-widest">In Development</span>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
+                    )}
                 </section>
 
                 {/* 4. IMPACT / STATS */}
