@@ -14,12 +14,15 @@ import { useModal } from '@/context/ModalContext';
 import { 
     ArrowLeft, 
     Save, 
-    UploadCloud, 
     FileText, 
-    Library, 
+    CheckCircle, 
     Loader2, 
-    X, 
-    Image as ImageIcon
+    X,
+    Library,
+    ImageIcon,
+    Globe,
+    Lock,
+    Calendar
 } from 'lucide-react';
 
 export default function EditBookPage() {
@@ -40,20 +43,22 @@ export default function EditBookPage() {
         title: '',
         author: '',
         collection: '',
-        category: 'Tafsir', // Topic
-        language: 'English', // Language
-        description: ''
+        language: 'English', 
+        publisher: 'Al-Asad Foundation', 
+        access: 'Free',
+        year: '',
+        description: '',
     });
 
     // File States
-    const [pdfFile, setPdfFile] = useState(null); // New PDF
-    const [coverFile, setCoverFile] = useState(null); // New Cover
+    const [docFile, setDocFile] = useState(null); // New PDF/EPUB to upload
+    const [coverFile, setCoverFile] = useState(null); // New Cover to upload
     
-    // Existing Data States
-    const [existingPdfUrl, setExistingPdfUrl] = useState(null);
-    const [existingPdfName, setExistingPdfName] = useState('');
+    // Existing Data for Preview
+    const [existingFileUrl, setExistingFileUrl] = useState(null);
+    const [existingFileName, setExistingFileName] = useState('');
     const [existingCoverUrl, setExistingCoverUrl] = useState(null);
-    const [coverPreview, setCoverPreview] = useState(null); // For new cover preview
+    const [coverPreview, setCoverPreview] = useState(null);
 
     // Helper: Auto-Detect Arabic
     const getDir = (text) => {
@@ -69,10 +74,10 @@ export default function EditBookPage() {
             setIsLoading(true);
             try {
                 // A. Fetch Collections
-                const qCollections = query(collection(db, "ebook_collections"), orderBy("createdAt", "desc"));
-                const colSnap = await getDocs(qCollections);
-                const collectionsData = colSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-                setAllCollections(collectionsData);
+                const qColl = query(collection(db, "ebook_collections"), orderBy("createdAt", "desc"));
+                const collSnap = await getDocs(qColl);
+                const collData = collSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                setAllCollections(collData);
 
                 // B. Fetch Book Document
                 const docRef = doc(db, "ebooks", id);
@@ -84,21 +89,25 @@ export default function EditBookPage() {
                         title: data.title || '',
                         author: data.author || '',
                         collection: data.collection || '',
-                        category: data.category || 'Tafsir',
                         language: data.language || 'English',
-                        description: data.description || ''
+                        publisher: data.publisher || 'Al-Asad Foundation',
+                        access: data.access || 'Free',
+                        year: data.year || new Date().getFullYear().toString(),
+                        description: data.description || '',
                     });
 
-                    // Set initial filter based on loaded language
-                    const initialFiltered = collectionsData.filter(c => c.category === (data.language || 'English'));
+                    // Set initial filter
+                    const initialFiltered = collData.filter(c => c.category === (data.language || 'English'));
                     setFilteredCollections(initialFiltered);
 
-                    if (data.pdfUrl) {
-                        setExistingPdfUrl(data.pdfUrl);
-                        setExistingPdfName(data.fileName || "Current PDF File");
+                    // Set Existing Files
+                    if (data.fileUrl) {
+                        setExistingFileUrl(data.fileUrl);
+                        setExistingFileName(data.fileName || "Current File");
                     }
                     if (data.coverUrl) {
                         setExistingCoverUrl(data.coverUrl);
+                        setCoverPreview(data.coverUrl);
                     }
                 } else {
                     alert("Book not found");
@@ -126,108 +135,82 @@ export default function EditBookPage() {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
 
-        // Reset collection if language changes
         if (name === 'language') {
             setFormData(prev => ({ ...prev, collection: '' }));
         }
     };
 
     // Handle File Changes
-    const handlePdfChange = (e) => {
+    const handleDocChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            if (file.type !== 'application/pdf') {
-                alert("Please upload a PDF file.");
-                return;
-            }
-            if (file.size > 50 * 1024 * 1024) { 
-                alert("PDF size exceeds 50MB limit.");
-                return;
-            }
-            setPdfFile(file);
+            setDocFile(file);
         }
     };
 
     const handleCoverChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            if (!file.type.startsWith('image/')) {
-                alert("Please upload a valid image file.");
-                return;
-            }
             setCoverFile(file);
             setCoverPreview(URL.createObjectURL(file));
         }
     };
-
-    const removeNewPdf = () => setPdfFile(null);
-    const removeNewCover = () => {
-        setCoverFile(null);
-        setCoverPreview(null);
-    };
-
-    const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!formData.title) {
-            alert("Please enter a book title.");
+            alert("Please enter a title.");
             return;
         }
 
         setIsSubmitting(true);
 
         try {
-            let pdfUrl = existingPdfUrl;
-            let coverUrl = existingCoverUrl;
-            let fileName = existingPdfName;
-            let fileSize = null; // Update only if new file
+            let finalDocUrl = existingFileUrl;
+            let finalFileName = existingFileName;
+            let finalFileSize = null;
+            let finalFileFormat = null;
+            let finalCoverUrl = existingCoverUrl;
 
-            const uploadTasks = [];
+            // 1. Upload New Document (if selected)
+            if (docFile) {
+                const docRef = ref(storage, `ebooks/docs/${Date.now()}_${docFile.name}`);
+                const uploadTask = uploadBytesResumable(docRef, docFile);
 
-            // 1. Upload New PDF (if selected)
-            if (pdfFile) {
-                const pdfRef = ref(storage, `ebooks/pdfs/${Date.now()}_${pdfFile.name}`);
-                const pdfTask = uploadBytesResumable(pdfRef, pdfFile);
-                
-                // Track PDF progress
-                pdfTask.on('state_changed', (snapshot) => {
+                // Track upload for feedback
+                uploadTask.on('state_changed', (snapshot) => {
                     const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
                     setUploadProgress(progress);
                 });
 
-                uploadTasks.push(
-                    pdfTask.then(async (snap) => {
-                        pdfUrl = await getDownloadURL(snap.ref);
-                        fileName = pdfFile.name;
-                        fileSize = (pdfFile.size / (1024 * 1024)).toFixed(2) + " MB";
-                    })
-                );
+                await uploadTask;
+                finalDocUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                finalFileName = docFile.name;
+                finalFileSize = (docFile.size / (1024 * 1024)).toFixed(2) + " MB";
+                finalFileFormat = docFile.name.split('.').pop().toUpperCase();
             }
 
             // 2. Upload New Cover (if selected)
             if (coverFile) {
                 const coverRef = ref(storage, `ebooks/covers/${Date.now()}_${coverFile.name}`);
-                uploadTasks.push(
-                    uploadBytesResumable(coverRef, coverFile).then(async (snap) => {
-                        coverUrl = await getDownloadURL(snap.ref);
-                    })
-                );
+                const uploadTask = uploadBytesResumable(coverRef, coverFile);
+                await uploadTask;
+                finalCoverUrl = await getDownloadURL(uploadTask.snapshot.ref);
             }
-
-            await Promise.all(uploadTasks);
 
             // 3. Prepare Update Data
             const updateData = {
                 ...formData,
                 title: formData.title.trim(),
-                pdfUrl: pdfUrl,
-                coverUrl: coverUrl,
-                fileName: fileName,
+                fileUrl: finalDocUrl,
+                coverUrl: finalCoverUrl,
+                fileName: finalFileName,
                 updatedAt: new Date().toISOString()
             };
 
-            if (fileSize) {
-                updateData.fileSize = fileSize;
+            if (finalFileSize) {
+                updateData.fileSize = finalFileSize;
+                updateData.fileFormat = finalFileFormat;
             }
 
             // 4. Update Firestore
@@ -256,215 +239,199 @@ export default function EditBookPage() {
         <form onSubmit={handleSubmit} className="space-y-6 max-w-6xl mx-auto pb-12">
 
             {/* HEADER */}
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 sticky top-0 bg-gray-50 z-20 py-4 border-b border-gray-200">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-0 bg-gray-50 z-20 py-4 border-b border-gray-200">
                 <div className="flex items-center gap-4">
-                    <Link href="/admin/ebooks" className="p-2 hover:bg-gray-200 rounded-lg">
+                    <Link href="/admin/ebooks" className="p-2 hover:bg-gray-200 rounded-lg transition-colors">
                         <ArrowLeft className="w-5 h-5 text-gray-600" />
                     </Link>
                     <div>
                         <h1 className="font-agency text-3xl text-brand-brown-dark">Edit eBook</h1>
-                        <p className="font-lato text-sm text-gray-500">Update book details or replace files.</p>
+                        <p className="font-lato text-sm text-gray-500">Update publication details and files.</p>
                     </div>
                 </div>
-                <div className="flex gap-3 w-full md:w-auto">
-                    <Link href="/admin/ebooks" className="flex-1 md:flex-none">
-                        <button type="button" className="w-full px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 text-center justify-center">
+                <div className="flex gap-3">
+                    <Link href="/admin/ebooks">
+                        <button type="button" className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 transition-colors">
                             Cancel
                         </button>
                     </Link>
                     <button 
-                        type="submit" 
+                        type="submit"
                         disabled={isSubmitting} 
-                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-colors shadow-md disabled:opacity-50"
+                        className="flex items-center gap-2 px-6 py-2.5 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-colors shadow-md disabled:opacity-50"
                     >
                         {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        {isSubmitting ? `Saving ${Math.round(uploadProgress)}%` : 'Save Changes'}
+                        {isSubmitting ? 'Saving...' : 'Save Changes'}
                     </button>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                {/* LEFT: File Replacements */}
+                {/* LEFT: Files */}
                 <div className="space-y-6">
 
-                    {/* PDF Replacement */}
+                    {/* Document Box */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                         <label className="flex items-center gap-2 text-xs font-bold text-brand-brown-dark uppercase tracking-wider mb-3">
-                            <FileText className="w-4 h-4" /> Replace PDF (Optional)
+                            <FileText className="w-4 h-4" /> Book File (PDF/EPUB)
                         </label>
 
-                        {/* Existing File Info */}
-                        {existingPdfUrl && !pdfFile && (
-                            <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-3 mb-4">
+                        {existingFileUrl && !docFile && (
+                            <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3 mb-4">
                                 <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 flex-shrink-0">
-                                    <FileText className="w-4 h-4" />
+                                    <CheckCircle className="w-4 h-4" />
                                 </div>
                                 <div className="flex-grow min-w-0">
                                     <p className="font-bold text-green-700 text-xs">Current File Active</p>
-                                    <p className="text-green-600 text-[10px] truncate">{existingPdfName}</p>
+                                    <p className="text-green-600 text-[10px] truncate">{existingFileName}</p>
                                 </div>
                             </div>
                         )}
 
-                        <div className={`relative border-2 border-dashed rounded-xl p-4 text-center transition-colors h-32 flex flex-col items-center justify-center ${
-                            pdfFile ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-300 hover:border-brand-gold'
+                        <div className={`border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center text-center transition-colors ${
+                            docFile ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200 hover:border-brand-gold'
                         }`}>
-                            {pdfFile ? (
-                                <div>
-                                    <FileText className="w-8 h-8 text-blue-600 mx-auto mb-1" />
-                                    <p className="font-bold text-brand-brown-dark text-xs truncate w-40">{pdfFile.name}</p>
-                                    <button type="button" onClick={removeNewPdf} className="text-red-500 text-[10px] font-bold hover:underline mt-1">
-                                        Remove New File
-                                    </button>
+                            {docFile ? (
+                                <div className="text-left w-full flex items-center gap-3">
+                                    <FileText className="w-8 h-8 text-blue-600" />
+                                    <div>
+                                        <p className="text-sm font-bold text-gray-700 line-clamp-1">{docFile.name}</p>
+                                        <button type="button" onClick={() => setDocFile(null)} className="text-xs text-red-500 hover:underline">Remove</button>
+                                    </div>
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center w-full relative">
-                                    <UploadCloud className="w-8 h-8 text-gray-400 mb-1" />
-                                    <p className="text-xs text-gray-500 font-bold">Upload New PDF</p>
-                                    <input 
-                                        type="file" 
-                                        accept="application/pdf"
-                                        onChange={handlePdfChange}
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                    />
+                                <div className="relative w-full py-4">
+                                    <p className="text-xs text-gray-500 font-bold mb-1">Replace File</p>
+                                    <input type="file" accept=".pdf,.epub" onChange={handleDocChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                                 </div>
                             )}
                         </div>
+                        {isSubmitting && docFile && (
+                            <p className="text-xs text-center mt-2 text-brand-gold font-bold">Uploading... {Math.round(uploadProgress)}%</p>
+                        )}
                     </div>
 
-                    {/* Cover Replacement */}
+                    {/* Cover Box */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                         <label className="flex items-center gap-2 text-xs font-bold text-brand-brown-dark uppercase tracking-wider mb-3">
-                            <ImageIcon className="w-4 h-4" /> Replace Cover (Optional)
+                            <ImageIcon className="w-4 h-4" /> Book Cover
                         </label>
-
-                        <div className={`relative w-full aspect-[2/3] bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center overflow-hidden group hover:border-brand-gold ${coverPreview || existingCoverUrl ? 'border-none' : ''}`}>
-                            {coverPreview || existingCoverUrl ? (
-                                <>
-                                    <Image 
-                                        src={coverPreview || existingCoverUrl} 
-                                        alt="Cover" 
-                                        fill 
-                                        className="object-cover" 
-                                    />
-                                    {/* Badge for new file */}
-                                    {coverPreview && (
-                                        <div className="absolute top-2 left-2 bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-md z-10">
-                                            New
-                                        </div>
-                                    )}
-                                    {/* Upload trigger on top of image */}
-                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <div className="relative">
-                                            <p className="text-white text-xs font-bold border border-white px-3 py-1 rounded-full cursor-pointer">Change</p>
-                                            <input 
-                                                type="file" 
-                                                accept="image/*" 
-                                                onChange={handleCoverChange}
-                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                            />
-                                        </div>
-                                        {coverPreview && (
-                                            <button 
-                                                type="button" 
-                                                onClick={removeNewCover} 
-                                                className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600 z-20"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
-                                        )}
-                                    </div>
-                                </>
+                        <div className="relative w-full aspect-[2/3] bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center overflow-hidden">
+                            {coverPreview ? (
+                                <Image src={coverPreview} alt="Cover" fill className="object-cover" />
                             ) : (
-                                <div className="flex flex-col items-center justify-center w-full h-full p-4 relative">
-                                    <ImageIcon className="w-8 h-8 text-gray-300 mb-2" />
-                                    <p className="text-xs text-gray-500 text-center px-4">Click to Upload Cover</p>
-                                    <input 
-                                        type="file" 
-                                        accept="image/*" 
-                                        onChange={handleCoverChange}
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                    />
-                                </div>
+                                <ImageIcon className="w-8 h-8 text-gray-300" />
                             )}
+                            <input type="file" accept="image/*" onChange={handleCoverChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                         </div>
+                        <p className="text-center text-xs text-gray-400 mt-2">Click image to replace</p>
                     </div>
+
                 </div>
 
                 {/* RIGHT: Metadata Inputs */}
                 <div className="lg:col-span-2 space-y-6">
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
-                        <h3 className="font-agency text-xl text-brand-brown-dark border-b border-gray-100 pb-2">Book Details</h3>
+                        <h3 className="font-agency text-xl text-brand-brown-dark border-b border-gray-100 pb-2">Publication Details</h3>
 
                         {/* Title */}
                         <div>
-                            <label className="block text-xs font-bold text-brand-brown mb-1">Book Title</label>
+                            <label className="block text-xs font-bold text-brand-brown mb-1">Title</label>
                             <input 
                                 type="text" 
                                 name="title" 
                                 value={formData.title} 
                                 onChange={handleChange} 
-                                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50" 
+                                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
                                 dir={getDir(formData.title)}
                             />
                         </div>
 
-                        {/* Language & Category */}
+                        {/* Filters Row 1 */}
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-bold text-brand-brown mb-1">Language</label>
-                                <select 
-                                    name="language" 
-                                    value={formData.language} 
-                                    onChange={handleChange} 
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
-                                >
-                                    <option>English</option>
-                                    <option>Hausa</option>
-                                    <option>Arabic</option>
-                                </select>
+                                <div className="relative">
+                                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <select 
+                                        name="language" 
+                                        value={formData.language} 
+                                        onChange={handleChange} 
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-brand-gold/50"
+                                    >
+                                        <option>English</option>
+                                        <option>Hausa</option>
+                                        <option>Arabic</option>
+                                    </select>
+                                </div>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-brand-brown mb-1">Category (Topic)</label>
-                                <select 
-                                    name="category" 
-                                    value={formData.category} 
-                                    onChange={handleChange} 
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
-                                >
-                                    <option>Tafsir</option>
-                                    <option>Fiqh</option>
-                                    <option>Aqeedah</option>
-                                    <option>History</option>
-                                    <option>General</option>
-                                </select>
+                                <label className="block text-xs font-bold text-brand-brown mb-1">Access Type</label>
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <select 
+                                        name="access" 
+                                        value={formData.access} 
+                                        onChange={handleChange} 
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-brand-gold/50"
+                                    >
+                                        <option>Free</option>
+                                        <option>Members Only</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Collection Selector (Filtered) */}
+                        {/* Filters Row 2 */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-brand-brown mb-1">Publisher</label>
+                                <select 
+                                    name="publisher" 
+                                    value={formData.publisher} 
+                                    onChange={handleChange} 
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-gold/50"
+                                >
+                                    <option>Al-Asad Foundation</option>
+                                    <option>External Publisher</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-brand-brown mb-1">Publication Year</label>
+                                <div className="relative">
+                                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input 
+                                        type="number" 
+                                        name="year" 
+                                        value={formData.year} 
+                                        onChange={handleChange} 
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-brand-gold/50" 
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Collection Selector */}
                         <div className="bg-brand-sand/20 p-4 rounded-xl border border-brand-gold/20">
                             <label className="flex items-center gap-2 text-xs font-bold text-brand-brown-dark uppercase tracking-wider mb-2">
-                                <Library className="w-4 h-4" /> Add to Collection
+                                <Library className="w-4 h-4" /> Add to Collection (Series)
                             </label>
                             <select 
                                 name="collection" 
                                 value={formData.collection} 
                                 onChange={handleChange} 
-                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer"
+                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-gold/50 cursor-pointer"
                             >
                                 <option value="">Select a Collection (Optional)</option>
                                 {filteredCollections.length > 0 ? (
-                                    filteredCollections.map(col => (
-                                        <option key={col.id} value={col.title}>{col.title}</option>
-                                    ))
+                                    filteredCollections.map(col => <option key={col.id} value={col.title}>{col.title}</option>)
                                 ) : (
                                     <option disabled>No collections found for {formData.language}</option>
                                 )}
                             </select>
                         </div>
 
-                        {/* Description */}
                         <div>
                             <label className="block text-xs font-bold text-brand-brown mb-1">Description</label>
                             <textarea 
@@ -472,7 +439,7 @@ export default function EditBookPage() {
                                 value={formData.description} 
                                 onChange={handleChange} 
                                 rows="4" 
-                                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-gold/50"
                                 dir={getDir(formData.description)}
                             ></textarea>
                         </div>
