@@ -5,6 +5,7 @@ import Link from 'next/link';
 // Firebase
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { useModal } from '@/context/ModalContext'; // Custom Modal Context
 import { 
     Save, 
     Loader2, 
@@ -17,12 +18,16 @@ import {
     Instagram, 
     Youtube, 
     MessageCircle,
-    Send 
+    Send,
+    AlertTriangle,
+    X
 } from 'lucide-react';
 
 export default function ContactSettingsPage() {
+    const { showSuccess } = useModal(); // Use Custom Success Modal
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false); // State for Verification Modal
 
     // Initial State
     const [data, setData] = useState({
@@ -34,7 +39,7 @@ export default function ContactSettingsPage() {
         instagram: '',
         youtube: '',
         whatsapp: '',
-        telegram: '' // Added Telegram
+        telegram: ''
     });
 
     // 1. Fetch Existing Data
@@ -57,7 +62,7 @@ export default function ContactSettingsPage() {
                         instagram: savedData.instagram || '',
                         youtube: savedData.youtube || '',
                         whatsapp: savedData.whatsapp || '',
-                        telegram: savedData.telegram || '' // Map Telegram
+                        telegram: savedData.telegram || ''
                     });
                 }
             } catch (error) {
@@ -75,9 +80,15 @@ export default function ContactSettingsPage() {
         setData(prev => ({ ...prev, [name]: value }));
     };
 
-    // 3. Save Data
-    const handleSubmit = async (e) => {
+    // 3. Trigger Confirmation
+    const handlePreSubmit = (e) => {
         e.preventDefault();
+        setShowConfirm(true);
+    };
+
+    // 4. Final Save Execution
+    const executeSave = async () => {
+        setShowConfirm(false);
         setSaving(true);
         try {
             const docRef = doc(db, "general_settings", "contact_info");
@@ -87,7 +98,13 @@ export default function ContactSettingsPage() {
                 updatedAt: serverTimestamp()
             }, { merge: true });
             
-            alert("Contact details updated successfully!");
+            // Trigger Custom Success Modal
+            showSuccess({
+                title: "Settings Saved",
+                message: "Public contact information has been successfully updated.",
+                confirmText: "Okay, Great"
+            });
+
         } catch (error) {
             console.error("Error saving settings:", error);
             alert("Failed to save settings. Please try again.");
@@ -105,7 +122,7 @@ export default function ContactSettingsPage() {
     }
 
     return (
-        <div className="max-w-4xl mx-auto pb-12">
+        <div className="max-w-4xl mx-auto pb-12 relative">
             
             {/* Header */}
             <div className="flex items-center gap-4 mb-8">
@@ -118,7 +135,7 @@ export default function ContactSettingsPage() {
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handlePreSubmit} className="space-y-8">
                 
                 {/* 1. General Info Section */}
                 <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
@@ -275,6 +292,39 @@ export default function ContactSettingsPage() {
                     Save Changes
                 </button>
             </form>
+
+            {/* --- VERIFICATION MODAL --- */}
+            {showConfirm && (
+                <div className="fixed inset-0 z-[99] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full border border-gray-100 transform scale-100 animate-in zoom-in-95 duration-200">
+                        <div className="flex flex-col items-center text-center">
+                            <div className="w-16 h-16 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mb-4">
+                                <AlertTriangle className="w-8 h-8" />
+                            </div>
+                            <h3 className="font-agency text-2xl text-brand-brown-dark mb-2">Confirm Updates?</h3>
+                            <p className="text-gray-500 font-lato text-sm mb-8">
+                                You are about to update public contact information. These changes will be visible on the website immediately.
+                            </p>
+                            
+                            <div className="flex gap-3 w-full">
+                                <button 
+                                    onClick={() => setShowConfirm(false)}
+                                    className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={executeSave}
+                                    className="flex-1 py-3 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-colors shadow-lg"
+                                >
+                                    Yes, Update
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }
