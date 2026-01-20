@@ -6,13 +6,14 @@ import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 // Context
 import { useModal } from '@/context/ModalContext';
-import LogoReveal from '@/components/logo-reveal'; // Custom Loader
+import LogoReveal from '@/components/logo-reveal'; // UPDATED PATH
 
 import { 
     Search, 
     Trash2, 
-    Loader2, // Kept for small button states
+    Loader2, 
     CheckCircle,
+    XCircle, // New Icon for Decline
     MessageCircle,
     User,
     Mail,
@@ -59,9 +60,14 @@ export default function ManagePartnersPage() {
         if (status === 'Contacted') {
             subject = `Partnership Inquiry: ${partner.type} - Al-Asad Foundation`;
             body = `Dear ${partner.contactPerson},%0D%0A%0D%0AThank you for reaching out to Al-Asad Foundation regarding a potential partnership in "${partner.type}".%0D%0A%0D%0AWe have reviewed your proposal from ${partner.organization} and would like to schedule a brief meeting to discuss how we can collaborate effectively.%0D%0A%0D%0APlease let us know your availability.%0D%0A%0D%0ABest regards,%0D%0APartnerships Team`;
-        } else if (status === 'Partnered') {
+        } 
+        else if (status === 'Partnered') {
             subject = `Official Partnership Welcome - Al-Asad Foundation`;
             body = `Dear ${partner.contactPerson},%0D%0A%0D%0AWe are thrilled to officially welcome ${partner.organization} as a partner of Al-Asad Foundation!%0D%0A%0D%0AWe look forward to a fruitful collaboration that drives meaningful impact.%0D%0A%0D%0ABest regards,%0D%0AAl-Asad Education Foundation`;
+        }
+        else if (status === 'Declined') {
+            subject = `Update regarding your Partnership Inquiry - Al-Asad Foundation`;
+            body = `Dear ${partner.contactPerson},%0D%0A%0D%0AThank you for your interest in partnering with Al-Asad Foundation and for sharing your proposal regarding ${partner.type}.%0D%0A%0D%0AAfter careful review, we regret to inform you that we are unable to proceed with this partnership at this time, as our current resources are fully committed to existing initiatives.%0D%0A%0D%0AWe appreciate the work ${partner.organization} is doing and wish you continued success.%0D%0A%0D%0ABest regards,%0D%0AAl-Asad Education Foundation`;
         }
 
         return `mailto:${partner.email}?subject=${subject}&body=${body}`;
@@ -95,12 +101,10 @@ export default function ManagePartnersPage() {
                 showSuccess({ title: "Status Updated", message: `Partner marked as ${payload}. Email client opened.` });
             } 
             else if (type === 'resend') {
-                // Just open email, no DB update
                 const mailUrl = generateEmailUrl(partner, partner.status);
                 if (mailUrl) window.location.href = mailUrl;
             }
 
-            // Close Modal
             setActionConfig(null);
             if(viewPartner) setViewPartner(null); 
 
@@ -149,7 +153,7 @@ export default function ManagePartnersPage() {
             {/* FILTERS */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm">
                 <div className="flex bg-gray-50 p-1 rounded-xl w-full md:w-auto overflow-x-auto">
-                    {['All', 'New', 'Contacted', 'Partnered'].map(status => (
+                    {['All', 'New', 'Contacted', 'Partnered', 'Declined'].map(status => (
                         <button key={status} onClick={() => setStatusFilter(status)} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${statusFilter === status ? 'bg-white text-brand-brown-dark shadow-sm' : 'text-gray-500 hover:text-brand-brown-dark'}`}>
                             {status}
                         </button>
@@ -193,8 +197,18 @@ export default function ManagePartnersPage() {
                                                 <div className="flex flex-col"><span className="text-sm font-bold text-gray-700">{p.contactPerson}</span><span className="text-xs text-brand-gold">{p.email}</span></div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${p.status === 'Partnered' ? 'bg-green-50 text-green-700 border-green-200' : p.status === 'Contacted' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>
-                                                    <span className={`w-1.5 h-1.5 rounded-full ${p.status === 'Partnered' ? 'bg-green-500' : p.status === 'Contacted' ? 'bg-blue-500' : 'bg-orange-500'}`}></span>{p.status}
+                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${
+                                                    p.status === 'Partnered' ? 'bg-green-50 text-green-700 border-green-200' : 
+                                                    p.status === 'Contacted' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
+                                                    p.status === 'Declined' ? 'bg-red-50 text-red-700 border-red-200' :
+                                                    'bg-orange-50 text-orange-700 border-orange-200'
+                                                }`}>
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${
+                                                        p.status === 'Partnered' ? 'bg-green-500' : 
+                                                        p.status === 'Contacted' ? 'bg-blue-500' : 
+                                                        p.status === 'Declined' ? 'bg-red-500' :
+                                                        'bg-orange-500'
+                                                    }`}></span>{p.status}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-xs text-gray-500 font-mono">{formatDate(p.submittedAt)}</td>
@@ -208,10 +222,15 @@ export default function ManagePartnersPage() {
                                                             <MessageCircle className="w-4 h-4" />
                                                         </button>
                                                     )}
-                                                    {p.status !== 'Partnered' && (
-                                                        <button onClick={() => confirmAction('update', p, 'Partnered')} className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Approve">
-                                                            <CheckCircle className="w-4 h-4" />
-                                                        </button>
+                                                    {p.status !== 'Partnered' && p.status !== 'Declined' && (
+                                                        <>
+                                                            <button onClick={() => confirmAction('update', p, 'Partnered')} className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Approve">
+                                                                <CheckCircle className="w-4 h-4" />
+                                                            </button>
+                                                            <button onClick={() => confirmAction('update', p, 'Declined')} className="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors" title="Decline">
+                                                                <XCircle className="w-4 h-4" />
+                                                            </button>
+                                                        </>
                                                     )}
                                                     {p.status !== 'New' && (
                                                         <button onClick={() => confirmAction('resend', p)} className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors" title="Resend Email">
@@ -258,11 +277,18 @@ export default function ManagePartnersPage() {
                             </div>
                             <div><span className="block text-gray-400 text-xs uppercase mb-2 flex items-center gap-1"><FileText className="w-3 h-3"/> Message / Proposal</span><div className="bg-gray-50 p-4 rounded-xl text-sm text-gray-600 leading-relaxed border border-gray-100 max-h-40 overflow-y-auto">{viewPartner.message}</div></div>
                         </div>
-                        <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-                            <button onClick={() => confirmAction('delete', viewPartner)} className="px-4 py-2 text-red-600 font-bold text-sm hover:bg-red-50 rounded-lg transition-colors">Delete</button>
-                            {viewPartner.status === 'New' && <button onClick={() => confirmAction('update', viewPartner, 'Contacted')} className="px-4 py-2 bg-blue-600 text-white font-bold text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm">Mark Contacted</button>}
-                            {viewPartner.status !== 'Partnered' && <button onClick={() => confirmAction('update', viewPartner, 'Partnered')} className="px-4 py-2 bg-green-600 text-white font-bold text-sm rounded-lg hover:bg-green-700 transition-colors shadow-sm">Approve Partner</button>}
-                            {viewPartner.status !== 'New' && <button onClick={() => confirmAction('resend', viewPartner)} className="px-4 py-2 bg-purple-600 text-white font-bold text-sm rounded-lg hover:bg-purple-700 transition-colors shadow-sm">Resend Email</button>}
+                        <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex justify-end gap-2 flex-wrap">
+                            <button onClick={() => confirmAction('delete', viewPartner)} className="px-3 py-2 text-red-600 font-bold text-xs hover:bg-red-50 rounded-lg transition-colors">Delete</button>
+                            {viewPartner.status === 'New' && <button onClick={() => confirmAction('update', viewPartner, 'Contacted')} className="px-3 py-2 bg-blue-600 text-white font-bold text-xs rounded-lg hover:bg-blue-700 transition-colors shadow-sm">Mark Contacted</button>}
+                            
+                            {viewPartner.status !== 'Partnered' && viewPartner.status !== 'Declined' && (
+                                <>
+                                    <button onClick={() => confirmAction('update', viewPartner, 'Declined')} className="px-3 py-2 bg-orange-100 text-orange-700 font-bold text-xs rounded-lg hover:bg-orange-200 transition-colors shadow-sm border border-orange-200">Decline</button>
+                                    <button onClick={() => confirmAction('update', viewPartner, 'Partnered')} className="px-3 py-2 bg-green-600 text-white font-bold text-xs rounded-lg hover:bg-green-700 transition-colors shadow-sm">Approve</button>
+                                </>
+                            )}
+                            
+                            {viewPartner.status !== 'New' && <button onClick={() => confirmAction('resend', viewPartner)} className="px-3 py-2 bg-purple-600 text-white font-bold text-xs rounded-lg hover:bg-purple-700 transition-colors shadow-sm">Resend Email</button>}
                         </div>
                     </div>
                 </div>
