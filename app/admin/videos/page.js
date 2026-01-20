@@ -370,21 +370,22 @@ export default function ManageVideosPage() {
                     <h1 className="font-agency text-3xl text-brand-brown-dark">Video Manager</h1>
                     <p className="font-lato text-sm text-gray-500">Manage your library, playlists, and lecture series.</p>
                 </div>
-                <div className="flex gap-2">
-                    <div className="bg-white border border-gray-100 px-4 py-2 rounded-xl text-center shadow-sm min-w-[80px]">
-                        <span className="block text-lg font-bold text-brand-gold">{totalItems}</span>
-                        <span className="text-[10px] text-gray-400 uppercase tracking-wider">Total</span>
+                {/* Updated Action Bar with Flex Stretch */}
+                <div className="flex gap-2 h-10">
+                    <div className="bg-white border border-gray-100 px-4 rounded-xl text-center shadow-sm min-w-[80px] flex flex-col justify-center h-full">
+                        <span className="block text-lg font-bold text-brand-gold leading-none">{totalItems}</span>
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wider leading-none mt-0.5">Total</span>
                     </div>
                     {activeTab === 'videos' ? (
-                        <Link href="/admin/videos/new" className="flex items-center gap-2 px-5 bg-brand-gold text-white rounded-xl text-sm font-bold hover:bg-brand-brown-dark transition-colors shadow-md h-full"><PlusCircle className="w-4 h-4" /> Upload Video</Link>
+                        <Link href="/admin/videos/new" className="flex items-center justify-center gap-2 px-5 bg-brand-gold text-white rounded-xl text-sm font-bold hover:bg-brand-brown-dark transition-colors shadow-md h-full"><PlusCircle className="w-4 h-4" /> Upload Video</Link>
                     ) : (
-                        <Link href="/admin/videos/playlists/new" className="flex items-center gap-2 px-5 bg-brand-brown-dark text-white rounded-xl text-sm font-bold hover:bg-brand-gold transition-colors shadow-md h-full"><ListVideo className="w-4 h-4" /> Create Playlist</Link>
+                        <Link href="/admin/videos/playlists/new" className="flex items-center justify-center gap-2 px-5 bg-brand-brown-dark text-white rounded-xl text-sm font-bold hover:bg-brand-gold transition-colors shadow-md h-full"><ListVideo className="w-4 h-4" /> Create Playlist</Link>
                     )}
                 </div>
             </div>
 
             {/* --- FILTERS TOOLBAR --- */}
-            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm">
+            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm relative z-20">
                 <div className="flex bg-gray-50 p-1 rounded-xl w-full md:w-auto overflow-x-auto">
                     <button onClick={() => { setActiveTab('videos'); setSearchTerm(''); }} className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'videos' ? 'bg-white text-brand-brown-dark shadow-sm' : 'text-gray-500 hover:text-brand-brown-dark'}`}><PlayCircle className="w-4 h-4" /> Videos</button>
                     <button onClick={() => { setActiveTab('playlists'); setSearchTerm(''); }} className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'playlists' ? 'bg-white text-brand-brown-dark shadow-sm' : 'text-gray-500 hover:text-brand-brown-dark'}`}><LayoutList className="w-4 h-4" /> Playlists</button>
@@ -403,7 +404,7 @@ export default function ManageVideosPage() {
             </div>
 
             {/* --- LIST VIEW --- */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[400px]">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[400px] relative z-10">
                 {isLoading ? (
                     <div className="flex items-center justify-center h-64 scale-75"><LogoReveal /></div>
                 ) : (
