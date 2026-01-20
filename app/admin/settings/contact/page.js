@@ -16,14 +16,15 @@ import {
     Twitter, 
     Instagram, 
     Youtube, 
-    MessageCircle 
+    MessageCircle,
+    Send 
 } from 'lucide-react';
 
 export default function ContactSettingsPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
-    // Initial State - Defined explicitly to avoid 'undefined' errors
+    // Initial State
     const [data, setData] = useState({
         address: '',
         email: '',
@@ -32,21 +33,21 @@ export default function ContactSettingsPage() {
         twitter: '',
         instagram: '',
         youtube: '',
-        whatsapp: ''
+        whatsapp: '',
+        telegram: '' // Added Telegram
     });
 
     // 1. Fetch Existing Data
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                if (!db) return; // Safety check
+                if (!db) return; 
 
                 const docRef = doc(db, "general_settings", "contact_info");
                 const docSnap = await getDoc(docRef);
                 
                 if (docSnap.exists()) {
                     const savedData = docSnap.data();
-                    // Explicitly map fields to ensure state integrity
                     setData({
                         address: savedData.address || '',
                         email: savedData.email || '',
@@ -55,7 +56,8 @@ export default function ContactSettingsPage() {
                         twitter: savedData.twitter || '',
                         instagram: savedData.instagram || '',
                         youtube: savedData.youtube || '',
-                        whatsapp: savedData.whatsapp || ''
+                        whatsapp: savedData.whatsapp || '',
+                        telegram: savedData.telegram || '' // Map Telegram
                     });
                 }
             } catch (error) {
@@ -173,7 +175,7 @@ export default function ContactSettingsPage() {
                 {/* 2. Social Media Section */}
                 <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
                     <h3 className="font-bold text-lg text-brand-brown-dark mb-6 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <MapPin className="w-5 h-5 text-brand-gold" /> Social Media Links
+                        <MessageCircle className="w-5 h-5 text-brand-gold" /> Social Media Links
                     </h3>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -233,8 +235,8 @@ export default function ContactSettingsPage() {
                                 <Youtube className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
                             </div>
                         </div>
-                        <div className="md:col-span-2">
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">WhatsApp Channel/Group</label>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">WhatsApp Channel</label>
                             <div className="relative">
                                 <input 
                                     type="url" 
@@ -245,6 +247,20 @@ export default function ContactSettingsPage() {
                                     placeholder="https://wa.me/..." 
                                 />
                                 <MessageCircle className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Telegram Channel</label>
+                            <div className="relative">
+                                <input 
+                                    type="url" 
+                                    name="telegram" 
+                                    value={data.telegram || ''} 
+                                    onChange={handleChange} 
+                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50" 
+                                    placeholder="https://t.me/..." 
+                                />
+                                <Send className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
                             </div>
                         </div>
                     </div>
