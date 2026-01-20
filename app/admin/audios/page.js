@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -10,13 +10,63 @@ import { collection, query, orderBy, onSnapshot, deleteDoc, doc, writeBatch, whe
 // Global Modal Context
 import { useModal } from '@/context/ModalContext';
 // Custom Loader
-import Loader from '@/components/Loader'; 
+import LogoReveal from '@/components/logo-reveal'; 
 
 import { 
     PlusCircle, Search, Edit, Trash2, Play, Music, Download, 
     ListMusic, Loader2, Filter, X, ArrowUpDown, CalendarClock, 
-    Info, ChevronRight, AlertTriangle
+    Info, ChevronRight, AlertTriangle, ChevronDown, Check
 } from 'lucide-react';
+
+// --- CUSTOM DROPDOWN COMPONENT (Internal) ---
+const CustomSelect = ({ options, value, onChange, placeholder, icon: Icon, className }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const selectedOption = options.find(opt => opt.value === value);
+
+    return (
+        <div className={`relative ${className || ''}`} ref={dropdownRef}>
+            <div 
+                onClick={() => setIsOpen(!isOpen)}
+                className={`w-full pl-3 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm flex justify-between items-center cursor-pointer transition-all hover:border-brand-gold/50 ${isOpen ? 'ring-2 ring-brand-gold/20 border-brand-gold' : ''}`}
+            >
+                <div className="flex items-center gap-2 overflow-hidden">
+                    {Icon && <Icon className="w-4 h-4 text-brand-gold flex-shrink-0" />}
+                    <span className={`truncate ${!selectedOption ? 'text-gray-500' : 'text-gray-700 font-medium'}`}>
+                        {selectedOption ? selectedOption.label : placeholder}
+                    </span>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+            </div>
+
+            {isOpen && (
+                <div className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 min-w-[140px]">
+                    {options.map((opt) => (
+                        <div 
+                            key={opt.value}
+                            onClick={() => { onChange(opt.value); setIsOpen(false); }}
+                            className={`px-4 py-3 text-sm cursor-pointer hover:bg-brand-sand/10 flex justify-between items-center ${value === opt.value ? 'bg-brand-sand/20 text-brand-brown-dark font-bold' : 'text-gray-600'}`}
+                        >
+                            {opt.label}
+                            {value === opt.value && <Check className="w-3 h-3 text-brand-gold" />}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
 
 export default function ManageAudiosPage() {
     const router = useRouter();
@@ -108,6 +158,8 @@ export default function ManageAudiosPage() {
     };
 
     const filteredContent = getProcessedContent();
+    const totalItems = filteredContent.length;
+
     // 3. ACTIONS
     const handleDelete = (id, type) => {
         const message = type === 'series' 
@@ -123,7 +175,10 @@ export default function ManageAudiosPage() {
             onConfirm: async () => {
                 try {
                     if (type === 'audio') await deleteDoc(doc(db, "audios", id));
-                    else await deleteDoc(doc(db, "audio_series", id));
+                    else {
+                        await deleteDoc(doc(db, "audio_series", id));
+                        setSelectedSeries(null); // Close modal if open
+                    }
                     
                     showSuccess({ title: "Deleted!", message: "Item deleted successfully.", confirmText: "Okay" });
                 } catch (error) {
@@ -203,16 +258,23 @@ export default function ManageAudiosPage() {
             confirmText: "Close"
         });
     };
+
+    const categoryOptions = [
+        { value: "All", label: "All Categories" },
+        { value: "English", label: "English" },
+        { value: "Hausa", label: "Hausa" },
+        { value: "Arabic", label: "Arabic" }
+    ];
 return (
-        <div className="space-y-6 relative">
+        <div className="space-y-6 relative max-w-7xl mx-auto pb-12">
 
             {/* --- SERIES DETAILS MODAL --- */}
             {selectedSeries && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-brown-dark/60 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
                         <div className="p-6 border-b border-gray-100 flex justify-between items-start bg-gray-50/50">
                             <div className="flex gap-4">
-                                <div className="relative w-24 aspect-square rounded-lg overflow-hidden bg-gray-200 shadow-sm border border-white">
+                                <div className="relative w-24 aspect-square rounded-lg overflow-hidden bg-gray-200 shadow-sm border border-white flex-shrink-0">
                                     <Image src={selectedSeries.cover || "/fallback.webp"} alt="Cover" fill className="object-cover" />
                                 </div>
                                 <div dir={getDir(selectedSeries.title)}>
@@ -227,16 +289,16 @@ return (
                                     </div>
                                 </div>
                             </div>
-                            <button onClick={() => setSelectedSeries(null)} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+                            <button onClick={() => setSelectedSeries(null)} className="p-2 hover:bg-gray-200 rounded-full transition-colors flex-shrink-0">
                                 <X className="w-5 h-5 text-gray-500" />
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-white">
                             {audios.filter(a => a.series === selectedSeries.title).length > 0 ? (
                                 audios.filter(a => a.series === selectedSeries.title).map((track, idx) => (
                                     <div key={track.id} className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl border border-transparent hover:border-gray-100 transition-all group">
-                                        <span className="text-xs font-bold text-gray-300 w-6">{idx + 1}</span>
+                                        <span className="text-xs font-bold text-gray-300 w-6 text-center">{idx + 1}</span>
                                         <div className="w-10 h-10 bg-brand-gold/10 text-brand-gold rounded-full flex items-center justify-center flex-shrink-0">
                                             <Music className="w-4 h-4" />
                                         </div>
@@ -251,7 +313,7 @@ return (
                                     </div>
                                 ))
                             ) : (
-                                <div className="text-center py-10 text-gray-400">
+                                <div className="text-center py-10 text-gray-400 border-2 border-dashed border-gray-100 rounded-xl">
                                     <ListMusic className="w-10 h-10 mx-auto mb-2 opacity-20" />
                                     <p className="text-sm">No tracks in this series yet.</p>
                                 </div>
@@ -277,13 +339,17 @@ return (
                     <h1 className="font-agency text-3xl text-brand-brown-dark">Audio Manager</h1>
                     <p className="font-lato text-sm text-gray-500">Upload and manage MP3 lectures, sermons, and series.</p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-2 h-10">
+                    <div className="bg-white border border-gray-100 px-4 rounded-xl text-center shadow-sm min-w-[80px] flex flex-col justify-center h-full">
+                        <span className="block text-lg font-bold text-brand-gold leading-none">{totalItems}</span>
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wider leading-none mt-0.5">Total</span>
+                    </div>
                     {activeTab === 'audios' ? (
-                        <Link href="/admin/audios/new" className="flex items-center gap-2 px-5 py-2.5 bg-brand-gold text-white rounded-xl text-sm font-bold hover:bg-brand-brown-dark transition-colors shadow-md">
+                        <Link href="/admin/audios/new" className="flex items-center justify-center gap-2 px-5 bg-brand-gold text-white rounded-xl text-sm font-bold hover:bg-brand-brown-dark transition-colors shadow-md h-full">
                             <PlusCircle className="w-4 h-4" /> Upload Audio
                         </Link>
                     ) : (
-                        <Link href="/admin/audios/series/new" className="flex items-center gap-2 px-5 py-2.5 bg-brand-brown-dark text-white rounded-xl text-sm font-bold hover:bg-brand-gold transition-colors shadow-md">
+                        <Link href="/admin/audios/series/new" className="flex items-center justify-center gap-2 px-5 bg-brand-brown-dark text-white rounded-xl text-sm font-bold hover:bg-brand-gold transition-colors shadow-md h-full">
                             <ListMusic className="w-4 h-4" /> Create Series
                         </Link>
                     )}
@@ -291,49 +357,40 @@ return (
             </div>
 
             {/* TABS & FILTERS */}
-            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-                <div className="flex bg-gray-100 p-1 rounded-lg w-full md:w-auto">
-                    <button onClick={() => { setActiveTab('audios'); setSearchTerm(''); }} className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'audios' ? 'bg-white text-brand-brown-dark shadow-sm' : 'text-gray-500 hover:text-brand-brown-dark'}`}>
+            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm relative z-20">
+                <div className="flex bg-gray-50 p-1 rounded-xl w-full md:w-auto overflow-x-auto">
+                    <button onClick={() => { setActiveTab('audios'); setSearchTerm(''); }} className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'audios' ? 'bg-white text-brand-brown-dark shadow-sm' : 'text-gray-500 hover:text-brand-brown-dark'}`}>
                         <Music className="w-4 h-4" /> All Tracks
                     </button>
-                    <button onClick={() => { setActiveTab('series'); setSearchTerm(''); }} className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'series' ? 'bg-white text-brand-brown-dark shadow-sm' : 'text-gray-500 hover:text-brand-brown-dark'}`}>
+                    <button onClick={() => { setActiveTab('series'); setSearchTerm(''); }} className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'series' ? 'bg-white text-brand-brown-dark shadow-sm' : 'text-gray-500 hover:text-brand-brown-dark'}`}>
                         <ListMusic className="w-4 h-4" /> Series & Sets
                     </button>
                 </div>
 
-                <div className="flex flex-col w-full xl:w-auto gap-3">
-                    <div className="flex flex-row gap-2 w-full">
-                        <div className="relative flex-1 md:flex-none">
-                            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-gold" />
-                            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-full md:w-40 pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer">
-                                <option value="All">All</option>
-                                <option value="English">English</option>
-                                <option value="Hausa">Hausa</option>
-                                <option value="Arabic">Arabic</option>
-                            </select>
-                        </div>
-                        <button onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors flex-1 md:flex-none">
-                            <ArrowUpDown className="w-4 h-4" />
-                            <span className="hidden sm:inline">{sortOrder === 'desc' ? 'Newest' : 'Oldest'}</span>
-                        </button>
+                <div className="flex flex-col sm:flex-row w-full xl:w-auto gap-3">
+                    <div className="relative flex-1 sm:flex-none sm:w-40 min-w-[160px]">
+                        <CustomSelect options={categoryOptions} value={categoryFilter} onChange={setCategoryFilter} icon={Filter} placeholder="Category" />
                     </div>
-                    <div className="relative w-full md:w-72">
+                    <button onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors">
+                        <ArrowUpDown className="w-4 h-4" /> <span className="hidden sm:inline">{sortOrder === 'desc' ? 'Newest' : 'Oldest'}</span>
+                    </button>
+                    <div className="relative flex-grow sm:w-64">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input type="text" placeholder={`Search ${activeTab}...`} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all" />
+                        <input type="text" placeholder={`Search ${activeTab}...`} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all" />
                         {searchTerm && <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500"><X className="w-4 h-4" /></button>}
                     </div>
                 </div>
             </div>
 
             {/* CONTENT AREA */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[400px]">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[400px] relative z-10">
                 {isLoading ? (
-                    <div className="flex items-center justify-center h-64"><Loader /></div>
+                    <div className="flex items-center justify-center h-64 scale-75"><LogoReveal /></div>
                 ) : (
                     <>
                         {activeTab === 'audios' && (
                             <div className="overflow-x-auto">
-                                <table className="w-full text-left">
+                                <table className="w-full text-left whitespace-nowrap">
                                     <thead className="bg-gray-50 border-b border-gray-100">
                                         <tr>
                                             <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Title / Speaker</th>
@@ -344,7 +401,7 @@ return (
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
                                         {filteredContent.length === 0 ? (
-                                            <tr><td colSpan="5" className="px-6 py-12 text-center text-gray-400">No tracks found.</td></tr>
+                                            <tr><td colSpan="4" className="px-6 py-20 text-center text-gray-400">No tracks found.</td></tr>
                                         ) : (
                                             filteredContent.map((audio) => (
                                                 <tr key={audio.id} className="hover:bg-gray-50 transition-colors group">
@@ -373,7 +430,7 @@ return (
                                                         {audio.series ? <span className="text-xs font-bold text-brand-brown bg-brand-sand/30 px-2 py-1 rounded-md">{audio.series}</span> : <span className="text-xs text-gray-400">-</span>}
                                                     </td>
                                                     <td className="px-6 py-4 text-right">
-                                                        <div className="flex justify-end gap-2">
+                                                        <div className="flex justify-end gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <button onClick={() => handleQuickView(audio)} className="p-2 text-gray-400 hover:text-brand-gold hover:bg-brand-sand rounded-lg md:hidden"><Info className="w-4 h-4" /></button>
                                                             <a href={audio.audioUrl} target="_blank" download className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg"><Download className="w-4 h-4" /></a>
                                                             <button onClick={() => handleEdit(audio.id, 'audio')} className="p-2 text-gray-400 hover:text-brand-gold hover:bg-brand-sand rounded-lg"><Edit className="w-4 h-4" /></button>
@@ -398,9 +455,9 @@ return (
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                         {filteredContent.map((s) => (
-                                            <div key={s.id} onClick={() => setSelectedSeries(s)} className="group border border-gray-100 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:border-brand-gold/30 cursor-pointer">
+                                            <div key={s.id} onClick={() => setSelectedSeries(s)} className="group border border-gray-100 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:border-brand-gold/30 cursor-pointer bg-white">
                                                 <div className="relative w-full aspect-square bg-gray-100">
-                                                    <Image src={s.cover || "/fallback.webp"} alt={s.title} fill className="object-cover" />
+                                                    <Image src={s.cover || "/fallback.webp"} alt={s.title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
                                                     <div className="absolute bottom-2 right-2 bg-black/80 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
                                                         <Music className="w-3 h-3" /> {s.realCount} Tracks
                                                     </div>
@@ -415,7 +472,7 @@ return (
                                                 </div>
                                                 <div className="p-4" dir={getDir(s.title)}>
                                                     <div className="flex justify-between items-start mb-2" dir="ltr">
-                                                        <span className="text-[10px] text-gray-400 font-bold flex items-center gap-1"><CalendarClock className="w-3 h-3" /> {formatUploadTime(s.createdAt)}</span>
+                                                        <span className="text-[10px] text-gray-400 font-bold flex items-center gap-1"><CalendarClock className="w-3 h-3" /> {formatUploadTime(s.createdAt).split('•')[0]}</span>
                                                         <button onClick={(e) => { e.stopPropagation(); handleDelete(s.id, 'series'); }} className="text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
                                                     </div>
                                                     <h3 className={`font-agency text-lg text-brand-brown-dark leading-tight line-clamp-2 ${getDir(s.title) === 'rtl' ? 'font-tajawal font-bold' : ''}`}>{s.title}</h3>
