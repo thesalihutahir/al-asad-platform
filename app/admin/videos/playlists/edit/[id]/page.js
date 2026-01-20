@@ -8,15 +8,17 @@ import { useRouter, useParams } from 'next/navigation';
 import { db, storage } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-// Global Modal Context
-import { useModal } from '@/context/ModalContext';
+// Context & Components
+import { useModal } from '@/context/ModalContext'; 
+import CustomSelect from '@/components/CustomSelect'; 
 
 import { 
     ArrowLeft, 
     Save, 
     X, 
     Image as ImageIcon, 
-    Loader2
+    Loader2,
+    Globe
 } from 'lucide-react';
 
 export default function EditPlaylistPage() {
@@ -34,7 +36,7 @@ export default function EditPlaylistPage() {
 
     const [formData, setFormData] = useState({
         title: '',
-        description: '', // NEW: Description Field
+        description: '', 
         category: 'English',
         cover: '' 
     });
@@ -42,6 +44,13 @@ export default function EditPlaylistPage() {
     // Image File State
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+
+    // Constants
+    const CATEGORY_OPTIONS = [
+        { value: 'English', label: 'English' },
+        { value: 'Hausa', label: 'Hausa' },
+        { value: 'Arabic', label: 'Arabic' }
+    ];
 
     // Helper: Auto-Detect Arabic
     const getDir = (text) => {
@@ -62,7 +71,7 @@ export default function EditPlaylistPage() {
                     const data = docSnap.data();
                     setFormData({
                         title: data.title || '',
-                        description: data.description || '', // Load Description
+                        description: data.description || '',
                         category: data.category || 'English',
                         cover: data.cover || ''
                     });
@@ -84,6 +93,11 @@ export default function EditPlaylistPage() {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    // Handler for Custom Select
+    const handleSelectChange = (name, value) => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
@@ -141,7 +155,7 @@ export default function EditPlaylistPage() {
             const playlistRef = doc(db, "video_playlists", id);
             await updateDoc(playlistRef, {
                 title: formData.title.trim(),
-                description: formData.description.trim(), // Save Description
+                description: formData.description.trim(),
                 category: formData.category,
                 cover: coverUrl,
                 updatedAt: new Date().toISOString()
@@ -181,7 +195,6 @@ export default function EditPlaylistPage() {
     };
 
     if (isLoading) return <div className="h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 text-brand-gold animate-spin" /></div>;
-
     return (
         <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto pb-12">
 
@@ -216,7 +229,7 @@ export default function EditPlaylistPage() {
                     )}
                 </div>
 
-                {/* NEW: Description Field */}
+                {/* Description Field */}
                 <div>
                     <label className="block text-xs font-bold text-brand-brown mb-1">Description (Optional)</label>
                     <textarea 
@@ -232,20 +245,17 @@ export default function EditPlaylistPage() {
 
                 {/* Category (Language) */}
                 <div>
-                    <label className="block text-xs font-bold text-brand-brown mb-1">Category (Language)</label>
-                    <select 
-                        name="category"
+                    <CustomSelect 
+                        label="Category (Language)"
+                        options={CATEGORY_OPTIONS}
                         value={formData.category}
-                        onChange={handleChange}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
-                    >
-                        <option>English</option>
-                        <option>Hausa</option>
-                        <option>Arabic</option>
-                    </select>
+                        onChange={(val) => handleSelectChange('category', val)}
+                        icon={Globe}
+                        placeholder="Select Language"
+                    />
                 </div>
 
-                {/* Cover Image Upload */}
+                {/* Cover Image Upload (Firebase) */}
                 <div>
                     <label className="block text-xs font-bold text-brand-brown mb-2">Cover Image</label>
                     <div className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center transition-colors ${
@@ -273,6 +283,7 @@ export default function EditPlaylistPage() {
                                     <ImageIcon className="w-6 h-6" />
                                 </div>
                                 <p className="text-sm text-gray-500 font-bold">Click to Upload Cover</p>
+                                <p className="text-[10px] text-gray-400 mt-1">Recommended: 16:9 Aspect Ratio</p>
                                 <input 
                                     type="file" 
                                     accept="image/*"
