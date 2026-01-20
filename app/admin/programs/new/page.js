@@ -8,18 +8,21 @@ import { useRouter } from 'next/navigation';
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-// Context
+// Context & Components
 import { useModal } from '@/context/ModalContext';
+import CustomSelect from '@/components/CustomSelect'; // Import CustomSelect
 
 import { 
     ArrowLeft, 
     Save, 
-    X,
-    MapPin,
-    Users,
-    Loader2,
+    X, 
+    MapPin, 
+    Users, 
+    Loader2, 
     Image as ImageIcon,
-    AlertTriangle
+    AlertTriangle,
+    Layers, // New Icon
+    Activity // New Icon
 } from 'lucide-react';
 
 export default function CreateProgramPage() {
@@ -33,7 +36,7 @@ export default function CreateProgramPage() {
 
     const [formData, setFormData] = useState({
         title: '',
-        category: 'Educational Support', // Default to first pillar
+        category: 'Educational Support', 
         status: 'Active',
         location: '',
         beneficiaries: '',
@@ -44,9 +47,28 @@ export default function CreateProgramPage() {
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
 
+    // Options Data
+    const categoryOptions = [
+        "Educational Support", 
+        "Community Development", 
+        "Training & Innovation"
+    ];
+
+    const statusOptions = [
+        "Upcoming", 
+        "Active", 
+        "Completed", 
+        "Paused"
+    ];
+
     // Handlers
     const handleChange = (e) => {
         const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    // Specific handler for CustomSelect
+    const handleSelectChange = (name, value) => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
@@ -70,7 +92,7 @@ export default function CreateProgramPage() {
             alert("Title and Short Summary are required.");
             return;
         }
-        setShowConfirm(true); // Open Confirmation Modal
+        setShowConfirm(true); 
     };
 
     // Final Execution
@@ -81,12 +103,11 @@ export default function CreateProgramPage() {
         try {
             let coverUrl = ""; 
 
-            // 1. Upload Cover Image (if selected)
+            // 1. Upload Cover Image
             if (imageFile) {
                 const storageRef = ref(storage, `programs/covers/${Date.now()}_${imageFile.name}`);
                 const uploadTask = uploadBytesResumable(storageRef, imageFile);
 
-                // Wait for upload to complete
                 await new Promise((resolve, reject) => {
                     uploadTask.on('state_changed', 
                         (snapshot) => {
@@ -101,7 +122,7 @@ export default function CreateProgramPage() {
                 coverUrl = await getDownloadURL(uploadTask.snapshot.ref);
             }
 
-            // 2. Save Program Data
+            // 2. Save Data
             await addDoc(collection(db, "programs"), {
                 ...formData,
                 coverImage: coverUrl,
@@ -114,7 +135,6 @@ export default function CreateProgramPage() {
                 confirmText: "View Programs"
             });
 
-            // Redirect after slight delay
             setTimeout(() => {
                 router.push('/admin/programs');
             }, 2000);
@@ -211,34 +231,23 @@ export default function CreateProgramPage() {
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
                         <h3 className="font-agency text-xl text-brand-brown-dark border-b border-gray-100 pb-2">Classification</h3>
 
-                        <div>
-                            <label className="block text-xs font-bold text-brand-brown mb-1">Program Type (Pillar)</label>
-                            <select 
-                                name="category"
-                                value={formData.category}
-                                onChange={handleChange}
-                                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
-                            >
-                                <option value="Educational Support">Educational Support</option>
-                                <option value="Community Development">Community Development</option>
-                                <option value="Training & Innovation">Training & Innovation</option>
-                            </select>
-                        </div>
+                        <CustomSelect 
+                            label="Program Type (Pillar)"
+                            options={categoryOptions}
+                            value={formData.category}
+                            onChange={(val) => handleSelectChange('category', val)}
+                            icon={Layers}
+                            placeholder="Select Category"
+                        />
 
-                        <div>
-                            <label className="block text-xs font-bold text-brand-brown mb-1">Current Status</label>
-                            <select 
-                                name="status"
-                                value={formData.status}
-                                onChange={handleChange}
-                                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
-                            >
-                                <option value="Upcoming">Coming Soon / Upcoming</option>
-                                <option value="Active">Active / Ongoing</option>
-                                <option value="Completed">Ended / Completed</option>
-                                <option value="Paused">Halted / Paused</option>
-                            </select>
-                        </div>
+                        <CustomSelect 
+                            label="Current Status"
+                            options={statusOptions}
+                            value={formData.status}
+                            onChange={(val) => handleSelectChange('status', val)}
+                            icon={Activity}
+                            placeholder="Select Status"
+                        />
                     </div>
 
                     {/* Impact Metrics */}
