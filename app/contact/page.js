@@ -21,11 +21,20 @@ export default function ContactPage() {
     // Dynamic Data
     const [teamLead, setTeamLead] = useState(null);
     const [teamMembers, setTeamMembers] = useState([]);
+    
+    // Contact Info State (Includes new Map & Telegram fields)
     const [contactInfo, setContactInfo] = useState({
         address: 'Loading address...',
         email: 'Loading email...',
         phone: 'Loading phone...',
-        facebook: '', twitter: '', instagram: '', youtube: '', whatsapp: ''
+        facebook: '', 
+        twitter: '', 
+        instagram: '', 
+        youtube: '', 
+        whatsapp: '', 
+        telegram: '', // Added Telegram
+        mapLatitude: '12.970758', // Default: Katsina
+        mapLongitude: '7.636398'  // Default: Katsina
     });
 
     // Form State
@@ -46,7 +55,14 @@ export default function ContactPage() {
                 // A. Fetch Contact Settings
                 const infoSnap = await getDoc(doc(db, "general_settings", "contact_info"));
                 if (infoSnap.exists()) {
-                    setContactInfo(infoSnap.data());
+                    const data = infoSnap.data();
+                    setContactInfo(prev => ({
+                        ...prev,
+                        ...data,
+                        // Ensure map coordinates exist, else fallback to defaults
+                        mapLatitude: data.mapLatitude || '12.970758',
+                        mapLongitude: data.mapLongitude || '7.636398'
+                    }));
                 }
 
                 // B. Fetch Team Members
@@ -112,7 +128,11 @@ export default function ContactPage() {
         { icon: Instagram, href: contactInfo.instagram },
         { icon: Youtube, href: contactInfo.youtube },
         { icon: MessageCircle, href: contactInfo.whatsapp },
-    ].filter(link => link.href && link.href.length > 5); 
+        { icon: Send, href: contactInfo.telegram }, // Added Telegram Icon
+    ].filter(link => link.href && link.href.length > 2); 
+
+    // Construct Dynamic Map URL
+    const mapEmbedUrl = `https://maps.google.com/maps?q=${contactInfo.mapLatitude},${contactInfo.mapLongitude}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
 
     return (
         <div className="min-h-screen flex flex-col bg-white font-lato">
@@ -215,7 +235,7 @@ export default function ContactPage() {
                                 </div>
                             </div>
 
-                            {/* Office Hours / Response Time Note */}
+                            {/* Office Hours */}
                             <div className="p-8 rounded-3xl border border-gray-100 bg-white shadow-lg flex items-start gap-5">
                                 <div className="w-12 h-12 rounded-full bg-brand-sand/30 text-brand-brown-dark flex items-center justify-center flex-shrink-0">
                                     <Clock className="w-6 h-6" />
@@ -232,7 +252,7 @@ export default function ContactPage() {
                             </div>
                         </div>
 
-                        {/* RIGHT: Contact Form (Functional) */}
+                        {/* RIGHT: Contact Form */}
                         <div className="flex-1 bg-white rounded-3xl shadow-2xl p-8 md:p-12 border-t-8 border-brand-gold h-fit relative">
                             <h2 className="font-agency text-3xl md:text-4xl text-brand-brown-dark mb-6">
                                 Send us a Message
@@ -240,53 +260,21 @@ export default function ContactPage() {
                             <form onSubmit={handleFormSubmit} className="space-y-6">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Full Name</label>
-                                    <input 
-                                        type="text" 
-                                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:border-brand-gold" 
-                                        placeholder="Enter your name" 
-                                        value={formData.fullName}
-                                        onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                                        required
-                                    />
+                                    <input type="text" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:border-brand-gold" placeholder="Enter your name" value={formData.fullName} onChange={(e) => setFormData({...formData, fullName: e.target.value})} required />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Email Address</label>
-                                    <input 
-                                        type="email" 
-                                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:border-brand-gold" 
-                                        placeholder="Enter your email" 
-                                        value={formData.email}
-                                        onChange={(e) => setFormData({...formData, email: e.target.value})}
-                                        required
-                                    />
+                                    <input type="email" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:border-brand-gold" placeholder="Enter your email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required />
                                 </div>
                                 
-                                {/* Custom Select for Subject */}
-                                <CustomSelect 
-                                    label="Subject"
-                                    options={subjects}
-                                    value={formData.subject}
-                                    onChange={(val) => setFormData({...formData, subject: val})}
-                                    placeholder="Select Subject"
-                                />
+                                <CustomSelect label="Subject" options={subjects} value={formData.subject} onChange={(val) => setFormData({...formData, subject: val})} placeholder="Select Subject" />
 
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Message</label>
-                                    <textarea 
-                                        rows="5" 
-                                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:border-brand-gold resize-none" 
-                                        placeholder="How can we help you?"
-                                        value={formData.message}
-                                        onChange={(e) => setFormData({...formData, message: e.target.value})}
-                                        required
-                                    ></textarea>
+                                    <textarea rows="5" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:border-brand-gold resize-none" placeholder="How can we help you?" value={formData.message} onChange={(e) => setFormData({...formData, message: e.target.value})} required></textarea>
                                 </div>
                                 
-                                <button 
-                                    type="submit" 
-                                    disabled={isSubmitting}
-                                    className="w-full py-4 bg-brand-brown-dark text-white font-agency text-xl rounded-xl hover:bg-brand-gold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
-                                >
+                                <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-brand-brown-dark text-white font-agency text-xl rounded-xl hover:bg-brand-gold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
                                     {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Send Message <Send className="w-4 h-4" /></>}
                                 </button>
                             </form>
@@ -297,61 +285,39 @@ export default function ContactPage() {
                 {/* 3. DYNAMIC MEDIA TEAM */}
                 <section className="px-6 md:px-12 lg:px-24 mb-16 md:mb-24 max-w-7xl mx-auto">
                     <div className="text-center mb-12 md:mb-16">
-                        <h2 className="font-agency text-3xl md:text-5xl text-brand-brown-dark mb-3">
-                            Meet Our Media Team
-                        </h2>
+                        <h2 className="font-agency text-3xl md:text-5xl text-brand-brown-dark mb-3">Meet Our Media Team</h2>
                         <div className="w-20 h-1.5 bg-brand-gold mx-auto rounded-full mb-6"></div>
-                        <p className="font-lato text-brand-brown text-base md:text-xl max-w-2xl mx-auto">
-                            The dedicated faces behind our digital presence, ensuring the message of Al-Asad Foundation reaches the world with excellence.
-                        </p>
+                        <p className="font-lato text-brand-brown text-base md:text-xl max-w-2xl mx-auto">The dedicated faces behind our digital presence, ensuring the message of Al-Asad Foundation reaches the world with excellence.</p>
                     </div>
 
                     {loading ? (
                         <div className="flex justify-center py-12"><Loader2 className="w-10 h-10 animate-spin text-brand-gold" /></div>
                     ) : (
                         <>
-                            {/* 3a. TEAM LEAD */}
+                            {/* Team Lead */}
                             {teamLead && (
                                 <div className="flex justify-center mb-12 md:mb-16">
                                     <div className="group flex flex-col items-center w-full max-w-[280px]">
                                         <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden mb-6 shadow-2xl border-4 border-brand-gold bg-brand-sand transform group-hover:scale-105 transition-transform duration-500">
-                                            <Image 
-                                                src={teamLead.image || "/fallback.webp"} 
-                                                alt={teamLead.name} 
-                                                fill 
-                                                className="object-cover" 
-                                            />
+                                            <Image src={teamLead.image || "/fallback.webp"} alt={teamLead.name} fill className="object-cover" />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
                                         </div>
-                                        <h3 className="font-agency text-3xl text-brand-brown-dark leading-none mb-2">
-                                            {teamLead.name}
-                                        </h3>
-                                        <p className="font-lato text-sm text-brand-gold font-bold uppercase tracking-widest bg-brand-gold/10 px-4 py-1.5 rounded-full">
-                                            {teamLead.role}
-                                        </p>
+                                        <h3 className="font-agency text-3xl text-brand-brown-dark leading-none mb-2">{teamLead.name}</h3>
+                                        <p className="font-lato text-sm text-brand-gold font-bold uppercase tracking-widest bg-brand-gold/10 px-4 py-1.5 rounded-full">{teamLead.role}</p>
                                     </div>
                                 </div>
                             )}
 
-                            {/* 3b. REST OF THE TEAM */}
+                            {/* Team Members */}
                             {teamMembers.length > 0 ? (
                                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8">
                                     {teamMembers.map((member) => (
                                         <div key={member.id} className="group flex flex-col items-center">
                                             <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden mb-4 shadow-md bg-brand-sand transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-2">
-                                                <Image 
-                                                    src={member.image || "/fallback.webp"} 
-                                                    alt={member.name} 
-                                                    fill 
-                                                    className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500" 
-                                                />
+                                                <Image src={member.image || "/fallback.webp"} alt={member.name} fill className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                                             </div>
-                                            <h3 className="font-agency text-lg md:text-xl text-brand-brown-dark leading-none text-center mb-1">
-                                                {member.name}
-                                            </h3>
-                                            <p className="font-lato text-[10px] md:text-xs text-brand-brown font-bold uppercase tracking-wider text-center opacity-70">
-                                                {member.role}
-                                            </p>
+                                            <h3 className="font-agency text-lg md:text-xl text-brand-brown-dark leading-none text-center mb-1">{member.name}</h3>
+                                            <p className="font-lato text-[10px] md:text-xs text-brand-brown font-bold uppercase tracking-wider text-center opacity-70">{member.role}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -362,10 +328,10 @@ export default function ContactPage() {
                     )}
                 </section>
 
-                {/* 4. LIVE GOOGLE MAP */}
+                {/* 4. DYNAMIC GOOGLE MAP */}
                 <section className="w-full h-80 md:h-[500px] bg-gray-100 relative grayscale hover:grayscale-0 transition-all duration-700">
                     <iframe 
-                        src="https://maps.google.com/maps?q=12.970758,7.636398&hl=en&z=17&output=embed"
+                        src={mapEmbedUrl} 
                         width="100%" 
                         height="100%" 
                         style={{ border: 0 }} 
@@ -375,7 +341,6 @@ export default function ContactPage() {
                         className="absolute inset-0"
                     ></iframe>
                     
-                    {/* Overlay Label */}
                     <div className="absolute top-6 left-1/2 -translate-x-1/2 md:left-24 md:translate-x-0 pointer-events-none">
                         <div className="bg-white/90 backdrop-blur-md px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-gray-100">
                             <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
@@ -385,7 +350,6 @@ export default function ContactPage() {
                 </section>
 
             </main>
-
             <Footer />
         </div>
     );
