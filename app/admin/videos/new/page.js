@@ -71,6 +71,13 @@ export default function AddVideoPage() {
         return arabicPattern.test(text) ? 'rtl' : 'ltr';
     };
 
+    // Helper: Format Date for Preview
+    const formatDate = (dateString) => {
+        if (!dateString) return 'Date';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
+
     // 1. Fetch Playlists on Mount
     useEffect(() => {
         const fetchPlaylists = async () => {
@@ -227,7 +234,6 @@ export default function AddVideoPage() {
                     </Link>
                     <button 
                         type="submit" 
-                        // UPDATED: Disabled logic includes checking for title
                         disabled={!isValid || isSubmitting || !!duplicateWarning || !formData.title.trim()}
                         className={`flex items-center gap-2 px-6 py-2.5 font-bold rounded-xl transition-colors shadow-md ${
                             isValid && !duplicateWarning && formData.title.trim()
@@ -369,6 +375,7 @@ export default function AddVideoPage() {
                         </h3>
 
                         <div className="bg-black rounded-xl overflow-hidden shadow-lg border border-gray-800 transform transition-all hover:scale-[1.02]">
+                            {/* Video/Thumbnail Area */}
                             <div className="relative w-full aspect-video group">
                                 {isValid && videoId ? (
                                     isPlayingPreview ? (
@@ -408,6 +415,40 @@ export default function AddVideoPage() {
                                 )}
                             </div>
                         </div>
+
+                        {/* Updated Info Area - Now visible */}
+                        <div className="p-5 border border-gray-100 rounded-b-xl bg-white" dir={getDir(formData.title)}>
+                            <div className="flex justify-between items-start mb-2" dir="ltr">
+                                <div className="flex gap-2">
+                                    <span className="text-[10px] font-bold text-brand-brown-dark bg-brand-sand px-2 py-1 rounded uppercase tracking-wider">
+                                        {formData.category}
+                                    </span>
+                                    {formData.playlist && (
+                                        <span className="text-[10px] font-bold text-brand-gold border border-brand-gold/30 px-2 py-1 rounded uppercase tracking-wider">
+                                            Series
+                                        </span>
+                                    )}
+                                </div>
+                                <span className="text-[10px] text-gray-400 font-lato">
+                                    {formatDate(formData.date)}
+                                </span>
+                            </div>
+
+                            <h3 className={`font-agency text-xl text-brand-brown-dark mb-2 leading-tight ${getDir(formData.title) === 'rtl' ? 'font-tajawal font-bold' : ''}`}>
+                                {formData.title || "Video Title Placeholder"}
+                            </h3>
+
+                            {formData.playlist && (
+                                <p className="text-xs text-brand-gold font-bold uppercase tracking-wide mb-2" dir="ltr">
+                                    Part of: {formData.playlist}
+                                </p>
+                            )}
+
+                            <p className={`text-sm text-brand-brown line-clamp-2 opacity-80 ${getDir(formData.description) === 'rtl' ? 'font-arabic' : 'font-lato'}`}>
+                                {formData.description || "The description you enter will appear here, giving users a quick summary of the lecture content."}
+                            </p>
+                        </div>
+
                     </div>
 
                 </div>
