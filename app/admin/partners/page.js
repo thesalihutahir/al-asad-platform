@@ -6,14 +6,14 @@ import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 // Context
 import { useModal } from '@/context/ModalContext';
-import LogoReveal from '@/components/logo-reveal'; // UPDATED PATH
+import LogoReveal from '@/components/logo-reveal'; 
 
 import { 
     Search, 
     Trash2, 
     Loader2, 
     CheckCircle,
-    XCircle, // New Icon for Decline
+    XCircle, // New: Decline Icon
     MessageCircle,
     User,
     Mail,
@@ -24,7 +24,10 @@ import {
     X,
     AlertTriangle,
     Calendar,
-    FileText
+    FileText,
+    Phone,
+    Globe,
+    Warehouse
 } from 'lucide-react';
 
 export default function ManagePartnersPage() {
@@ -168,7 +171,7 @@ export default function ManagePartnersPage() {
             {/* TABLE */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[400px]">
                 {isLoading ? (
-                    <div className="flex items-center justify-center h-64"><LogoReveal /></div>
+                    <div className="flex items-center justify-center h-64 scale-75"><LogoReveal /></div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left whitespace-nowrap">
@@ -190,7 +193,7 @@ export default function ManagePartnersPage() {
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 bg-brand-sand/30 rounded-full flex items-center justify-center text-brand-brown-dark"><Building2 className="w-5 h-5" /></div>
-                                                    <div><span className="font-bold text-brand-brown-dark block text-sm">{p.organization}</span><span className="text-xs text-gray-400">{p.type}</span></div>
+                                                    <div><span className="font-bold text-brand-brown-dark block text-sm">{p.organization}</span><span className="text-xs text-gray-400">{p.orgType || p.type}</span></div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
@@ -254,30 +257,44 @@ export default function ManagePartnersPage() {
             {/* --- VIEW DETAILS MODAL --- */}
             {viewPartner && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
-                        <div className="bg-brand-brown-dark px-6 py-4 flex justify-between items-center text-white">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+                        
+                        {/* Header */}
+                        <div className="bg-brand-brown-dark px-6 py-4 flex justify-between items-center text-white flex-shrink-0">
                             <h3 className="font-agency text-xl">Application Details</h3>
                             <button onClick={() => setViewPartner(null)} className="p-1 hover:bg-white/10 rounded-full transition-colors"><X className="w-5 h-5" /></button>
                         </div>
-                        <div className="p-6 space-y-6">
+                        
+                        {/* Content Scrollable */}
+                        <div className="p-6 space-y-6 overflow-y-auto">
                             <div className="flex items-start gap-4">
                                 <div className="w-14 h-14 bg-brand-sand/30 rounded-full flex items-center justify-center text-brand-brown-dark text-xl font-bold flex-shrink-0">
                                     {viewPartner.organization.charAt(0)}
                                 </div>
                                 <div>
                                     <h2 className="text-xl font-bold text-gray-800">{viewPartner.organization}</h2>
-                                    <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded mt-1">{viewPartner.type}</span>
+                                    <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded mt-1 mr-2">{viewPartner.orgType}</span>
+                                    <span className="inline-block bg-brand-gold/10 text-brand-gold text-xs px-2 py-1 rounded mt-1">{viewPartner.type}</span>
                                 </div>
                             </div>
+
                             <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div className="bg-gray-50 p-3 rounded-lg"><span className="block text-gray-400 text-xs uppercase mb-1">Contact Person</span><div className="flex items-center gap-2 font-semibold text-gray-700"><User className="w-4 h-4" /> {viewPartner.contactPerson}</div></div>
                                 <div className="bg-gray-50 p-3 rounded-lg"><span className="block text-gray-400 text-xs uppercase mb-1">Email</span><div className="flex items-center gap-2 font-semibold text-gray-700 break-all"><Mail className="w-4 h-4" /> {viewPartner.email}</div></div>
+                                <div className="bg-gray-50 p-3 rounded-lg"><span className="block text-gray-400 text-xs uppercase mb-1">Phone Number</span><div className="flex items-center gap-2 font-semibold text-gray-700"><Phone className="w-4 h-4" /> {viewPartner.phone}</div></div>
+                                <div className="bg-gray-50 p-3 rounded-lg"><span className="block text-gray-400 text-xs uppercase mb-1">Country</span><div className="flex items-center gap-2 font-semibold text-gray-700"><Globe className="w-4 h-4" /> {viewPartner.country}</div></div>
                                 <div className="bg-gray-50 p-3 rounded-lg"><span className="block text-gray-400 text-xs uppercase mb-1">Submitted On</span><div className="flex items-center gap-2 font-semibold text-gray-700"><Calendar className="w-4 h-4" /> {formatDate(viewPartner.submittedAt)}</div></div>
                                 <div className="bg-gray-50 p-3 rounded-lg"><span className="block text-gray-400 text-xs uppercase mb-1">Current Status</span><div className="flex items-center gap-2 font-semibold text-brand-gold"><CheckCircle className="w-4 h-4" /> {viewPartner.status}</div></div>
                             </div>
-                            <div><span className="block text-gray-400 text-xs uppercase mb-2 flex items-center gap-1"><FileText className="w-3 h-3"/> Message / Proposal</span><div className="bg-gray-50 p-4 rounded-xl text-sm text-gray-600 leading-relaxed border border-gray-100 max-h-40 overflow-y-auto">{viewPartner.message}</div></div>
+
+                            <div>
+                                <span className="block text-gray-400 text-xs uppercase mb-2 flex items-center gap-1"><FileText className="w-3 h-3"/> Message / Proposal</span>
+                                <div className="bg-gray-50 p-4 rounded-xl text-sm text-gray-600 leading-relaxed border border-gray-100 max-h-40 overflow-y-auto">{viewPartner.message}</div>
+                            </div>
                         </div>
-                        <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex justify-end gap-2 flex-wrap">
+
+                        {/* Footer Fixed */}
+                        <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex justify-end gap-2 flex-wrap flex-shrink-0">
                             <button onClick={() => confirmAction('delete', viewPartner)} className="px-3 py-2 text-red-600 font-bold text-xs hover:bg-red-50 rounded-lg transition-colors">Delete</button>
                             {viewPartner.status === 'New' && <button onClick={() => confirmAction('update', viewPartner, 'Contacted')} className="px-3 py-2 bg-blue-600 text-white font-bold text-xs rounded-lg hover:bg-blue-700 transition-colors shadow-sm">Mark Contacted</button>}
                             
