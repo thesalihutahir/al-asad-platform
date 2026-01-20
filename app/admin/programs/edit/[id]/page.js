@@ -8,24 +8,30 @@ import { useRouter, useParams } from 'next/navigation';
 import { db, storage } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+// Context
+import { useModal } from '@/context/ModalContext';
 
 import { 
     ArrowLeft, 
     Save, 
-    X,
-    MapPin,
-    Users,
-    Loader2,
-    Image as ImageIcon
+    X, 
+    MapPin, 
+    Users, 
+    Loader2, 
+    Image as ImageIcon,
+    AlertTriangle
 } from 'lucide-react';
 
 export default function EditProgramPage() {
     const router = useRouter();
     const params = useParams();
     const id = params?.id;
+    const { showSuccess } = useModal();
 
+    // State
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [showConfirm, setShowConfirm] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
 
     const [formData, setFormData] = useState({
@@ -79,6 +85,7 @@ export default function EditProgramPage() {
         fetchData();
     }, [id, router]);
 
+    // Handlers
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -97,14 +104,20 @@ export default function EditProgramPage() {
         // Revert to existing if available, else null
         setImagePreview(existingCoverUrl || null);
     };
-const handleSubmit = async (e) => {
-        e.preventDefault();
 
+    // Pre-Submit Validation
+    const handlePreSubmit = (e) => {
+        e.preventDefault();
         if (!formData.title || !formData.excerpt) {
             alert("Title and Short Summary are required.");
             return;
         }
+        setShowConfirm(true);
+    };
 
+    // Final Execution
+    const executeUpdate = async () => {
+        setShowConfirm(false);
         setIsSubmitting(true);
 
         try {
@@ -137,8 +150,15 @@ const handleSubmit = async (e) => {
                 updatedAt: serverTimestamp()
             });
 
-            alert("Program updated successfully!");
-            router.push('/admin/programs');
+            showSuccess({
+                title: "Program Updated!",
+                message: "Changes have been saved successfully.",
+                confirmText: "Back to List"
+            });
+
+            setTimeout(() => {
+                router.push('/admin/programs');
+            }, 2000);
 
         } catch (error) {
             console.error("Error updating program:", error);
@@ -149,9 +169,8 @@ const handleSubmit = async (e) => {
     };
 
     if (isLoading) return <div className="h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 text-brand-gold animate-spin" /></div>;
-
     return (
-        <form onSubmit={handleSubmit} className="space-y-6 max-w-6xl mx-auto pb-12">
+        <form onSubmit={handlePreSubmit} className="space-y-6 max-w-6xl mx-auto pb-12 relative">
 
             {/* 1. HEADER */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-0 bg-gray-50 z-20 py-4 border-b border-gray-200">
@@ -303,7 +322,6 @@ const handleSubmit = async (e) => {
                             {imagePreview ? (
                                 <>
                                     <Image src={imagePreview} alt="Preview" fill className="object-cover" />
-                                    {/* Show remove button only if it's a new file, or if we want to clear the preview (logic: set to null, though submitting null won't delete old image in this specific implementation, but allows re-selecting) */}
                                     <button 
                                         type="button"
                                         onClick={removeImage}
@@ -332,6 +350,30 @@ const handleSubmit = async (e) => {
 
                 </div>
             </div>
+
+            {/* --- CONFIRMATION MODAL --- */}
+            {showConfirm && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full border border-gray-100 transform scale-100 animate-in zoom-in-95 duration-200">
+                        <div className="flex flex-col items-center text-center">
+                            <div className="w-14 h-14 bg-brand-gold/20 rounded-full flex items-center justify-center mb-4 text-brand-gold">
+                                <AlertTriangle className="w-7 h-7" />
+                            </div>
+                            <h3 className="font-agency text-2xl text-brand-brown-dark mb-2">Save Changes?</h3>
+                            <p className="text-gray-500 font-lato text-sm mb-6">
+                                These updates will reflect immediately on the live website.
+                            </p>
+                            <div className="flex gap-3 w-full">
+                                <button type="button" onClick={() => setShowConfirm(false)} className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
+                                <button type="button" onClick={executeUpdate} className="flex-1 py-2.5 bg-brand-gold text-white font-bold rounded-xl shadow-lg hover:bg-brand-brown-dark transition-colors flex justify-center items-center gap-2">
+                                    Confirm
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </form>
     );
 }
