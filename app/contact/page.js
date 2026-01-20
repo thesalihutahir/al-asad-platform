@@ -22,7 +22,7 @@ export default function ContactPage() {
     const [teamLead, setTeamLead] = useState(null);
     const [teamMembers, setTeamMembers] = useState([]);
     
-    // Contact Info State (Includes new Map & Telegram fields)
+    // Contact Info State
     const [contactInfo, setContactInfo] = useState({
         address: 'Loading address...',
         email: 'Loading email...',
@@ -32,9 +32,9 @@ export default function ContactPage() {
         instagram: '', 
         youtube: '', 
         whatsapp: '', 
-        telegram: '', // Added Telegram
-        mapLatitude: '12.970758', // Default: Katsina
-        mapLongitude: '7.636398'  // Default: Katsina
+        telegram: '', // Included Telegram
+        mapLatitude: '12.970758', // Default Fallback
+        mapLongitude: '7.636398'
     });
 
     // Form State
@@ -48,7 +48,7 @@ export default function ContactPage() {
 
     const subjects = ["General Inquiry", "Media & Press", "Volunteering", "Donation Support", "Other"];
 
-    // --- 1. FETCH DATA (Team & Contact Info) ---
+    // --- 1. FETCH DATA ---
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -59,7 +59,6 @@ export default function ContactPage() {
                     setContactInfo(prev => ({
                         ...prev,
                         ...data,
-                        // Ensure map coordinates exist, else fallback to defaults
                         mapLatitude: data.mapLatitude || '12.970758',
                         mapLongitude: data.mapLongitude || '7.636398'
                     }));
@@ -70,7 +69,7 @@ export default function ContactPage() {
                 const teamSnap = await getDocs(teamQ);
                 const allMembers = teamSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-                // Separate Lead from others
+                // Separate Lead
                 const lead = allMembers.find(m => m.isLead);
                 const rest = allMembers.filter(m => m.id !== lead?.id);
 
@@ -105,7 +104,6 @@ export default function ContactPage() {
                 createdAt: serverTimestamp()
             });
 
-            // Reset & Show Success
             setFormData({ fullName: '', email: '', subject: '', message: '' });
             showSuccess({
                 title: "Message Sent!",
@@ -115,7 +113,7 @@ export default function ContactPage() {
 
         } catch (error) {
             console.error("Error sending message:", error);
-            alert("Failed to send message. Please try again.");
+            alert("Failed to send message.");
         } finally {
             setIsSubmitting(false);
         }
@@ -128,12 +126,11 @@ export default function ContactPage() {
         { icon: Instagram, href: contactInfo.instagram },
         { icon: Youtube, href: contactInfo.youtube },
         { icon: MessageCircle, href: contactInfo.whatsapp },
-        { icon: Send, href: contactInfo.telegram }, // Added Telegram Icon
+        { icon: Send, href: contactInfo.telegram }, // Telegram Added
     ].filter(link => link.href && link.href.length > 2); 
 
-    // Construct Dynamic Map URL
+    // Dynamic Map URL
     const mapEmbedUrl = `https://maps.google.com/maps?q=${contactInfo.mapLatitude},${contactInfo.mapLongitude}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
-
     return (
         <div className="min-h-screen flex flex-col bg-white font-lato">
             <Header />
@@ -168,7 +165,7 @@ export default function ContactPage() {
                 <section className="px-6 md:px-12 lg:px-24 mb-16 md:mb-24 max-w-7xl mx-auto">
                     <div className="flex flex-col lg:flex-row gap-12 lg:gap-20">
 
-                        {/* LEFT: Contact Information (Dynamic) */}
+                        {/* LEFT: Contact Information */}
                         <div className="flex-1 space-y-8 md:space-y-10">
 
                             <div className="bg-brand-sand/30 p-8 md:p-10 rounded-3xl border border-brand-gold/10 relative overflow-hidden shadow-sm">
@@ -266,14 +263,11 @@ export default function ContactPage() {
                                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Email Address</label>
                                     <input type="email" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:border-brand-gold" placeholder="Enter your email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required />
                                 </div>
-                                
                                 <CustomSelect label="Subject" options={subjects} value={formData.subject} onChange={(val) => setFormData({...formData, subject: val})} placeholder="Select Subject" />
-
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Message</label>
                                     <textarea rows="5" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:border-brand-gold resize-none" placeholder="How can we help you?" value={formData.message} onChange={(e) => setFormData({...formData, message: e.target.value})} required></textarea>
                                 </div>
-                                
                                 <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-brand-brown-dark text-white font-agency text-xl rounded-xl hover:bg-brand-gold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
                                     {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Send Message <Send className="w-4 h-4" /></>}
                                 </button>
@@ -282,19 +276,17 @@ export default function ContactPage() {
                     </div>
                 </section>
 
-                {/* 3. DYNAMIC MEDIA TEAM */}
+                {/* 3. MEDIA TEAM */}
                 <section className="px-6 md:px-12 lg:px-24 mb-16 md:mb-24 max-w-7xl mx-auto">
                     <div className="text-center mb-12 md:mb-16">
                         <h2 className="font-agency text-3xl md:text-5xl text-brand-brown-dark mb-3">Meet Our Media Team</h2>
                         <div className="w-20 h-1.5 bg-brand-gold mx-auto rounded-full mb-6"></div>
                         <p className="font-lato text-brand-brown text-base md:text-xl max-w-2xl mx-auto">The dedicated faces behind our digital presence, ensuring the message of Al-Asad Foundation reaches the world with excellence.</p>
                     </div>
-
                     {loading ? (
                         <div className="flex justify-center py-12"><Loader2 className="w-10 h-10 animate-spin text-brand-gold" /></div>
                     ) : (
                         <>
-                            {/* Team Lead */}
                             {teamLead && (
                                 <div className="flex justify-center mb-12 md:mb-16">
                                     <div className="group flex flex-col items-center w-full max-w-[280px]">
@@ -307,8 +299,6 @@ export default function ContactPage() {
                                     </div>
                                 </div>
                             )}
-
-                            {/* Team Members */}
                             {teamMembers.length > 0 ? (
                                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8">
                                     {teamMembers.map((member) => (
@@ -321,30 +311,41 @@ export default function ContactPage() {
                                         </div>
                                     ))}
                                 </div>
-                            ) : (
-                                !teamLead && <p className="text-center text-gray-400 italic">Team members will be listed here.</p>
-                            )}
+                            ) : ( !teamLead && <p className="text-center text-gray-400 italic">Team members will be listed here.</p> )}
                         </>
                     )}
                 </section>
 
-                {/* 4. DYNAMIC GOOGLE MAP */}
-                <section className="w-full h-80 md:h-[500px] bg-gray-100 relative grayscale hover:grayscale-0 transition-all duration-700">
-                    <iframe 
-                        src={mapEmbedUrl} 
-                        width="100%" 
-                        height="100%" 
-                        style={{ border: 0 }} 
-                        allowFullScreen="" 
-                        loading="lazy" 
-                        referrerPolicy="no-referrer-when-downgrade"
-                        className="absolute inset-0"
-                    ></iframe>
-                    
-                    <div className="absolute top-6 left-1/2 -translate-x-1/2 md:left-24 md:translate-x-0 pointer-events-none">
-                        <div className="bg-white/90 backdrop-blur-md px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-gray-100">
-                            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                            <span className="font-agency text-brand-brown-dark text-lg">Locate us on Map</span>
+                {/* 4. DYNAMIC MAP (Light Card Design, 16:9 Mobile) */}
+                <section className="px-6 md:px-12 lg:px-24 mb-16 md:mb-24 max-w-7xl mx-auto">
+                    <div className="bg-white p-3 md:p-4 rounded-3xl shadow-xl border border-gray-100 relative">
+                        {/* Map Container */}
+                        <div className="relative w-full aspect-video md:h-[500px] rounded-2xl overflow-hidden border border-gray-100">
+                            <iframe 
+                                src={mapEmbedUrl} 
+                                width="100%" 
+                                height="100%" 
+                                style={{ border: 0 }} 
+                                allowFullScreen="" 
+                                loading="lazy" 
+                                referrerPolicy="no-referrer-when-downgrade"
+                                className="absolute inset-0 w-full h-full"
+                            ></iframe>
+                        </div>
+
+                        {/* Floating Label (Bottom Right for cleaner look on Map) */}
+                        <div className="absolute bottom-8 right-8 pointer-events-none hidden md:block">
+                            <div className="bg-white/95 backdrop-blur-md px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-gray-100 transform hover:scale-105 transition-transform">
+                                <div className="w-3 h-3 bg-brand-gold rounded-full animate-pulse"></div>
+                                <span className="font-agency text-brand-brown-dark text-lg whitespace-nowrap">Locate us on Map</span>
+                            </div>
+                        </div>
+                        {/* Mobile Label */}
+                        <div className="mt-4 flex justify-center md:hidden">
+                             <div className="bg-gray-50 px-4 py-2 rounded-full border border-gray-200 flex items-center gap-2">
+                                <MapPin className="w-4 h-4 text-brand-gold" />
+                                <span className="font-agency text-brand-brown-dark text-base">Mani Road, Katsina</span>
+                             </div>
                         </div>
                     </div>
                 </section>
