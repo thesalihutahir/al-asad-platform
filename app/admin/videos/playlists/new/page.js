@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -8,8 +8,9 @@ import { useRouter } from 'next/navigation';
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore'; 
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-// Global Modal Context
+// Context & Components
 import { useModal } from '@/context/ModalContext';
+import CustomSelect from '@/components/CustomSelect'; 
 
 import { 
     ArrowLeft, 
@@ -17,7 +18,8 @@ import {
     X, 
     Image as ImageIcon, 
     Loader2,
-    AlertTriangle 
+    AlertTriangle,
+    Globe
 } from 'lucide-react';
 
 export default function CreatePlaylistPage() {
@@ -33,7 +35,7 @@ export default function CreatePlaylistPage() {
 
     const [formData, setFormData] = useState({
         title: '',
-        description: '', // NEW: Description Field
+        description: '', 
         category: 'English', 
         cover: '' 
     });
@@ -41,6 +43,13 @@ export default function CreatePlaylistPage() {
     // Image File State
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+
+    // Constants
+    const CATEGORY_OPTIONS = [
+        { value: 'English', label: 'English' },
+        { value: 'Hausa', label: 'Hausa' },
+        { value: 'Arabic', label: 'Arabic' }
+    ];
 
     // Helper: Auto-Detect Arabic
     const getDir = (text) => {
@@ -81,6 +90,11 @@ export default function CreatePlaylistPage() {
         if (name === 'title') {
             checkDuplicateTitle(value);
         }
+    };
+
+    // Handler for Custom Select
+    const handleSelectChange = (name, value) => {
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleImageChange = (e) => {
@@ -137,7 +151,7 @@ export default function CreatePlaylistPage() {
             await addDoc(collection(db, "video_playlists"), {
                 ...formData,
                 title: formData.title.trim(), 
-                description: formData.description.trim(), // Save Description
+                description: formData.description.trim(),
                 cover: coverUrl,
                 count: 0, 
                 status: "Active",
@@ -159,7 +173,6 @@ export default function CreatePlaylistPage() {
             setIsSubmitting(false);
         }
     };
-
     return (
         <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto pb-12">
 
@@ -207,7 +220,7 @@ export default function CreatePlaylistPage() {
                     )}
                 </div>
 
-                {/* NEW: Description Field */}
+                {/* Description Field */}
                 <div>
                     <label className="block text-xs font-bold text-brand-brown mb-1">Description (Optional)</label>
                     <textarea 
@@ -223,17 +236,14 @@ export default function CreatePlaylistPage() {
 
                 {/* Category (Language) */}
                 <div>
-                    <label className="block text-xs font-bold text-brand-brown mb-1">Category (Language)</label>
-                    <select 
-                        name="category"
+                    <CustomSelect 
+                        label="Category (Language)"
+                        options={CATEGORY_OPTIONS}
                         value={formData.category}
-                        onChange={handleChange}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
-                    >
-                        <option>English</option>
-                        <option>Hausa</option>
-                        <option>Arabic</option>
-                    </select>
+                        onChange={(val) => handleSelectChange('category', val)}
+                        icon={Globe}
+                        placeholder="Select Language"
+                    />
                 </div>
 
                 {/* Cover Image Upload (Firebase) */}
