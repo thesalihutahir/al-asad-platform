@@ -6,11 +6,11 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CustomSelect from '@/components/CustomSelect'; 
-import { useModal } from '@/context/ModalContext';
+import { useModal } from '@/context/ModalContext'; 
 // Firebase
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, query, orderBy, getDocs, doc, getDoc } from 'firebase/firestore';
-import { MapPin, Phone, Mail, Globe, Facebook, Youtube, Instagram, Twitter, MessageCircle, Loader2, Send, Clock, ArrowRight } from 'lucide-react';
+import { MapPin, Phone, Mail, Globe, Facebook, Youtube, Instagram, Twitter, MessageCircle, Loader2, Send, Clock } from 'lucide-react';
 
 export default function ContactPage() {
     const { showSuccess } = useModal();
@@ -118,10 +118,10 @@ export default function ContactPage() {
         <div className="min-h-screen flex flex-col bg-white font-lato">
             <Header />
 
-            <main className="flex-grow">
+            <main className="flex-grow pb-16">
 
                 {/* 1. HERO SECTION */}
-                <section className="w-full relative bg-white mb-16 md:mb-24">
+                <section className="w-full relative bg-white mb-12 md:mb-20">
                     <div className="relative w-full aspect-[2.5/1] md:aspect-[3.5/1] lg:aspect-[4/1]">
                         <Image
                             src="/images/heroes/contact-hero.webp"
@@ -145,27 +145,24 @@ export default function ContactPage() {
                 </section>
 
                 {/* 2. CONTACT INFO & FORM GRID */}
-                <section className="px-6 md:px-12 lg:px-24 mb-20 max-w-7xl mx-auto">
-                    <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 items-start">
+                <section className="px-6 md:px-12 lg:px-24 mb-16 md:mb-24 max-w-7xl mx-auto">
+                    <div className="flex flex-col lg:flex-row gap-12 lg:gap-20">
 
                         {/* LEFT: Contact Information (Dynamic) */}
-                        <div className="flex-1 space-y-8 w-full">
+                        <div className="flex-1 space-y-8 md:space-y-10">
 
-                            <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-xl shadow-brand-sand/20 relative overflow-hidden group hover:border-brand-gold/30 transition-all duration-300">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-brand-sand/30 rounded-full blur-3xl -mr-16 -mt-16 transition-all group-hover:bg-brand-gold/20"></div>
-                                
-                                <h2 className="font-agency text-3xl text-brand-brown-dark mb-8 relative z-10">
+                            <div className="bg-brand-sand/30 p-8 md:p-10 rounded-3xl border border-brand-gold/10 relative overflow-hidden shadow-sm">
+                                <h2 className="font-agency text-3xl text-brand-brown-dark mb-8">
                                     Get in Touch
                                 </h2>
-                                <div className="space-y-8 relative z-10">
-                                    
+                                <div className="space-y-8">
                                     {/* Address */}
-                                    <div className="flex items-start gap-5 group/item">
-                                        <div className="w-12 h-12 rounded-2xl bg-brand-sand/30 text-brand-brown-dark flex items-center justify-center flex-shrink-0 group-hover/item:bg-brand-brown-dark group-hover/item:text-brand-gold transition-all duration-300">
+                                    <div className="flex items-start gap-5">
+                                        <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-brand-gold shadow-sm mt-1 flex-shrink-0">
                                             <MapPin className="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <p className="font-agency text-xl text-brand-brown-dark leading-none mb-2">Head Office</p>
+                                            <p className="font-agency text-xl text-brand-brown-dark leading-none mb-2">Office Address</p>
                                             <p className="font-lato text-base text-gray-600 leading-relaxed whitespace-pre-wrap">
                                                 {contactInfo.address}
                                             </p>
@@ -173,8 +170,8 @@ export default function ContactPage() {
                                     </div>
 
                                     {/* Phone/Email */}
-                                    <div className="flex items-start gap-5 group/item">
-                                        <div className="w-12 h-12 rounded-2xl bg-brand-sand/30 text-brand-brown-dark flex items-center justify-center flex-shrink-0 group-hover/item:bg-brand-brown-dark group-hover/item:text-brand-gold transition-all duration-300">
+                                    <div className="flex items-start gap-5">
+                                        <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-brand-gold shadow-sm mt-1 flex-shrink-0">
                                             <Phone className="w-6 h-6" />
                                         </div>
                                         <div>
@@ -190,8 +187,8 @@ export default function ContactPage() {
 
                                     {/* Socials */}
                                     {socialLinks.length > 0 && (
-                                        <div className="flex items-start gap-5 group/item pt-2">
-                                            <div className="w-12 h-12 rounded-2xl bg-brand-sand/30 text-brand-brown-dark flex items-center justify-center flex-shrink-0 group-hover/item:bg-brand-brown-dark group-hover/item:text-brand-gold transition-all duration-300">
+                                        <div className="flex items-start gap-5 pt-2">
+                                            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-brand-gold shadow-sm mt-1 flex-shrink-0">
                                                 <Globe className="w-6 h-6" />
                                             </div>
                                             <div>
@@ -205,7 +202,7 @@ export default function ContactPage() {
                                                                 href={social.href}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
-                                                                className="w-10 h-10 rounded-full border border-gray-200 text-gray-500 flex items-center justify-center hover:bg-brand-gold hover:border-brand-gold hover:text-white transition-all transform hover:-translate-y-1 shadow-sm"
+                                                                className="w-10 h-10 rounded-full bg-brand-gold text-white flex items-center justify-center hover:bg-brand-brown-dark transition-all transform hover:scale-110 shadow-sm"
                                                             >
                                                                 <Icon className="w-5 h-5" />
                                                             </Link>
@@ -218,59 +215,50 @@ export default function ContactPage() {
                                 </div>
                             </div>
 
-                            {/* Visit Note (Replaced Press & Media) */}
-                            <div className="p-8 rounded-3xl bg-brand-brown-dark text-white shadow-xl relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-40 h-40 bg-brand-gold/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
-                                <div className="relative z-10 flex items-start gap-5">
-                                    <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                                        <Clock className="w-6 h-6 text-brand-gold" />
-                                    </div>
-                                    <div>
-                                        <h2 className="font-agency text-2xl text-white mb-2">
-                                            Visit Us
-                                        </h2>
-                                        <p className="font-lato text-sm text-white/80 leading-relaxed mb-4">
-                                            Our doors are open for inquiries and support during working hours.
-                                        </p>
-                                        <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-gold">
-                                            <span>Mon - Fri: 9AM - 5PM</span>
-                                        </div>
-                                    </div>
+                            {/* Office Hours / Response Time Note */}
+                            <div className="p-8 rounded-3xl border border-gray-100 bg-white shadow-lg flex items-start gap-5">
+                                <div className="w-12 h-12 rounded-full bg-brand-sand/30 text-brand-brown-dark flex items-center justify-center flex-shrink-0">
+                                    <Clock className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h2 className="font-agency text-2xl text-brand-brown-dark mb-2">
+                                        Office Hours
+                                    </h2>
+                                    <p className="font-lato text-sm text-gray-500 leading-relaxed">
+                                        We are available <strong>Mon - Fri, 9:00 AM to 5:00 PM</strong>. 
+                                        For urgent inquiries, please visit our office or call the number above.
+                                    </p>
                                 </div>
                             </div>
                         </div>
 
                         {/* RIGHT: Contact Form (Functional) */}
-                        <div className="flex-1 w-full bg-white rounded-3xl shadow-2xl shadow-brand-brown-dark/10 p-8 md:p-12 border border-gray-100 relative h-fit">
-                            <h2 className="font-agency text-3xl md:text-4xl text-brand-brown-dark mb-2">
+                        <div className="flex-1 bg-white rounded-3xl shadow-2xl p-8 md:p-12 border-t-8 border-brand-gold h-fit relative">
+                            <h2 className="font-agency text-3xl md:text-4xl text-brand-brown-dark mb-6">
                                 Send us a Message
                             </h2>
-                            <p className="text-gray-500 text-sm mb-8">We usually reply within 24 hours.</p>
-
                             <form onSubmit={handleFormSubmit} className="space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Full Name</label>
-                                        <input 
-                                            type="text" 
-                                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:bg-white" 
-                                            placeholder="Enter your name" 
-                                            value={formData.fullName}
-                                            onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                                            required
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Email Address</label>
-                                        <input 
-                                            type="email" 
-                                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:bg-white" 
-                                            placeholder="Enter your email" 
-                                            value={formData.email}
-                                            onChange={(e) => setFormData({...formData, email: e.target.value})}
-                                            required
-                                        />
-                                    </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Full Name</label>
+                                    <input 
+                                        type="text" 
+                                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:border-brand-gold" 
+                                        placeholder="Enter your name" 
+                                        value={formData.fullName}
+                                        onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Email Address</label>
+                                    <input 
+                                        type="email" 
+                                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:border-brand-gold" 
+                                        placeholder="Enter your email" 
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                        required
+                                    />
                                 </div>
                                 
                                 {/* Custom Select for Subject */}
@@ -279,14 +267,14 @@ export default function ContactPage() {
                                     options={subjects}
                                     value={formData.subject}
                                     onChange={(val) => setFormData({...formData, subject: val})}
-                                    placeholder="Select Topic"
+                                    placeholder="Select Subject"
                                 />
 
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Message</label>
                                     <textarea 
                                         rows="5" 
-                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:bg-white resize-none" 
+                                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:border-brand-gold resize-none" 
                                         placeholder="How can we help you?"
                                         value={formData.message}
                                         onChange={(e) => setFormData({...formData, message: e.target.value})}
@@ -297,9 +285,9 @@ export default function ContactPage() {
                                 <button 
                                     type="submit" 
                                     disabled={isSubmitting}
-                                    className="w-full py-4 bg-brand-brown-dark text-white font-agency text-xl rounded-xl hover:bg-brand-gold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                                    className="w-full py-4 bg-brand-brown-dark text-white font-agency text-xl rounded-xl hover:bg-brand-gold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
                                 >
-                                    {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : <>Send Message <Send className="w-5 h-5" /></>}
+                                    {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Send Message <Send className="w-4 h-4" /></>}
                                 </button>
                             </form>
                         </div>
@@ -307,14 +295,14 @@ export default function ContactPage() {
                 </section>
 
                 {/* 3. DYNAMIC MEDIA TEAM */}
-                <section className="px-6 md:px-12 lg:px-24 mb-20 max-w-7xl mx-auto">
+                <section className="px-6 md:px-12 lg:px-24 mb-16 md:mb-24 max-w-7xl mx-auto">
                     <div className="text-center mb-12 md:mb-16">
                         <h2 className="font-agency text-3xl md:text-5xl text-brand-brown-dark mb-3">
                             Meet Our Media Team
                         </h2>
                         <div className="w-20 h-1.5 bg-brand-gold mx-auto rounded-full mb-6"></div>
                         <p className="font-lato text-brand-brown text-base md:text-xl max-w-2xl mx-auto">
-                            The dedicated faces behind our digital presence, ensuring the message of Al-Asad Foundation reaches the world.
+                            The dedicated faces behind our digital presence, ensuring the message of Al-Asad Foundation reaches the world with excellence.
                         </p>
                     </div>
 
@@ -328,7 +316,7 @@ export default function ContactPage() {
                                     <div className="group flex flex-col items-center w-full max-w-[280px]">
                                         <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden mb-6 shadow-2xl border-4 border-brand-gold bg-brand-sand transform group-hover:scale-105 transition-transform duration-500">
                                             <Image 
-                                                src={teamLead.image || "/images/placeholders/user-placeholder.webp"} 
+                                                src={teamLead.image || "/fallback.webp"} 
                                                 alt={teamLead.name} 
                                                 fill 
                                                 className="object-cover" 
@@ -347,52 +335,52 @@ export default function ContactPage() {
 
                             {/* 3b. REST OF THE TEAM */}
                             {teamMembers.length > 0 ? (
-                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-10">
+                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8">
                                     {teamMembers.map((member) => (
                                         <div key={member.id} className="group flex flex-col items-center">
-                                            <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden mb-4 shadow-md bg-brand-sand transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-2 border border-transparent group-hover:border-brand-gold/50">
+                                            <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden mb-4 shadow-md bg-brand-sand transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-2">
                                                 <Image 
-                                                    src={member.image || "/images/placeholders/user-placeholder.webp"} 
+                                                    src={member.image || "/fallback.webp"} 
                                                     alt={member.name} 
                                                     fill 
                                                     className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500" 
                                                 />
                                             </div>
-                                            <h3 className="font-agency text-lg md:text-xl text-brand-brown-dark leading-none text-center mb-1 group-hover:text-brand-gold transition-colors">
+                                            <h3 className="font-agency text-lg md:text-xl text-brand-brown-dark leading-none text-center mb-1">
                                                 {member.name}
                                             </h3>
-                                            <p className="font-lato text-[10px] md:text-xs text-gray-500 font-bold uppercase tracking-wider text-center">
+                                            <p className="font-lato text-[10px] md:text-xs text-brand-brown font-bold uppercase tracking-wider text-center opacity-70">
                                                 {member.role}
                                             </p>
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                !teamLead && <div className="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-gray-400 italic">Team members will be listed here soon.</div>
+                                !teamLead && <p className="text-center text-gray-400 italic">Team members will be listed here.</p>
                             )}
                         </>
                     )}
                 </section>
 
-                {/* 4. LIVE MAP */}
-                <section className="w-full h-[400px] md:h-[500px] bg-gray-100 relative grayscale hover:grayscale-0 transition-all duration-700 border-t border-gray-200">
+                {/* 4. LIVE GOOGLE MAP */}
+                <section className="w-full h-80 md:h-[500px] bg-gray-100 relative grayscale hover:grayscale-0 transition-all duration-700">
                     <iframe 
-                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3920.6724623347986!2d7.5960!3d12.9886!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x11b03b6d2737604d%3A0x863336795779366!2sGidan%20Dawa%20Primary%20School!5e0!3m2!1sen!2sng!4v1700000000000!5m2!1sen!2sng" 
+                        src="https://maps.google.com/maps?q=12.970758,7.636398&hl=en&z=17&output=embed"
                         width="100%" 
                         height="100%" 
                         style={{ border: 0 }} 
                         allowFullScreen="" 
                         loading="lazy" 
                         referrerPolicy="no-referrer-when-downgrade"
-                        className="w-full h-full"
+                        className="absolute inset-0"
                     ></iframe>
                     
                     {/* Overlay Label */}
-                    <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-white/95 backdrop-blur-md px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-gray-200">
-                        <div className="w-8 h-8 bg-brand-gold rounded-full flex items-center justify-center animate-pulse">
-                            <MapPin className="w-4 h-4 text-white" />
+                    <div className="absolute top-6 left-1/2 -translate-x-1/2 md:left-24 md:translate-x-0 pointer-events-none">
+                        <div className="bg-white/90 backdrop-blur-md px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-gray-100">
+                            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                            <span className="font-agency text-brand-brown-dark text-lg">Locate us on Map</span>
                         </div>
-                        <span className="font-agency text-brand-brown-dark text-xl">We are here</span>
                     </div>
                 </section>
 
