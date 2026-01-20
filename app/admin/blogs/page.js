@@ -164,18 +164,28 @@ export default function ManageBlogsPage() {
     return (
         <div className="space-y-6 relative max-w-full overflow-hidden pb-12">
             
-            {/* HEADER */}
+            {/* HEADER & COUNTER */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="font-agency text-3xl text-brand-brown-dark">Content Manager</h1>
                     <p className="font-lato text-sm text-gray-500">Manage articles, news, and research publications.</p>
                 </div>
-                <Link 
-                    href="/admin/blogs/new" 
-                    className="flex items-center justify-center gap-2 px-5 py-3 bg-brand-gold text-white rounded-xl text-sm font-bold hover:bg-brand-brown-dark transition-colors shadow-md w-full md:w-auto"
-                >
-                    <PlusCircle className="w-4 h-4" /> Create New
-                </Link>
+                
+                <div className="flex gap-2 items-center">
+                    {/* Counter */}
+                    <div className="bg-white border border-gray-100 px-4 py-2 rounded-xl text-center shadow-sm min-w-[80px]">
+                        <span className="block text-lg font-bold text-brand-gold">{contentList.length}</span>
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wider">Total</span>
+                    </div>
+
+                    {/* Create Button */}
+                    <Link 
+                        href="/admin/blogs/new" 
+                        className="flex items-center justify-center gap-2 px-5 py-2.5 bg-brand-gold text-white rounded-xl text-sm font-bold hover:bg-brand-brown-dark transition-colors shadow-md h-full"
+                    >
+                        <PlusCircle className="w-4 h-4" /> Create New
+                    </Link>
+                </div>
             </div>
 
             {/* TABS & TOOLBAR */}
