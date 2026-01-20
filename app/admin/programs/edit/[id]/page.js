@@ -10,6 +10,7 @@ import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 // Context
 import { useModal } from '@/context/ModalContext';
+import CustomSelect from '@/components/CustomSelect'; // Import CustomSelect
 
 import { 
     ArrowLeft, 
@@ -19,7 +20,9 @@ import {
     Users, 
     Loader2, 
     Image as ImageIcon,
-    AlertTriangle
+    AlertTriangle,
+    Layers, // New Icon
+    Activity // New Icon
 } from 'lucide-react';
 
 export default function EditProgramPage() {
@@ -47,6 +50,20 @@ export default function EditProgramPage() {
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [existingCoverUrl, setExistingCoverUrl] = useState(null);
+
+    // Options Data
+    const categoryOptions = [
+        "Educational Support", 
+        "Community Development", 
+        "Training & Innovation"
+    ];
+
+    const statusOptions = [
+        "Upcoming", 
+        "Active", 
+        "Completed", 
+        "Paused"
+    ];
 
     // 1. Fetch Existing Data
     useEffect(() => {
@@ -88,6 +105,11 @@ export default function EditProgramPage() {
     // Handlers
     const handleChange = (e) => {
         const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    // Specific handler for CustomSelect
+    const handleSelectChange = (name, value) => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
@@ -251,34 +273,23 @@ export default function EditProgramPage() {
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
                         <h3 className="font-agency text-xl text-brand-brown-dark border-b border-gray-100 pb-2">Classification</h3>
 
-                        <div>
-                            <label className="block text-xs font-bold text-brand-brown mb-1">Program Type (Pillar)</label>
-                            <select 
-                                name="category"
-                                value={formData.category}
-                                onChange={handleChange}
-                                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
-                            >
-                                <option value="Educational Support">Educational Support</option>
-                                <option value="Community Development">Community Development</option>
-                                <option value="Training & Innovation">Training & Innovation</option>
-                            </select>
-                        </div>
+                        <CustomSelect 
+                            label="Program Type (Pillar)"
+                            options={categoryOptions}
+                            value={formData.category}
+                            onChange={(val) => handleSelectChange('category', val)}
+                            icon={Layers}
+                            placeholder="Select Category"
+                        />
 
-                        <div>
-                            <label className="block text-xs font-bold text-brand-brown mb-1">Current Status</label>
-                            <select 
-                                name="status"
-                                value={formData.status}
-                                onChange={handleChange}
-                                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
-                            >
-                                <option value="Upcoming">Coming Soon / Upcoming</option>
-                                <option value="Active">Active / Ongoing</option>
-                                <option value="Completed">Ended / Completed</option>
-                                <option value="Paused">Halted / Paused</option>
-                            </select>
-                        </div>
+                        <CustomSelect 
+                            label="Current Status"
+                            options={statusOptions}
+                            value={formData.status}
+                            onChange={(val) => handleSelectChange('status', val)}
+                            icon={Activity}
+                            placeholder="Select Status"
+                        />
                     </div>
 
                     {/* Impact Metrics */}
