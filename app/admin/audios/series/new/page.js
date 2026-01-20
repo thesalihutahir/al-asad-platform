@@ -6,10 +6,11 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 // Firebase
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore'; 
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 // Global Modal Context
 import { useModal } from '@/context/ModalContext';
+import CustomSelect from '@/components/CustomSelect';
 
 import { 
     ArrowLeft, 
@@ -17,7 +18,8 @@ import {
     X, 
     Image as ImageIcon, 
     Loader2,
-    AlertTriangle
+    AlertTriangle,
+    Globe
 } from 'lucide-react';
 
 export default function CreateSeriesPage() {
@@ -33,14 +35,21 @@ export default function CreateSeriesPage() {
 
     const [formData, setFormData] = useState({
         title: '',
-        description: '', // Added Description
-        category: 'English', // Standardized Category
+        description: '',
+        category: 'English', 
         cover: '' 
     });
 
     // Image File State
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+
+    // Constants
+    const CATEGORY_OPTIONS = [
+        { value: 'English', label: 'English' },
+        { value: 'Hausa', label: 'Hausa' },
+        { value: 'Arabic', label: 'Arabic' }
+    ];
 
     // Helper: Auto-Detect Arabic
     const getDir = (text) => {
@@ -80,6 +89,11 @@ export default function CreateSeriesPage() {
         if (name === 'title') {
             checkDuplicateTitle(value);
         }
+    };
+
+    // Handler for Custom Select
+    const handleSelectChange = (name, value) => {
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleImageChange = (e) => {
@@ -136,6 +150,7 @@ export default function CreateSeriesPage() {
                 ...formData,
                 title: formData.title.trim(),
                 description: formData.description.trim(),
+                category: formData.category,
                 cover: coverUrl,
                 status: "Active",
                 count: 0,
@@ -157,7 +172,6 @@ export default function CreateSeriesPage() {
             setIsSubmitting(false);
         }
     };
-
     return (
         <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto pb-12">
 
@@ -195,7 +209,7 @@ export default function CreateSeriesPage() {
                             </div>
                         )}
                     </div>
-
+                    
                     {/* DUPLICATE WARNING */}
                     {duplicateWarning && (
                         <div className="mt-2 flex items-start gap-2 text-xs font-bold text-orange-700 animate-in fade-in slide-in-from-top-1">
@@ -221,17 +235,14 @@ export default function CreateSeriesPage() {
 
                 {/* Category (Language) */}
                 <div>
-                    <label className="block text-xs font-bold text-brand-brown mb-1">Category (Language)</label>
-                    <select 
-                        name="category"
+                    <CustomSelect 
+                        label="Category (Language)"
+                        options={CATEGORY_OPTIONS}
                         value={formData.category}
-                        onChange={handleChange}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
-                    >
-                        <option>English</option>
-                        <option>Hausa</option>
-                        <option>Arabic</option>
-                    </select>
+                        onChange={(val) => handleSelectChange('category', val)}
+                        icon={Globe}
+                        placeholder="Select Language"
+                    />
                 </div>
 
                 {/* Cover Image Upload (Firebase) */}
