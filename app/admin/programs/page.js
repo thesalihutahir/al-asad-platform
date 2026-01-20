@@ -31,7 +31,7 @@ import {
     Check
 } from 'lucide-react';
 
-// --- CUSTOM DROPDOWN COMPONENT (Internal for consistent style in list view) ---
+// --- CUSTOM DROPDOWN COMPONENT ---
 const CustomSelect = ({ options, value, onChange, placeholder, icon: Icon, className }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
@@ -64,7 +64,7 @@ const CustomSelect = ({ options, value, onChange, placeholder, icon: Icon, class
             </div>
 
             {isOpen && (
-                <div className="absolute z-20 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 min-w-[180px]">
+                <div className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 min-w-[180px]">
                     {options.map((opt) => (
                         <div 
                             key={opt.value}
@@ -141,7 +141,7 @@ export default function ManageProgramsPage() {
             await deleteDoc(doc(db, "programs", deleteConfig.id));
             showSuccess({ title: "Deleted", message: "Program has been removed successfully." });
             setDeleteConfig(null);
-            if (viewProgram) setViewProgram(null); // Close view modal if deleted from there
+            if (viewProgram) setViewProgram(null); 
         } catch (error) {
             console.error("Error deleting program:", error);
             alert("Failed to delete program.");
@@ -158,7 +158,6 @@ export default function ManageProgramsPage() {
         return matchesStatus && matchesPillar && matchesSearch;
     });
 
-    // Format Date Helper
     const formatDate = (timestamp) => {
         if (!timestamp) return 'N/A';
         const date = timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp);
@@ -188,12 +187,12 @@ export default function ManageProgramsPage() {
                 </div>
             </div>
 
-            {/* 2. FILTERS */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm">
+            {/* 2. FILTERS - UPDATED: Removed overflow-hidden, added z-index */}
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm relative z-20">
                 
-                {/* Custom Selects */}
-                <div className="flex bg-gray-50 p-1 rounded-xl w-full md:w-auto overflow-x-auto gap-2">
-                    <div className="min-w-[150px]">
+                {/* Custom Selects - Replaced overflow-x-auto with flex-wrap */}
+                <div className="flex bg-gray-50 p-1 rounded-xl w-full md:w-auto flex-wrap gap-2">
+                    <div className="min-w-[150px] flex-1 md:flex-none">
                         <CustomSelect 
                             options={statusOptions}
                             value={statusFilter}
@@ -202,7 +201,7 @@ export default function ManageProgramsPage() {
                             placeholder="Status"
                         />
                     </div>
-                    <div className="min-w-[160px]">
+                    <div className="min-w-[160px] flex-1 md:flex-none">
                         <CustomSelect 
                             options={pillarOptions}
                             value={pillarFilter}
@@ -226,7 +225,7 @@ export default function ManageProgramsPage() {
             </div>
 
             {/* 3. PROGRAMS TABLE */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[400px]">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[400px] relative z-10">
                 {isLoading ? (
                     <div className="flex items-center justify-center h-64 scale-75"><LogoReveal /></div>
                 ) : (
