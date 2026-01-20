@@ -168,7 +168,8 @@ export default function AddVideoPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!isValid || !videoId || duplicateWarning) return;
+        // Validation: Added Title Check
+        if (!isValid || !videoId || duplicateWarning || !formData.title.trim()) return;
 
         setIsSubmitting(true);
 
@@ -203,6 +204,7 @@ export default function AddVideoPage() {
         value: pl.title,
         label: pl.title
     }));
+
     return (
         <form onSubmit={handleSubmit} className="space-y-6 max-w-6xl mx-auto pb-12">
 
@@ -225,9 +227,10 @@ export default function AddVideoPage() {
                     </Link>
                     <button 
                         type="submit" 
-                        disabled={!isValid || isSubmitting || !!duplicateWarning}
+                        // UPDATED: Disabled logic includes checking for title
+                        disabled={!isValid || isSubmitting || !!duplicateWarning || !formData.title.trim()}
                         className={`flex items-center gap-2 px-6 py-2.5 font-bold rounded-xl transition-colors shadow-md ${
-                            isValid && !duplicateWarning 
+                            isValid && !duplicateWarning && formData.title.trim()
                             ? 'bg-brand-gold text-white hover:bg-brand-brown-dark' 
                             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                         }`}
@@ -285,7 +288,9 @@ export default function AddVideoPage() {
 
                         {/* Title */}
                         <div>
-                            <label className="block text-xs font-bold text-brand-brown mb-2">Video Title</label>
+                            <label className="block text-xs font-bold text-brand-brown mb-2">
+                                Video Title <span className="text-red-500">*</span>
+                            </label>
                             <input 
                                 type="text" 
                                 name="title"
@@ -294,6 +299,7 @@ export default function AddVideoPage() {
                                 placeholder="Enter video title" 
                                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
                                 dir={getDir(formData.title)}
+                                required
                             />
                         </div>
 
