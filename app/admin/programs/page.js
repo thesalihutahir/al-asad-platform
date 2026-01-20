@@ -18,9 +18,7 @@ import {
     Users, 
     Target, 
     Loader2, 
-    Filter,
-    AlertTriangle,
-    X
+    AlertTriangle
 } from 'lucide-react';
 
 export default function ManageProgramsPage() {
@@ -81,6 +79,7 @@ export default function ManageProgramsPage() {
         const matchesSearch = p.title?.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesStatus && matchesPillar && matchesSearch;
     });
+
     return (
         <div className="space-y-6 max-w-7xl mx-auto pb-12 relative">
 
@@ -95,8 +94,9 @@ export default function ManageProgramsPage() {
                         <span className="block text-lg font-bold text-brand-gold">{programs.length}</span>
                         <span className="text-[10px] text-gray-400 uppercase tracking-wider">Total</span>
                     </div>
+                    {/* UPDATED CREATE PATH */}
                     <Link 
-                        href="/admin/programs/create" 
+                        href="/admin/programs/new" 
                         className="flex items-center gap-2 px-5 py-2 bg-brand-gold text-white rounded-xl text-sm font-bold hover:bg-brand-brown-dark transition-colors shadow-md"
                     >
                         <PlusCircle className="w-4 h-4" />
@@ -218,7 +218,8 @@ export default function ManageProgramsPage() {
                                             {/* Actions */}
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex justify-end gap-2">
-                                                    <Link href={`/admin/programs/${program.id}`}>
+                                                    {/* UPDATED EDIT PATH */}
+                                                    <Link href={`/admin/programs/edit/${program.id}`}>
                                                         <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
                                                             <Edit className="w-4 h-4" />
                                                         </button>
