@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 // Firebase
 import { db } from '@/lib/firebase';
-import { collection, query, orderBy, onSnapshot, deleteDoc, doc, writeBatch, where, getDocs, limit, startAfter, endBefore, limitToLast } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, deleteDoc, doc, writeBatch, where, getDocs } from 'firebase/firestore';
 // Context
 import { useModal } from '@/context/ModalContext';
 import LogoReveal from '@/components/logo-reveal'; 
@@ -88,7 +88,7 @@ export default function ManageVideosPage() {
     const [categoryFilter, setCategoryFilter] = useState('All');
     const [sortOrder, setSortOrder] = useState('desc'); 
 
-    // Pagination State (Client-side simulation for filtered content is simpler and smoother for < 1000 items)
+    // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 20;
 
@@ -195,7 +195,7 @@ export default function ManageVideosPage() {
                         await deleteDoc(doc(db, "video_playlists", id));
                         setSelectedPlaylist(null); 
                     }
-                    if (selectedVideo) setSelectedVideo(null); // Close video modal if open
+                    if (selectedVideo) setSelectedVideo(null); 
                     showSuccess({ title: "Deleted!", message: "Item deleted successfully.", confirmText: "Okay" });
                 } catch (error) {
                     console.error("Error deleting:", error);
@@ -303,7 +303,7 @@ export default function ManageVideosPage() {
                 </div>
             )}
 
-            {/* --- VIDEO DETAILS MODAL --- */}
+            {/* --- VIDEO DETAILS MODAL (Updated) --- */}
             {selectedVideo && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
@@ -351,7 +351,7 @@ export default function ManageVideosPage() {
             </div>
 
             {/* --- FILTERS TOOLBAR --- */}
-            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm">
+            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm relative z-20">
                 <div className="flex bg-gray-50 p-1 rounded-xl w-full md:w-auto overflow-x-auto">
                     <button onClick={() => { setActiveTab('videos'); setSearchTerm(''); }} className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'videos' ? 'bg-white text-brand-brown-dark shadow-sm' : 'text-gray-500 hover:text-brand-brown-dark'}`}><PlayCircle className="w-4 h-4" /> Videos</button>
                     <button onClick={() => { setActiveTab('playlists'); setSearchTerm(''); }} className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'playlists' ? 'bg-white text-brand-brown-dark shadow-sm' : 'text-gray-500 hover:text-brand-brown-dark'}`}><LayoutList className="w-4 h-4" /> Playlists</button>
@@ -360,7 +360,7 @@ export default function ManageVideosPage() {
                     <div className="relative flex-1 sm:flex-none sm:w-40 min-w-[160px]">
                         <CustomSelect options={categoryOptions} value={categoryFilter} onChange={setCategoryFilter} icon={Filter} placeholder="Category" />
                     </div>
-                    <button onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors"><ArrowUpDown className="w-4 h-4" /> <span className="hidden sm:inline">{sortOrder === 'desc' ? 'Newest' : 'Oldest'}</span></button>
+                    <button onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors"><ArrowUpDown className="w-4 h-4" /> <span className="hidden sm:inline">{sortOrder === 'desc' ? 'Newest' : 'Oldest'}</span></button>
                     <div className="relative flex-grow sm:w-64">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input type="text" placeholder={`Search ${activeTab}...`} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all" />
@@ -370,7 +370,7 @@ export default function ManageVideosPage() {
             </div>
 
             {/* --- LIST VIEW --- */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[400px]">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[400px] relative z-10">
                 {isLoading ? (
                     <div className="flex items-center justify-center h-64 scale-75"><LogoReveal /></div>
                 ) : (
