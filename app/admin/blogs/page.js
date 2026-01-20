@@ -8,13 +8,13 @@ import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 // Global Modal & Loader
 import { useModal } from '@/context/ModalContext';
-import Loader from '@/components/Loader'; 
+import LogoReveal from '@/components/logo-reveal';
 
 import { 
     PlusCircle, Search, Edit, Trash2, 
     FileText, Bell, BookOpen, 
     Filter, X, ArrowUpDown, Calendar,
-    Globe, ChevronDown, Check // Added Icons
+    Globe, ChevronDown, Check, Eye, User, Layers
 } from 'lucide-react';
 
 // --- CUSTOM DROPDOWN COMPONENT ---
@@ -22,7 +22,6 @@ const CustomSelect = ({ options, value, onChange, placeholder, icon: Icon, class
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
 
-    // Close on outside click
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -72,7 +71,7 @@ export default function ManageBlogsPage() {
     const router = useRouter();
     const { showSuccess, showConfirm } = useModal(); 
 
-    const [activeTab, setActiveTab] = useState('articles'); // 'articles', 'news', 'research'
+    const [activeTab, setActiveTab] = useState('articles'); 
     const [isLoading, setIsLoading] = useState(true);
     const [contentList, setContentList] = useState([]);
     
@@ -80,6 +79,9 @@ export default function ManageBlogsPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [languageFilter, setLanguageFilter] = useState('All'); 
     const [sortOrder, setSortOrder] = useState('desc');
+
+    // Modal State
+    const [viewItem, setViewItem] = useState(null);
 
     // Helper: Auto-Detect Arabic
     const getDir = (text) => {
@@ -91,7 +93,7 @@ export default function ManageBlogsPage() {
     // Helper: Format Date
     const formatDate = (timestamp) => {
         if (!timestamp) return <span className="text-gray-300 italic">...</span>;
-        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp.seconds * 1000);
         return new Intl.DateTimeFormat('en-NG', {
             day: 'numeric', month: 'short', year: 'numeric'
         }).format(date);
@@ -112,7 +114,7 @@ export default function ManageBlogsPage() {
         return () => unsubscribe();
     }, [activeTab]);
 
-    // 2. PROCESS CONTENT (Filter & Sort)
+    // 2. PROCESS CONTENT
     const filteredContent = contentList.filter(item => {
         const title = item.title || item.headline || item.researchTitle || '';
         const matchesSearch = title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -139,6 +141,7 @@ export default function ManageBlogsPage() {
                 try {
                     await deleteDoc(doc(db, activeTab, id));
                     showSuccess({ title: "Deleted", message: "Content removed successfully.", confirmText: "Okay" });
+                    if(viewItem) setViewItem(null); // Close modal if open
                 } catch (error) {
                     console.error("Delete error:", error);
                     alert("Failed to delete.");
@@ -152,16 +155,14 @@ export default function ManageBlogsPage() {
         router.push(`/admin/blogs/edit/${id}?type=${activeTab}`);
     };
 
-    // Options for Language Filter
     const languageOptions = [
         { value: "All", label: "All Langs" },
         { value: "English", label: "English" },
         { value: "Hausa", label: "Hausa" },
         { value: "Arabic", label: "Arabic" }
     ];
-
     return (
-        <div className="space-y-6 relative max-w-full overflow-hidden">
+        <div className="space-y-6 relative max-w-full overflow-hidden pb-12">
             
             {/* HEADER */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -180,7 +181,7 @@ export default function ManageBlogsPage() {
             {/* TABS & TOOLBAR */}
             <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                 
-                {/* Tabs - Optimized for mobile */}
+                {/* Tabs */}
                 <div className="flex w-full xl:w-auto bg-gray-50 p-1 rounded-lg overflow-x-auto scrollbar-hide">
                     {['articles', 'news', 'research'].map((tab) => (
                         <button 
@@ -200,9 +201,7 @@ export default function ManageBlogsPage() {
 
                 {/* Filters */}
                 <div className="flex flex-col sm:flex-row w-full xl:w-auto gap-3">
-                    
                     <div className="flex gap-2 w-full sm:w-auto">
-                        {/* Custom Language Filter */}
                         <div className="relative flex-grow sm:flex-grow-0 min-w-[140px]">
                             <CustomSelect 
                                 options={languageOptions} 
@@ -212,14 +211,11 @@ export default function ManageBlogsPage() {
                                 placeholder="Language"
                             />
                         </div>
-
-                        {/* Sort Button */}
                         <button onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')} className="flex items-center justify-center px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors">
                             <ArrowUpDown className="w-4 h-4" />
                         </button>
                     </div>
 
-                    {/* Search */}
                     <div className="relative w-full sm:w-64">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input 
@@ -237,7 +233,7 @@ export default function ManageBlogsPage() {
             {/* LIST */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[400px]">
                 {isLoading ? (
-                    <div className="flex items-center justify-center h-64"><Loader /></div>
+                    <div className="flex items-center justify-center h-64"><LogoReveal /></div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left min-w-[600px]">
@@ -255,12 +251,15 @@ export default function ManageBlogsPage() {
                                     <tr><td colSpan="5" className="px-6 py-12 text-center text-gray-400">No content found.</td></tr>
                                 ) : (
                                     filteredContent.map((item) => (
-                                        <tr key={item.id} className="hover:bg-gray-50 transition-colors group">
+                                        <tr 
+                                            key={item.id} 
+                                            className="hover:bg-gray-50 transition-colors group cursor-pointer"
+                                            onClick={() => setViewItem(item)}
+                                        >
                                             <td className="px-6 py-4">
                                                 <p className={`font-bold text-brand-brown-dark text-sm line-clamp-2 md:line-clamp-1 ${getDir(item.title || item.headline) === 'rtl' ? 'font-tajawal' : ''}`}>
                                                     {item.title || item.headline || item.researchTitle}
                                                 </p>
-                                                {/* Mobile-only detail view */}
                                                 <p className="text-xs text-gray-400 mt-1 md:hidden">
                                                     {activeTab === 'research' ? item.authors : (item.category || formatDate(item.eventDate))}
                                                 </p>
@@ -286,8 +285,9 @@ export default function ManageBlogsPage() {
                                                     {item.status}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-right">
+                                            <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                                 <div className="flex justify-end gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button onClick={() => setViewItem(item)} className="p-2 text-gray-400 hover:text-brand-brown-dark bg-gray-50 sm:bg-transparent rounded-lg"><Eye className="w-4 h-4" /></button>
                                                     <button onClick={() => handleEdit(item.id)} className="p-2 text-gray-400 hover:text-brand-gold bg-gray-50 sm:bg-transparent rounded-lg"><Edit className="w-4 h-4" /></button>
                                                     <button onClick={() => handleDelete(item.id)} className="p-2 text-gray-400 hover:text-red-600 bg-gray-50 sm:bg-transparent rounded-lg"><Trash2 className="w-4 h-4" /></button>
                                                 </div>
@@ -300,6 +300,53 @@ export default function ManageBlogsPage() {
                     </div>
                 )}
             </div>
+
+            {/* --- VIEW DETAILS MODAL --- */}
+            {viewItem && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+                        {/* Header */}
+                        <div className="bg-brand-brown-dark px-6 py-4 flex justify-between items-center text-white flex-shrink-0">
+                            <h3 className="font-agency text-xl capitalize">{activeTab} Details</h3>
+                            <button onClick={() => setViewItem(null)} className="p-1 hover:bg-white/10 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-6 space-y-6 overflow-y-auto">
+                            <div>
+                                <h2 className={`text-2xl font-bold text-gray-800 mb-2 ${getDir(viewItem.title || viewItem.headline || viewItem.researchTitle) === 'rtl' ? 'font-tajawal text-right' : ''}`}>
+                                    {viewItem.title || viewItem.headline || viewItem.researchTitle}
+                                </h2>
+                                <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                                    <div className="flex items-center gap-1"><Globe className="w-4 h-4 text-brand-gold" /> {viewItem.language}</div>
+                                    <div className="flex items-center gap-1"><Layers className="w-4 h-4 text-brand-gold" /> {viewItem.category || viewItem.researchType || 'News'}</div>
+                                    <div className="flex items-center gap-1"><Calendar className="w-4 h-4 text-brand-gold" /> {formatDate(viewItem.eventDate || viewItem.createdAt)}</div>
+                                    {viewItem.author && <div className="flex items-center gap-1"><User className="w-4 h-4 text-brand-gold" /> {viewItem.author}</div>}
+                                </div>
+                            </div>
+
+                            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Excerpt</h4>
+                                <p className={`text-sm text-gray-600 leading-relaxed italic ${getDir(viewItem.excerpt) === 'rtl' ? 'font-tajawal text-right' : ''}`}>{viewItem.excerpt || "No excerpt available."}</p>
+                            </div>
+
+                            <div>
+                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-2"><FileText className="w-4 h-4"/> Full Content</h4>
+                                <div className={`text-sm text-gray-700 leading-relaxed whitespace-pre-wrap ${getDir(viewItem.content || viewItem.body) === 'rtl' ? 'font-tajawal text-right' : ''}`}>
+                                    {viewItem.content || viewItem.body}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex justify-end gap-3 flex-shrink-0">
+                            <button onClick={() => handleDelete(viewItem.id)} className="px-4 py-2 text-red-600 font-bold text-sm hover:bg-red-50 rounded-lg transition-colors">Delete</button>
+                            <button onClick={() => handleEdit(viewItem.id)} className="px-6 py-2 bg-brand-gold text-white font-bold text-sm rounded-lg hover:bg-brand-brown-dark transition-colors shadow-sm">Edit Content</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }
