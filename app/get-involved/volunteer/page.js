@@ -4,12 +4,11 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import CustomSelect from '@/components/CustomSelect'; // Custom Dropdown
-import { useModal } from '@/context/ModalContext'; // Custom Modal
-// Firebase
+import CustomSelect from '@/components/CustomSelect'; 
+import { useModal } from '@/context/ModalContext'; 
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { BookOpen, Truck, Laptop, HeartHandshake, Calendar, User, Phone, Mail, MapPin, Loader2, Globe, CheckCircle } from 'lucide-react';
+import { BookOpen, Truck, Laptop, HeartHandshake, Calendar, User, Phone, Mail, MapPin, Loader2, Globe } from 'lucide-react';
 
 export default function VolunteerPage() {
     const { showSuccess } = useModal();
@@ -121,14 +120,8 @@ export default function VolunteerPage() {
 
             // Reset
             setFormData({
-                fullName: '',
-                email: '',
-                phone: '',
-                nationality: '',
-                state: '',
-                department: '',
-                availability: '',
-                experience: ''
+                fullName: '', email: '', phone: '', nationality: '',
+                state: '', department: '', availability: '', experience: ''
             });
 
             // Custom Success Modal
@@ -145,7 +138,7 @@ export default function VolunteerPage() {
             setIsSubmitting(false);
         }
     };
-return (
+    return (
         <div className="min-h-screen flex flex-col bg-white font-lato">
             <Header />
 
@@ -204,7 +197,8 @@ return (
                             </div>
                         </div>
                     </div>
-{/* RIGHT: FORM */}
+
+                    {/* RIGHT: FORM */}
                     <div className="flex-[1.5]">
                         <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 md:p-12 relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-brand-sand/30 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
