@@ -34,7 +34,7 @@ export default function CreateCollectionPage() {
 
     const [formData, setFormData] = useState({
         title: '',
-        category: 'English', // Standardized to Language
+        category: 'English', 
         description: '',
         cover: '' 
     });
@@ -55,7 +55,7 @@ export default function CreateCollectionPage() {
             setDuplicateWarning(null);
             return;
         }
-        
+
         setIsChecking(true);
         try {
             const q = query(collection(db, "ebook_collections"), where("title", "==", title.trim()));
@@ -101,7 +101,7 @@ export default function CreateCollectionPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!formData.title || duplicateWarning) {
             return;
         }
@@ -157,8 +157,7 @@ export default function CreateCollectionPage() {
             setIsSubmitting(false);
         }
     };
-
-    return (
+return (
         <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto pb-12">
 
             {/* Header */}
@@ -173,7 +172,7 @@ export default function CreateCollectionPage() {
             </div>
 
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
-                
+
                 {/* Title */}
                 <div>
                     <label className="block text-xs font-bold text-brand-brown mb-1">Collection Title</label>
