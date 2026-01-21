@@ -10,6 +10,7 @@ import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'fire
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 // Global Modal Context
 import { useModal } from '@/context/ModalContext';
+import CustomSelect from '@/components/CustomSelect'; 
 
 import { 
     ArrowLeft, 
@@ -18,7 +19,8 @@ import {
     X, 
     Image as ImageIcon, 
     Loader2,
-    AlertTriangle
+    AlertTriangle,
+    Globe
 } from 'lucide-react';
 
 export default function CreatePodcastShowPage() {
@@ -35,7 +37,7 @@ export default function CreatePodcastShowPage() {
     const [formData, setFormData] = useState({
         title: '',
         host: 'Al-Asad Foundation',
-        category: 'English', // Default to English
+        category: 'English', 
         description: '', 
         cover: '' 
     });
@@ -43,6 +45,13 @@ export default function CreatePodcastShowPage() {
     // Image File State
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+
+    // Constants
+    const CATEGORY_OPTIONS = [
+        { value: 'English', label: 'English' },
+        { value: 'Hausa', label: 'Hausa' },
+        { value: 'Arabic', label: 'Arabic' }
+    ];
 
     // Helper: Auto-Detect Arabic
     const getDir = (text) => {
@@ -57,7 +66,7 @@ export default function CreatePodcastShowPage() {
             setDuplicateWarning(null);
             return;
         }
-        
+
         setIsChecking(true);
         try {
             const q = query(collection(db, "podcast_shows"), where("title", "==", title.trim()));
@@ -82,6 +91,11 @@ export default function CreatePodcastShowPage() {
         if (name === 'title') {
             checkDuplicateTitle(value);
         }
+    };
+
+    // Handler for Custom Select
+    const handleSelectChange = (name, value) => {
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleImageChange = (e) => {
@@ -160,8 +174,7 @@ export default function CreatePodcastShowPage() {
             setIsSubmitting(false);
         }
     };
-
-    return (
+return (
         <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto pb-12">
 
             {/* Header */}
@@ -221,19 +234,16 @@ export default function CreatePodcastShowPage() {
                     />
                 </div>
 
-                {/* Category (UPDATED TO LANGUAGE SYSTEM) */}
+                {/* Category */}
                 <div>
-                    <label className="block text-xs font-bold text-brand-brown mb-1">Category (Language)</label>
-                    <select 
-                        name="category"
+                    <CustomSelect 
+                        label="Category (Language)"
+                        options={CATEGORY_OPTIONS}
                         value={formData.category}
-                        onChange={handleChange}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
-                    >
-                        <option>English</option>
-                        <option>Hausa</option>
-                        <option>Arabic</option>
-                    </select>
+                        onChange={(val) => handleSelectChange('category', val)}
+                        icon={Globe}
+                        placeholder="Select Language"
+                    />
                 </div>
 
                 {/* Description */}
