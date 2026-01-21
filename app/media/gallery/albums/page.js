@@ -38,8 +38,6 @@ export default function AllAlbumsPage() {
                 }));
 
                 // 2. Fetch Photos (Only needed to count them per album)
-                // Optimization: In a huge app, you'd store 'photoCount' on the album doc itself. 
-                // For now, client-side counting is fine.
                 const qPhotos = query(collection(db, "gallery_photos"));
                 const photoSnapshot = await getDocs(qPhotos);
                 const allPhotos = photoSnapshot.docs.map(doc => doc.data());
@@ -55,10 +53,12 @@ export default function AllAlbumsPage() {
 
                 // 4. Extract Years for Filter
                 const years = new Set(enrichedAlbums.map(a => {
-                    const d = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+                    const d = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
                     return d.getFullYear().toString();
                 }));
-                setAvailableYears(["All", ...Array.from(years).sort().reverse()]);
+                // Filter out invalid dates if any
+                const validYears = Array.from(years).filter(y => !isNaN(y) && y !== 'NaN').sort().reverse();
+                setAvailableYears(["All", ...validYears]);
 
             } catch (error) {
                 console.error("Error fetching albums:", error);
@@ -77,7 +77,7 @@ export default function AllAlbumsPage() {
         // 1. Year Filter
         if (activeYear !== 'All') {
             results = results.filter(album => {
-                const d = album.createdAt?.toDate ? album.createdAt.toDate() : new Date(album.createdAt);
+                const d = album.createdAt?.toDate ? album.createdAt.toDate() : new Date(album.createdAt || 0);
                 return d.getFullYear().toString() === activeYear;
             });
         }
@@ -100,7 +100,6 @@ export default function AllAlbumsPage() {
         const date = timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp);
         return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
     };
-
     return (
         <div className="min-h-screen flex flex-col bg-brand-sand font-lato">
             <Header />
