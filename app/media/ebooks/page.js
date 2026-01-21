@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/Header';
@@ -9,7 +9,59 @@ import Loader from '@/components/Loader';
 // Firebase Imports
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
-import { Book, Download, Library, Filter, Loader2, ChevronRight, Globe, Lock, Building2 } from 'lucide-react';
+import { Book, Download, Library, Filter, Loader2, ChevronRight, Globe, Lock, Building2, ChevronDown, Check } from 'lucide-react';
+
+// --- CUSTOM SELECT COMPONENT (Internal) ---
+const CustomFilterSelect = ({ options, value, onChange, icon: Icon, placeholder }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const selectedLabel = options.find(opt => opt.value === value)?.label || placeholder;
+
+    return (
+        <div className="relative" ref={dropdownRef}>
+            <button 
+                onClick={() => setIsOpen(!isOpen)}
+                className={`flex items-center gap-2 px-4 py-2.5 bg-white border rounded-full text-xs font-bold transition-all min-w-[140px] justify-between ${
+                    isOpen ? 'border-brand-gold ring-2 ring-brand-gold/20' : 'border-gray-200 hover:border-brand-gold'
+                }`}
+            >
+                <div className="flex items-center gap-2 text-gray-600">
+                    {Icon && <Icon className="w-3 h-3 text-gray-400" />}
+                    <span>{selectedLabel}</span>
+                </div>
+                <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isOpen && (
+                <div className="absolute top-full mt-2 left-0 w-full min-w-[180px] bg-white border border-gray-100 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                    {options.map((opt) => (
+                        <button
+                            key={opt.value}
+                            onClick={() => { onChange(opt.value); setIsOpen(false); }}
+                            className={`w-full text-left px-4 py-3 text-xs font-medium hover:bg-brand-sand/20 flex items-center justify-between ${
+                                value === opt.value ? 'text-brand-brown-dark bg-brand-sand/10 font-bold' : 'text-gray-600'
+                            }`}
+                        >
+                            {opt.label}
+                            {value === opt.value && <Check className="w-3 h-3 text-brand-gold" />}
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
 
 export default function EbooksPage() {
 
@@ -25,12 +77,25 @@ export default function EbooksPage() {
     
     // Filters
     const [activeLang, setActiveLang] = useState("English");
-    const [activeAccess, setActiveAccess] = useState("All"); // Free, Members Only
-    const [activePublisher, setActivePublisher] = useState("All"); // Foundation, External
+    const [activeAccess, setActiveAccess] = useState("All"); 
+    const [activePublisher, setActivePublisher] = useState("All"); 
     
     const [visibleCount, setVisibleCount] = useState(10);
 
     const languages = ["English", "Hausa", "Arabic"];
+
+    // Filter Options for Custom Select
+    const accessOptions = [
+        { value: "All", label: "All Access" },
+        { value: "Free", label: "Free Books" },
+        { value: "Members Only", label: "Members Only" }
+    ];
+
+    const publisherOptions = [
+        { value: "All", label: "All Publishers" },
+        { value: "Foundation", label: "Al-Asad Foundation" },
+        { value: "External", label: "External Publishers" }
+    ];
 
     // --- FETCH DATA ---
     useEffect(() => {
@@ -63,11 +128,11 @@ export default function EbooksPage() {
 
         fetchData();
     }, []);
-
     // --- FILTER LOGIC ---
     useEffect(() => {
         // 1. Base Filter by Language (Primary)
         let results = allBooks.filter(b => b.language === activeLang);
+        // Assuming collections have a 'category' field matching language
         const langCollections = allCollections.filter(c => c.category === activeLang);
 
         // 2. Filter by Access Type
@@ -78,9 +143,9 @@ export default function EbooksPage() {
         // 3. Filter by Publisher
         if (activePublisher !== "All") {
             if (activePublisher === "Foundation") {
-                results = results.filter(b => b.publisher === "Al-Asad Foundation");
+                results = results.filter(b => b.publisher === "Al-Asad Education Foundation");
             } else {
-                results = results.filter(b => b.publisher !== "Al-Asad Foundation");
+                results = results.filter(b => b.publisher !== "Al-Asad Education Foundation");
             }
         }
 
@@ -209,35 +274,22 @@ export default function EbooksPage() {
                                     Recent Uploads
                                 </h2>
                                 
-                                {/* Soft Filters */}
-                                <div className="flex flex-wrap gap-2">
-                                    {/* Access Filter */}
-                                    <div className="relative">
-                                        <select 
-                                            value={activeAccess}
-                                            onChange={(e) => setActiveAccess(e.target.value)}
-                                            className="appearance-none bg-white border border-gray-200 text-gray-600 text-xs font-bold py-2 pl-8 pr-4 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer hover:border-brand-gold transition-colors"
-                                        >
-                                            <option value="All">All Access</option>
-                                            <option value="Free">Free</option>
-                                            <option value="Members Only">Members Only</option>
-                                        </select>
-                                        <Lock className="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                                    </div>
-
-                                    {/* Publisher Filter */}
-                                    <div className="relative">
-                                        <select 
-                                            value={activePublisher}
-                                            onChange={(e) => setActivePublisher(e.target.value)}
-                                            className="appearance-none bg-white border border-gray-200 text-gray-600 text-xs font-bold py-2 pl-8 pr-4 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer hover:border-brand-gold transition-colors"
-                                        >
-                                            <option value="All">All Publishers</option>
-                                            <option value="Foundation">Al-Asad Foundation</option>
-                                            <option value="External">External</option>
-                                        </select>
-                                        <Building2 className="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                                    </div>
+                                {/* Soft Filters with Custom Select */}
+                                <div className="flex flex-wrap gap-3">
+                                    <CustomFilterSelect 
+                                        options={accessOptions}
+                                        value={activeAccess}
+                                        onChange={setActiveAccess}
+                                        icon={Lock}
+                                        placeholder="Access Type"
+                                    />
+                                    <CustomFilterSelect 
+                                        options={publisherOptions}
+                                        value={activePublisher}
+                                        onChange={setActivePublisher}
+                                        icon={Building2}
+                                        placeholder="Publisher"
+                                    />
                                 </div>
                             </div>
 
