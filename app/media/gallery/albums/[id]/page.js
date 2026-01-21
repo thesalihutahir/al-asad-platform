@@ -80,7 +80,7 @@ export default function ViewAlbumPage() {
         if (searchTerm) {
             const term = searchTerm.toLowerCase();
             const results = photos.filter(photo => 
-                photo.name.toLowerCase().includes(term)
+                (photo.name && photo.name.toLowerCase().includes(term))
             );
             setFilteredPhotos(results);
         } else {
@@ -131,7 +131,6 @@ export default function ViewAlbumPage() {
 
     if (loading) return <Loader size="lg" className="h-screen bg-brand-sand" />;
     if (!album) return null;
-
     return (
         <div className="min-h-screen flex flex-col bg-white font-lato">
             <Header />
@@ -237,7 +236,7 @@ export default function ViewAlbumPage() {
                                             <div className={`relative w-full ${aspectRatio}`}>
                                                 <Image
                                                     src={photo.url}
-                                                    alt={photo.name}
+                                                    alt={photo.name || "Gallery Photo"}
                                                     fill
                                                     className="object-cover transition-transform duration-700 group-hover:scale-110"
                                                 />
