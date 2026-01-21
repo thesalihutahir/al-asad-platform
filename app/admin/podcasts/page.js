@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -9,13 +9,63 @@ import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, deleteDoc, doc, writeBatch, where, getDocs } from 'firebase/firestore';
 // Global Modal Context
 import { useModal } from '@/context/ModalContext';
-// Custom Loader
-import Loader from '@/components/Loader'; 
+import LogoReveal from '@/components/logo-reveal'; 
 
 import { 
     PlusCircle, Search, Edit, Trash2, Mic, LayoutGrid, 
-    List, Loader2, Filter, X, ArrowUpDown, CalendarClock, Info
+    List, Loader2, Filter, X, ArrowUpDown, CalendarClock, Info,
+    ChevronDown, Check
 } from 'lucide-react';
+
+// --- CUSTOM DROPDOWN COMPONENT (Internal) ---
+const CustomSelect = ({ options, value, onChange, placeholder, icon: Icon, className }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const selectedOption = options.find(opt => opt.value === value);
+
+    return (
+        <div className={`relative ${className || ''}`} ref={dropdownRef}>
+            <div 
+                onClick={() => setIsOpen(!isOpen)}
+                className={`w-full pl-3 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm flex justify-between items-center cursor-pointer transition-all hover:border-brand-gold/50 ${isOpen ? 'ring-2 ring-brand-gold/20 border-brand-gold' : ''}`}
+            >
+                <div className="flex items-center gap-2 overflow-hidden">
+                    {Icon && <Icon className="w-4 h-4 text-brand-gold flex-shrink-0" />}
+                    <span className={`truncate ${!selectedOption ? 'text-gray-500' : 'text-gray-700 font-medium'}`}>
+                        {selectedOption ? selectedOption.label : placeholder}
+                    </span>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+            </div>
+
+            {isOpen && (
+                <div className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 min-w-[140px]">
+                    {options.map((opt) => (
+                        <div 
+                            key={opt.value}
+                            onClick={() => { onChange(opt.value); setIsOpen(false); }}
+                            className={`px-4 py-3 text-sm cursor-pointer hover:bg-brand-sand/10 flex justify-between items-center ${value === opt.value ? 'bg-brand-sand/20 text-brand-brown-dark font-bold' : 'text-gray-600'}`}
+                        >
+                            {opt.label}
+                            {value === opt.value && <Check className="w-3 h-3 text-brand-gold" />}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
 
 export default function ManagePodcastsPage() {
     const router = useRouter();
@@ -79,9 +129,6 @@ export default function ManagePodcastsPage() {
         if (activeTab === 'episodes') {
             content = episodes.filter(ep => {
                 const matchesSearch = ep.title.toLowerCase().includes(term) || (ep.show && ep.show.toLowerCase().includes(term));
-                // Assuming episodes inherit category from show or have their own. 
-                // If episodes have 'category', filter by it. If not, filter logic might differ.
-                // For now, assuming episodes have a 'category' field (as added in update).
                 const matchesCategory = categoryFilter === 'All' || ep.category === categoryFilter;
                 return matchesSearch && matchesCategory;
             });
@@ -91,7 +138,7 @@ export default function ManagePodcastsPage() {
                 ...show,
                 realCount: episodes.filter(ep => ep.show === show.title).length
             }));
-            
+
             content = showsWithCounts.filter(show => {
                 const matchesSearch = show.title.toLowerCase().includes(term) || show.host.toLowerCase().includes(term);
                 const matchesCategory = categoryFilter === 'All' || show.category === categoryFilter;
@@ -107,6 +154,7 @@ export default function ManagePodcastsPage() {
     };
 
     const filteredContent = getProcessedContent();
+    const totalItems = filteredContent.length;
 
     // 3. ACTIONS
     const handleDelete = (id, type) => {
@@ -124,7 +172,7 @@ export default function ManagePodcastsPage() {
                 try {
                     if (type === 'episode') await deleteDoc(doc(db, "podcasts", id));
                     else await deleteDoc(doc(db, "podcast_shows", id));
-                    
+
                     showSuccess({ title: "Deleted!", message: "Item deleted successfully.", confirmText: "Okay" });
                 } catch (error) {
                     console.error("Error deleting:", error);
@@ -163,8 +211,15 @@ export default function ManagePodcastsPage() {
             confirmText: "Close"
         });
     };
+
+    const categoryOptions = [
+        { value: "All", label: "All Categories" },
+        { value: "English", label: "English" },
+        { value: "Hausa", label: "Hausa" },
+        { value: "Arabic", label: "Arabic" }
+    ];
 return (
-        <div className="space-y-6 relative">
+        <div className="space-y-6 relative max-w-7xl mx-auto pb-12">
 
             {/* 1. HEADER */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -172,22 +227,24 @@ return (
                     <h1 className="font-agency text-3xl text-brand-brown-dark">Podcast Manager</h1>
                     <p className="font-lato text-sm text-gray-500">Manage shows, episodes, and audio streams.</p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-2 h-10">
+                    <div className="bg-white border border-gray-100 px-4 rounded-xl text-center shadow-sm min-w-[80px] flex flex-col justify-center h-full">
+                        <span className="block text-lg font-bold text-brand-gold leading-none">{totalItems}</span>
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wider leading-none mt-0.5">Total</span>
+                    </div>
                     {activeTab === 'episodes' ? (
                         <Link 
                             href="/admin/podcasts/new" 
-                            className="flex items-center gap-2 px-5 py-2.5 bg-brand-gold text-white rounded-xl text-sm font-bold hover:bg-brand-brown-dark transition-colors shadow-md"
+                            className="flex items-center justify-center gap-2 px-5 bg-brand-gold text-white rounded-xl text-sm font-bold hover:bg-brand-brown-dark transition-colors shadow-md h-full"
                         >
-                            <PlusCircle className="w-4 h-4" />
-                            New Episode
+                            <PlusCircle className="w-4 h-4" /> New Episode
                         </Link>
                     ) : (
                         <Link 
                             href="/admin/podcasts/shows/new"
-                            className="flex items-center gap-2 px-5 py-2.5 bg-brand-brown-dark text-white rounded-xl text-sm font-bold hover:bg-brand-gold transition-colors shadow-md"
+                            className="flex items-center justify-center gap-2 px-5 bg-brand-brown-dark text-white rounded-xl text-sm font-bold hover:bg-brand-gold transition-colors shadow-md h-full"
                         >
-                            <Mic className="w-4 h-4" />
-                            Create Show
+                            <Mic className="w-4 h-4" /> Create Show
                         </Link>
                     )}
                 </div>
@@ -195,7 +252,7 @@ return (
 
             {/* 2. TABS & FILTERS TOOLBAR */}
             <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-                
+
                 {/* Tabs */}
                 <div className="flex bg-gray-100 p-1 rounded-lg w-full md:w-auto">
                     <button 
@@ -216,37 +273,21 @@ return (
                     </button>
                 </div>
 
-                {/* Filters & Sorting - RESPONSIVE ROW */}
+                {/* Filters & Sorting */}
                 <div className="flex flex-col w-full xl:w-auto gap-3">
-                    
                     <div className="flex flex-row gap-2 w-full">
-                        {/* Category Dropdown */}
-                        <div className="relative flex-1 md:flex-none">
-                            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-gold" />
-                            <select 
-                                value={categoryFilter}
-                                onChange={(e) => setCategoryFilter(e.target.value)}
-                                className="w-full md:w-40 pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer appearance-none font-bold text-gray-600"
-                            >
-                                <option value="All">All</option>
-                                <option value="English">English</option>
-                                <option value="Hausa">Hausa</option>
-                                <option value="Arabic">Arabic</option>
-                            </select>
+                        <div className="relative flex-1 sm:flex-none sm:w-40 min-w-[160px]">
+                            <CustomSelect options={categoryOptions} value={categoryFilter} onChange={setCategoryFilter} icon={Filter} placeholder="Category" />
                         </div>
-
-                        {/* Sorting Button */}
                         <button 
                             onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
                             className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors flex-1 md:flex-none"
-                            title={sortOrder === 'desc' ? "Sort: Newest First" : "Sort: Oldest First"}
                         >
                             <ArrowUpDown className="w-4 h-4" />
                             <span className="hidden sm:inline">{sortOrder === 'desc' ? 'Newest' : 'Oldest'}</span>
                         </button>
                     </div>
 
-                    {/* Search */}
                     <div className="relative w-full md:w-72">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input 
@@ -262,18 +303,18 @@ return (
             </div>
 
             {/* 3. CONTENT */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[300px]">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[400px]">
 
                 {isLoading ? (
-                    <div className="flex items-center justify-center h-64">
-                        <Loader />
+                    <div className="flex items-center justify-center h-64 scale-75">
+                        <LogoReveal />
                     </div>
                 ) : (
                     <>
                         {/* --- EPISODES VIEW --- */}
                         {activeTab === 'episodes' && (
                             <div className="overflow-x-auto">
-                                <table className="w-full text-left">
+                                <table className="w-full text-left whitespace-nowrap">
                                     <thead className="bg-gray-50 border-b border-gray-100">
                                         <tr>
                                             <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Episode</th>
@@ -295,7 +336,6 @@ return (
                                                                 <Image src={ep.thumbnail || "/fallback.webp"} alt={ep.title} fill className="object-cover" />
                                                             </div>
                                                             <div className="min-w-[150px]">
-                                                                {/* Full Title (No Line Clamp) */}
                                                                 <h3 
                                                                     className={`font-bold text-brand-brown-dark text-sm cursor-pointer hover:text-brand-gold ${getDir(ep.title) === 'rtl' ? 'font-tajawal' : ''}`}
                                                                     onClick={() => handleQuickView(ep)}
@@ -325,10 +365,10 @@ return (
                                                         {formatUploadTime(ep.createdAt)}
                                                     </td>
                                                     <td className="px-6 py-4 text-right">
-                                                        <div className="flex justify-end gap-2">
-                                                            <button onClick={() => handleQuickView(ep)} className="p-2 text-gray-400 hover:text-brand-gold hover:bg-brand-sand rounded-lg md:hidden"><Info className="w-4 h-4" /></button>
-                                                            <button onClick={() => handleEdit(ep.id, 'episode')} className="p-2 text-gray-400 hover:text-brand-gold hover:bg-brand-sand rounded-lg"><Edit className="w-4 h-4" /></button>
-                                                            <button onClick={() => handleDelete(ep.id, 'episode')} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
+                                                        <div className="flex justify-end gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button onClick={() => handleQuickView(ep)} className="p-2 text-gray-400 hover:text-brand-brown-dark bg-gray-100 rounded-lg md:hidden"><Info className="w-4 h-4" /></button>
+                                                            <button onClick={() => handleEdit(ep.id, 'episode')} className="p-2 text-gray-400 hover:text-brand-gold bg-gray-100 rounded-lg"><Edit className="w-4 h-4" /></button>
+                                                            <button onClick={() => handleDelete(ep.id, 'episode')} className="p-2 text-gray-400 hover:text-red-600 bg-gray-100 rounded-lg"><Trash2 className="w-4 h-4" /></button>
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -363,7 +403,6 @@ return (
                                                     </div>
                                                 </div>
                                                 <div className="flex-grow min-w-0">
-                                                    {/* Full Title Logic for Shows too */}
                                                     <h3 className={`font-agency text-lg text-brand-brown-dark leading-none mb-1 ${getDir(show.title) === 'rtl' ? 'font-tajawal font-bold' : ''}`}>
                                                         {show.title}
                                                     </h3>
