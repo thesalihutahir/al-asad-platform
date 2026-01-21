@@ -144,7 +144,6 @@ export default function UploadPhotosPage() {
             setIsSubmitting(false);
         }
     };
-
     return (
         <form onSubmit={handleSubmit} className="space-y-6 max-w-6xl mx-auto pb-12">
 
