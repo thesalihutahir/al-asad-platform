@@ -8,8 +8,10 @@ import { useRouter, useParams } from 'next/navigation';
 import { db, storage } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-// Global Modal
+// Global Modal & Components
 import { useModal } from '@/context/ModalContext';
+import CustomSelect from '@/components/CustomSelect'; 
+import CustomDatePicker from '@/components/CustomDatePicker'; 
 
 import { 
     ArrowLeft, 
@@ -17,11 +19,13 @@ import {
     Youtube, 
     Mic, 
     CheckCircle, 
-    Loader2,
-    FileAudio,
-    X,
-    Play,
-    ListMusic
+    Loader2, 
+    FileAudio, 
+    X, 
+    Play, 
+    ListMusic, 
+    Globe, 
+    Calendar as CalendarIcon
 } from 'lucide-react';
 
 export default function EditPodcastPage() {
@@ -42,7 +46,7 @@ export default function EditPodcastPage() {
         title: '',
         url: '', // YouTube URL
         show: '',
-        category: 'English', // NEW: Language
+        category: 'English', 
         episodeNumber: '',
         season: '',
         description: '',
@@ -52,10 +56,17 @@ export default function EditPodcastPage() {
     const [videoId, setVideoId] = useState(null);
     const [thumbnail, setThumbnail] = useState(null);
     const [isValid, setIsValid] = useState(false);
-    
+
     // Audio File State
     const [audioFile, setAudioFile] = useState(null);
     const [existingAudioUrl, setExistingAudioUrl] = useState(null);
+
+    // Constants
+    const CATEGORY_OPTIONS = [
+        { value: 'English', label: 'English' },
+        { value: 'Hausa', label: 'Hausa' },
+        { value: 'Arabic', label: 'Arabic' }
+    ];
 
     // Helper: Auto-Detect Arabic
     const getDir = (text) => {
@@ -94,13 +105,13 @@ export default function EditPodcastPage() {
                         title: data.title || '',
                         url: data.url || '',
                         show: data.show || '',
-                        category: data.category || 'English', // Load Category
+                        category: data.category || 'English',
                         episodeNumber: data.episodeNumber || '',
                         season: data.season || '',
                         description: data.description || '',
                         date: data.date || new Date().toISOString().split('T')[0]
                     });
-                    
+
                     // Filter shows immediately based on loaded category
                     const initialFiltered = showsData.filter(s => s.category === (data.category || 'English'));
                     setFilteredShows(initialFiltered);
@@ -142,7 +153,7 @@ export default function EditPodcastPage() {
         const vidId = extractVideoId(url);
         if (vidId) {
             setVideoId(vidId);
-            setThumbnail(`https://img.youtube.com/vi/${vidId}/hqdefault.jpg`); // Safe thumb
+            setThumbnail(`https://img.youtube.com/vi/${vidId}/hqdefault.jpg`); 
             setIsValid(true);
         } else {
             setVideoId(null);
@@ -165,18 +176,22 @@ export default function EditPodcastPage() {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    // Handler for Custom Selects
+    const handleSelectChange = (name, value) => {
+        setFormData(prev => ({ ...prev, [name]: value }));
         
-        // Reset show if category changes (optional, but good UX)
         if (name === 'category') {
-            setFormData(prev => ({ ...prev, show: '' }));
+            setFormData(prev => ({ ...prev, show: '' })); 
         }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!isValid || !videoId) {
-            alert("Please ensure the YouTube URL is valid.");
+        if (!isValid || !videoId || !formData.title) {
+            alert("Please ensure the title is filled and YouTube URL is valid.");
             return;
         }
 
@@ -231,7 +246,12 @@ export default function EditPodcastPage() {
         }
     };
 
-    if (isLoading) return <div className="h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 text-brand-gold animate-spin" /></div>;
+    // Show Options for Custom Select
+    const showOptions = filteredShows.map(show => ({
+        value: show.title,
+        label: show.title
+    }));
+if (isLoading) return <div className="h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 text-brand-gold animate-spin" /></div>;
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6 max-w-5xl mx-auto pb-12">
@@ -255,9 +275,9 @@ export default function EditPodcastPage() {
                     </Link>
                     <button 
                         type="submit" 
-                        disabled={!isValid || isSubmitting}
+                        disabled={!isValid || isSubmitting || !formData.title}
                         className={`flex items-center gap-2 px-6 py-2.5 font-bold rounded-xl transition-colors shadow-md ${
-                            isValid 
+                            isValid && formData.title
                             ? 'bg-brand-gold text-white hover:bg-brand-brown-dark' 
                             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                         }`}
@@ -297,7 +317,6 @@ export default function EditPodcastPage() {
                         <label className="flex items-center gap-2 text-xs font-bold text-brand-brown-dark uppercase tracking-wider mb-3">
                             <FileAudio className="w-4 h-4" /> Replace Audio File (Optional)
                         </label>
-                        
                         {/* Existing File Indicator */}
                         {existingAudioUrl && !audioFile && (
                             <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-3 mb-4">
@@ -307,6 +326,7 @@ export default function EditPodcastPage() {
                                 <div className="text-xs">
                                     <p className="font-bold text-green-700">Audio File Exists</p>
                                     <p className="text-green-600">Upload new file below to replace it.</p>
+                                    <a href={existingAudioUrl} target="_blank" className="text-blue-500 underline mt-1 block">Test Link</a>
                                 </div>
                             </div>
                         )}
@@ -342,7 +362,7 @@ export default function EditPodcastPage() {
                                 </div>
                             )}
                         </div>
-                        
+
                         {isSubmitting && audioFile && (
                             <div className="mt-3">
                                 <div className="flex justify-between text-[10px] font-bold text-gray-500 mb-1">
@@ -390,40 +410,25 @@ export default function EditPodcastPage() {
                     <h3 className="font-agency text-xl text-brand-brown-dark border-b border-gray-100 pb-2">Episode Details</h3>
 
                     {/* Category (Language) Selector */}
-                    <div>
-                        <label className="block text-xs font-bold text-brand-brown mb-1">Category (Language)</label>
-                        <select 
-                            name="category" 
-                            value={formData.category} 
-                            onChange={handleChange} 
-                            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
-                        >
-                            <option>English</option>
-                            <option>Hausa</option>
-                            <option>Arabic</option>
-                        </select>
-                    </div>
+                    <CustomSelect 
+                        label="Category (Language)"
+                        options={CATEGORY_OPTIONS}
+                        value={formData.category}
+                        onChange={(val) => handleSelectChange('category', val)}
+                        icon={Globe}
+                        placeholder="Select Language"
+                    />
 
                     {/* Show Selector (Filtered by Category) */}
-                    <div className="bg-brand-sand/20 p-4 rounded-xl border border-brand-gold/20">
-                        <label className="flex items-center gap-2 text-xs font-bold text-brand-brown-dark uppercase tracking-wider mb-2">
-                            <ListMusic className="w-4 h-4" /> Select Show
-                        </label>
-                        <select 
-                            name="show" 
-                            value={formData.show} 
-                            onChange={handleChange} 
-                            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer"
-                        >
-                            <option value="">Select a Podcast Show...</option>
-                            {filteredShows.length > 0 ? (
-                                filteredShows.map(show => (
-                                    <option key={show.id} value={show.title}>{show.title}</option>
-                                ))
-                            ) : (
-                                <option disabled>No shows found for {formData.category}</option>
-                            )}
-                        </select>
+                    <div className="pt-2 border-t border-gray-100">
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Select Show</label>
+                        <CustomSelect 
+                            options={showOptions}
+                            value={formData.show}
+                            onChange={(val) => handleSelectChange('show', val)}
+                            icon={ListMusic}
+                            placeholder={showOptions.length > 0 ? "Select a Podcast Show..." : "No shows found"}
+                        />
                     </div>
 
                     <div>
@@ -462,16 +467,12 @@ export default function EditPodcastPage() {
                         </div>
                     </div>
 
-                    <div>
-                        <label className="block text-xs font-bold text-brand-brown mb-1">Publish Date</label>
-                        <input 
-                            type="date" 
-                            name="date" 
-                            value={formData.date} 
-                            onChange={handleChange} 
-                            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50" 
-                        />
-                    </div>
+                    <CustomDatePicker 
+                        label="Publish Date"
+                        value={formData.date}
+                        onChange={(val) => handleSelectChange('date', val)}
+                        icon={CalendarIcon}
+                    />
 
                     <div>
                         <label className="block text-xs font-bold text-brand-brown mb-1">Description</label>
