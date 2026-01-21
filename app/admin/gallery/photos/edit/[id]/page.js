@@ -8,8 +8,10 @@ import { useRouter, useParams } from 'next/navigation';
 import { db, storage } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-// Global Modal
+// Global Modal & Components
 import { useModal } from '@/context/ModalContext';
+import CustomSelect from '@/components/CustomSelect'; 
+import LogoReveal from '@/components/logo-reveal'; 
 
 import { 
     ArrowLeft, 
@@ -84,7 +86,7 @@ export default function EditPhotoPage() {
                         albumId: data.albumId || 'uncategorized',
                         createdAt: data.createdAt
                     });
-                    
+
                     if (data.url) {
                         setExistingImageUrl(data.url);
                     }
@@ -105,6 +107,11 @@ export default function EditPhotoPage() {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    // Handler for Custom Select
+    const handleAlbumChange = (value) => {
+        setFormData(prev => ({ ...prev, albumId: value }));
     };
 
     // Handle New File Selection
@@ -161,9 +168,8 @@ export default function EditPhotoPage() {
             }
 
             // 2. Prepare Update Data
-            // Note: We also update albumTitle denormalized field if you used it in Upload page
             const selectedAlbumData = availableAlbums.find(a => a.id === formData.albumId);
-            
+
             const updateData = {
                 name: formData.name,
                 albumId: formData.albumId,
@@ -192,7 +198,12 @@ export default function EditPhotoPage() {
         }
     };
 
-    if (isLoading) return <div className="h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 text-brand-gold animate-spin" /></div>;
+    // Album Options for Custom Select
+    const albumOptions = [
+        { value: "uncategorized", label: "-- No Album (Stream Only) --" },
+        ...availableAlbums.map(alb => ({ value: alb.id, label: alb.title }))
+    ];
+if (isLoading) return <div className="h-screen flex items-center justify-center"><LogoReveal /></div>;
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6 max-w-5xl mx-auto pb-12">
@@ -208,16 +219,16 @@ export default function EditPhotoPage() {
                         <p className="font-lato text-sm text-gray-500">Update photo details or replace image.</p>
                     </div>
                 </div>
-                <div className="flex gap-3">
-                    <Link href="/admin/gallery">
-                        <button type="button" className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 transition-colors">
+                <div className="flex gap-3 w-full md:w-auto">
+                    <Link href="/admin/gallery" className="flex-1 md:flex-none">
+                        <button type="button" className="w-full px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 transition-colors text-center justify-center">
                             Cancel
                         </button>
                     </Link>
                     <button 
                         type="submit"
                         disabled={isSubmitting} 
-                        className="flex items-center gap-2 px-6 py-2.5 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-colors shadow-md disabled:opacity-50"
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-colors shadow-md disabled:opacity-50"
                     >
                         {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                         {isSubmitting ? 'Saving...' : 'Save Changes'}
@@ -236,7 +247,7 @@ export default function EditPhotoPage() {
                             <ImageIcon className="w-5 h-5 text-brand-gold" />
                             Image Preview
                         </h3>
-                        
+
                         <div className="relative w-full aspect-square bg-gray-100 rounded-xl overflow-hidden border border-gray-200 shadow-inner">
                             <Image 
                                 src={imageFile ? URL.createObjectURL(imageFile) : (existingImageUrl || "/fallback.webp")} 
@@ -244,7 +255,7 @@ export default function EditPhotoPage() {
                                 fill 
                                 className="object-contain" 
                             />
-                            
+
                             {/* If new file selected, show badge */}
                             {imageFile && (
                                 <div className="absolute top-3 right-3 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
@@ -309,20 +320,14 @@ export default function EditPhotoPage() {
 
                     {/* Album Selector */}
                     <div className="bg-brand-sand/20 p-4 rounded-xl border border-brand-gold/20">
-                        <label className="flex items-center gap-2 text-xs font-bold text-brand-brown-dark uppercase tracking-wider mb-2">
-                            <Folder className="w-4 h-4" /> Assigned Album
-                        </label>
-                        <select 
-                            name="albumId"
+                        <CustomSelect 
+                            label="Assigned Album"
+                            options={albumOptions}
                             value={formData.albumId}
-                            onChange={handleChange}
-                            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 cursor-pointer"
-                        >
-                            <option value="uncategorized">-- No Album (Stream Only) --</option>
-                            {availableAlbums.map(alb => (
-                                <option key={alb.id} value={alb.id}>{alb.title}</option>
-                            ))}
-                        </select>
+                            onChange={handleAlbumChange}
+                            icon={Folder}
+                            placeholder="Select Album"
+                        />
                     </div>
 
                     {/* Caption/Name */}
