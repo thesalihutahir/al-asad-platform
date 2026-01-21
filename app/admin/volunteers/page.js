@@ -125,6 +125,7 @@ export default function ManageVolunteersPage() {
         const date = timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp);
         return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     };
+
     return (
         <div className="space-y-6 max-w-7xl mx-auto pb-12 relative">
 
@@ -182,16 +183,11 @@ export default function ManageVolunteersPage() {
                                 ) : (
                                     filteredVolunteers.map((vol) => (
                                         <tr key={vol.id} className="hover:bg-gray-50 transition-colors group cursor-pointer" onClick={() => setViewVolunteer(vol)}>
+                                            {/* VOLUNTEER NAME & LOCATION (Removed Circle) */}
                                             <td className="px-6 py-4">
-                                                {/* Replaced Profile Pic Logic with Initials Avatar */}
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 bg-brand-sand/30 rounded-full flex items-center justify-center text-brand-brown-dark font-bold text-lg border border-brand-gold/20 shadow-sm">
-                                                        {vol.fullName.charAt(0).toUpperCase()}
-                                                    </div>
-                                                    <div>
-                                                        <span className="font-bold text-brand-brown-dark block">{vol.fullName}</span>
-                                                        <span className="flex items-center gap-1 text-xs text-gray-400"><MapPin className="w-3 h-3" /> {vol.state}, {vol.nationality}</span>
-                                                    </div>
+                                                <div>
+                                                    <span className="font-bold text-brand-brown-dark block">{vol.fullName}</span>
+                                                    <span className="flex items-center gap-1 text-xs text-gray-400 mt-0.5"><MapPin className="w-3 h-3" /> {vol.state}, {vol.nationality}</span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
