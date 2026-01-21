@@ -95,7 +95,7 @@ export default function ManagePartnersPage() {
             } 
             else if (type === 'update') {
                 await updateDoc(doc(db, "partners", partner.id), { status: payload });
-                
+
                 const mailUrl = generateEmailUrl(partner, payload);
                 if (mailUrl) window.location.href = mailUrl;
 
@@ -129,6 +129,7 @@ export default function ManagePartnersPage() {
         const date = timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp);
         return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     };
+
     return (
         <div className="space-y-6 max-w-7xl mx-auto pb-12 relative">
 
@@ -255,15 +256,16 @@ export default function ManagePartnersPage() {
             {viewPartner && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-                        
+
                         {/* Header */}
                         <div className="bg-brand-brown-dark px-6 py-4 flex justify-between items-center text-white flex-shrink-0">
                             <h3 className="font-agency text-xl">Application Details</h3>
                             <button onClick={() => setViewPartner(null)} className="p-1 hover:bg-white/10 rounded-full transition-colors"><X className="w-5 h-5" /></button>
                         </div>
-                        
+
                         {/* Content Scrollable */}
                         <div className="p-6 space-y-6 overflow-y-auto">
+                            
                             {/* Updated Header Layout: No Avatar */}
                             <div className="border-b border-gray-100 pb-4">
                                 <h2 className="text-2xl font-bold text-gray-800 mb-2">{viewPartner.organization}</h2>
@@ -284,7 +286,8 @@ export default function ManagePartnersPage() {
 
                             <div>
                                 <span className="block text-gray-400 text-xs uppercase mb-2 flex items-center gap-1"><FileText className="w-3 h-3"/> Message / Proposal</span>
-                                <div className="bg-gray-50 p-4 rounded-xl text-sm text-gray-600 leading-relaxed border border-gray-100 max-h-40 overflow-y-auto">{viewPartner.message}</div>
+                                
+<div className="bg-gray-50 p-4 rounded-xl text-sm text-gray-600 leading-relaxed border border-gray-100 max-h-40 overflow-y-auto">{viewPartner.message}</div>
                             </div>
                         </div>
 
@@ -292,14 +295,14 @@ export default function ManagePartnersPage() {
                         <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex justify-end gap-2 flex-wrap flex-shrink-0">
                             <button onClick={() => confirmAction('delete', viewPartner)} className="px-3 py-2 text-red-600 font-bold text-xs hover:bg-red-50 rounded-lg transition-colors">Delete</button>
                             {viewPartner.status === 'New' && <button onClick={() => confirmAction('update', viewPartner, 'Contacted')} className="px-3 py-2 bg-blue-600 text-white font-bold text-xs rounded-lg hover:bg-blue-700 transition-colors shadow-sm">Mark Contacted</button>}
-                            
+
                             {viewPartner.status !== 'Partnered' && viewPartner.status !== 'Declined' && (
                                 <>
                                     <button onClick={() => confirmAction('update', viewPartner, 'Declined')} className="px-3 py-2 bg-orange-100 text-orange-700 font-bold text-xs rounded-lg hover:bg-orange-200 transition-colors shadow-sm border border-orange-200">Decline</button>
                                     <button onClick={() => confirmAction('update', viewPartner, 'Partnered')} className="px-3 py-2 bg-green-600 text-white font-bold text-xs rounded-lg hover:bg-green-700 transition-colors shadow-sm">Approve</button>
                                 </>
                             )}
-                            
+
                             {viewPartner.status !== 'New' && <button onClick={() => confirmAction('resend', viewPartner)} className="px-3 py-2 bg-purple-600 text-white font-bold text-xs rounded-lg hover:bg-purple-700 transition-colors shadow-sm">Resend Email</button>}
                         </div>
                     </div>
