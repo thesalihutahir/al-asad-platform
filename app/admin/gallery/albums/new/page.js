@@ -272,7 +272,7 @@ return (
                         }`}
                     >
                         {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        {isSubmitting ? 'Creating...' : 'Create Album'}
+                        {isSubmitting ? 'Creating...' : 'Create'}
                     </button>
                 </div>
 
