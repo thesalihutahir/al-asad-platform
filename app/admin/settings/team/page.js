@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { db, storage } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, deleteDoc, doc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { ArrowLeft, Plus, Trash2, Loader2, Upload, User, BadgeCheck, X, Pencil } from 'lucide-react'; // Added Pencil
+import { ArrowLeft, Plus, Trash2, Loader2, Upload, BadgeCheck, X, Pencil } from 'lucide-react';
 
 export default function TeamSettingsPage() {
     const [members, setMembers] = useState([]);
@@ -151,6 +151,7 @@ export default function TeamSettingsPage() {
                         
                         {/* ACTIONS */}
                         <div className="flex gap-1">
+                            {/* Updated Edit Route */}
                             <Link href={`/admin/settings/team/edit/${member.id}`}>
                                 <button className="p-2 text-gray-400 hover:text-brand-brown-dark hover:bg-gray-100 rounded-lg transition-colors" title="Edit">
                                     <Pencil className="w-4 h-4" />
