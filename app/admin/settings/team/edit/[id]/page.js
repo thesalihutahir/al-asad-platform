@@ -7,7 +7,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { db, storage } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, deleteDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { useModal } from '@/context/ModalContext'; // Assuming you have this
+// Context for Custom Modal
+import { useModal } from '@/context/ModalContext';
 import { 
     ArrowLeft, Save, Trash2, Loader2, UploadCloud, 
     User, BadgeCheck, X, Camera, Eye, Check, ChevronDown 
@@ -70,7 +71,7 @@ export default function EditTeamMemberPage() {
     const params = useParams();
     const router = useRouter();
     const id = params?.id;
-    const { showSuccess, showConfirm } = useModal();
+    const { showSuccess, showConfirm } = useModal(); // Use Custom Modal Hook
 
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,15 +83,20 @@ export default function EditTeamMemberPage() {
         primaryRole: 'Esteemed Member',
         responsibilities: [] 
     });
-    
+
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [originalImage, setOriginalImage] = useState(null);
 
     // --- CONSTANTS ---
     const PRIMARY_ROLES = [
-        "Media Team Lead", "Operations Coordinator", "Content Manager",
-        "Public Relations Officer", "Livestream Lead", "Creative Director",
+        "Team Lead", // Updated
+        "Operations Coordinator", 
+        "Content Manager",
+        "Financial Manager", // Added
+        "Public Relations Officer", 
+        "Livestream Lead", 
+        "Creative Director",
         "Esteemed Member"
     ];
 
@@ -225,7 +231,7 @@ if (isLoading) return <div className="h-screen flex items-center justify-center"
 
     return (
         <div className="max-w-7xl mx-auto pb-20 px-4">
-            
+
             {/* --- HEADER --- */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 border-b border-gray-100 pb-6 pt-6">
                 <div className="flex items-center gap-4">
@@ -250,16 +256,16 @@ if (isLoading) return <div className="h-screen flex items-center justify-center"
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
-                
+
                 {/* LEFT: FORM INPUTS */}
                 <div className="lg:col-span-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-8 relative overflow-hidden">
                     {/* Background Decor */}
                     <div className="absolute top-0 right-0 w-64 h-64 bg-brand-sand/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
 
                     <h2 className="font-agency text-2xl text-brand-brown-dark mb-6 relative z-10">Member Details</h2>
-                    
+
                     <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
-                        
+
                         {/* 1. Name & Photo */}
                         <div className="flex flex-col sm:flex-row gap-6 items-start">
                             <div className="relative group cursor-pointer flex-shrink-0 mx-auto sm:mx-0">
