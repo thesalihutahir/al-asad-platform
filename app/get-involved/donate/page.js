@@ -55,7 +55,7 @@ export default function DonateOverviewPage() {
         title: "General Impact Fund",
         tagline: "Support our mission where it's needed most.",
         description: "Your contribution enables us to respond quickly to urgent community needs, maintain our educational facilities, and support our dedicated volunteers.",
-        coverImage: "/images/donate-general.webp", // Ensure you have a fallback image
+        coverImage: "fallback.webp", // Ensure you have a fallback image
         theme: "gold"
     };
 
