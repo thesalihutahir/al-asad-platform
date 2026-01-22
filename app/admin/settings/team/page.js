@@ -67,11 +67,11 @@ const CustomSelect = ({ options, value, onChange, placeholder, disabled, icon: I
 export default function TeamSettingsPage() {
     const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
-    
+
     // Form State
     const [showForm, setShowForm] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
+
     // View Modal State
     const [viewMember, setViewMember] = useState(null);
 
@@ -81,14 +81,19 @@ export default function TeamSettingsPage() {
         primaryRole: 'Esteemed Member',
         responsibilities: [] 
     });
-    
+
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
 
     // --- CONSTANTS ---
     const PRIMARY_ROLES = [
-        "Media Team Lead", "Operations Coordinator", "Content Manager",
-        "Public Relations Officer", "Livestream Lead", "Creative Director",
+        "Media Team Lead", 
+        "Operations Coordinator", 
+        "Content Manager",
+        "Public Relations Officer", 
+        "Livestream Lead", 
+        "Creative Director",
+        "Financial Manager", // Added New Role
         "Esteemed Member"
     ];
 
@@ -170,11 +175,11 @@ export default function TeamSettingsPage() {
             disabled: !!takenBy 
         };
     });
-if (loading) return <div className="h-96 flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-brand-gold" /></div>;
 
-    return (
+    if (loading) return <div className="h-96 flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-brand-gold" /></div>;
+return (
         <div className="max-w-7xl mx-auto pb-20 px-4">
-            
+
             {/* --- HEADER --- */}
             <div className="mb-10 border-b border-gray-100 pb-6">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -201,7 +206,7 @@ if (loading) return <div className="h-96 flex items-center justify-center"><Load
                     <div className="lg:col-span-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-8 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-brand-sand/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
                         <h2 className="font-agency text-2xl text-brand-brown-dark mb-6 relative z-10">New Team Member Profile</h2>
-                        
+
                         <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
                             <div className="flex flex-col sm:flex-row gap-6 items-start">
                                 <div className="relative group cursor-pointer flex-shrink-0 mx-auto sm:mx-0">
@@ -255,7 +260,6 @@ if (loading) return <div className="h-96 flex items-center justify-center"><Load
                             </div>
                         </form>
                     </div>
-
                     {/* Preview Card */}
                     <div className="lg:col-span-4 space-y-6">
                         <div className="bg-brand-sand/20 rounded-3xl p-6 border-2 border-dashed border-brand-gold/30 flex flex-col items-center justify-center text-center h-full min-h-[400px]">
@@ -277,7 +281,8 @@ if (loading) return <div className="h-96 flex items-center justify-center"><Load
                     </div>
                 </div>
             )}
-{/* --- MEMBERS GRID LIST --- */}
+
+            {/* --- MEMBERS GRID LIST --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {members.map((member) => (
                     <div key={member.id} onClick={() => setViewMember(member)} className="group bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:border-brand-gold/30 hover:shadow-lg transition-all duration-300 flex items-start gap-5 relative cursor-pointer">
