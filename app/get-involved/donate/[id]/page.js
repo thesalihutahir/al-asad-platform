@@ -1,0 +1,481 @@
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import Loader from '@/components/Loader';
+// Paystack
+import { usePaystackPayment } from 'react-paystack';
+// Firebase
+import { db } from '@/lib/firebase';
+import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { 
+    ArrowLeft, Heart, CreditCard, Landmark, CheckCircle, 
+    Copy, User, Mail, Phone, MessageSquare, ShieldCheck,
+    AlertCircle, ChevronRight, Lock
+} from 'lucide-react';
+
+export default function DonateFundPage() {
+    const params = useParams();
+    const router = useRouter();
+    const id = params?.id;
+
+    // --- STATE ---
+    const [fund, setFund] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [step, setStep] = useState(1); // 1: Amount, 2: Details, 3: Payment, 4: Success/BankInfo
+
+    // Donation Data
+    const [amount, setAmount] = useState(5000);
+    const [customAmount, setCustomAmount] = useState('');
+    const [donor, setDonor] = useState({ name: '', email: '', phone: '', note: '', anonymous: false });
+    const [paymentMethod, setPaymentMethod] = useState('paystack'); // 'paystack' or 'bank'
+    const [transactionRef, setTransactionRef] = useState(null); // Stores reference for bank/paystack
+
+    // Constants
+    const PRESET_AMOUNTS = [1000, 5000, 10000, 20000, 50000, 100000];
+    
+    // --- FETCH FUND DETAILS ---
+    useEffect(() => {
+        const fetchFund = async () => {
+            if (!id) return;
+            
+            // Handle "General" fund fallback if ID is 'general'
+            if (id === 'general') {
+                setFund({
+                    id: 'general',
+                    title: "General Impact Fund",
+                    description: "Your contribution enables us to respond quickly to urgent community needs, maintain our educational facilities, and support our dedicated volunteers. By donating to the General Fund, you trust us to allocate resources where they will have the most immediate and lasting impact.",
+                    coverImage: "/images/donate-general.webp",
+                    bankDetails: { // Default Bank
+                        accountName: "Al-Asad Foundation",
+                        bankName: "Jaiz Bank",
+                        accountNumber: "0000000000"
+                    }
+                });
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const docRef = doc(db, "donation_funds", id);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    setFund({ id: docSnap.id, ...docSnap.data() });
+                } else {
+                    // Fund not found
+                    router.push('/get-involved/donate');
+                }
+            } catch (error) {
+                console.error("Error fetching fund:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchFund();
+    }, [id, router]);
+
+    // --- CALCULATE FEES ---
+    // Optional: Pass fee to donor or absorb it. Here we display total.
+    const calculateTotal = (base) => {
+        // Simple logic: If < 2500, 1.5%. Else 1.5% + 100. Cap at 2000.
+        // For simplicity in this demo, we might just use base amount or add fee if configured.
+        // Let's assume we ABSORB fees for better UX, so user pays exactly what they typed.
+        return base; 
+    };
+
+    // --- PAYSTACK CONFIG ---
+    const paystackConfig = {
+        reference: (new Date()).getTime().toString(),
+        email: donor.email,
+        amount: amount * 100, // Paystack is in Kobo
+        publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+        metadata: {
+            fundId: fund?.id,
+            fundTitle: fund?.title,
+            donorName: donor.name,
+            custom_fields: [
+                { display_name: "Fund", variable_name: "fund", value: fund?.title }
+            ]
+        }
+    };
+
+    const initializePaystack = usePaystackPayment(paystackConfig);
+
+    // --- HANDLERS ---
+
+    const handleAmountSelect = (val) => {
+        setAmount(val);
+        setCustomAmount('');
+    };
+
+    const handleCustomAmountChange = (e) => {
+        const val = e.target.value.replace(/[^0-9]/g, '');
+        setCustomAmount(val);
+        setAmount(val ? parseInt(val) : 0);
+    };
+
+    const handleNextStep = () => {
+        if (step === 1 && amount < 100) return alert("Minimum donation is ₦100");
+        if (step === 2 && !donor.email) return alert("Please provide an email address for your receipt.");
+        setStep(prev => prev + 1);
+    };
+
+    const recordDonation = async (ref, status) => {
+        try {
+            await addDoc(collection(db, "donations"), {
+                fundId: fund.id,
+                fundTitle: fund.title,
+                amount: amount,
+                donorName: donor.anonymous ? "Anonymous" : donor.name,
+                donorEmail: donor.email,
+                donorPhone: donor.phone,
+                message: donor.note,
+                method: paymentMethod, // 'paystack' or 'bank'
+                reference: ref,
+                status: status, // 'Success' or 'Pending' (for bank)
+                createdAt: serverTimestamp()
+            });
+        } catch (error) {
+            console.error("Error recording donation:", error);
+        }
+    };
+
+    const handlePaystackSuccess = (reference) => {
+        recordDonation(reference.reference, 'Success');
+        setTransactionRef(reference.reference);
+        setStep(4); // Success View
+    };
+
+    const handleBankTransferInit = () => {
+        // Generate a manual reference for them to use
+        const manualRef = `BANK-${Date.now().toString().slice(-6)}`;
+        setTransactionRef(manualRef);
+        recordDonation(manualRef, 'Pending'); // Mark as pending admin approval
+        setStep(4); // Show Bank Details View
+    };
+
+    const processPayment = () => {
+        if (paymentMethod === 'paystack') {
+            initializePaystack(handlePaystackSuccess, () => alert("Payment cancelled."));
+        } else {
+            handleBankTransferInit();
+        }
+    };
+
+    // --- RENDER HELPERS ---
+    
+    // Copy to clipboard helper
+    const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text);
+        alert("Copied: " + text);
+    };
+
+    if (loading) return <Loader size="lg" className="h-screen bg-brand-sand" />;
+    if (!fund) return null;
+
+    // Use Fund-specific bank details if available, else Fallback
+    const bankDetails = fund.bankDetails || {
+        accountName: "Al-Asad Education Foundation",
+        bankName: "Jaiz Bank",
+        accountNumber: "0000000000" // Replace with real default
+    };
+
+    return (
+        <div className="min-h-screen flex flex-col bg-gray-50 font-lato">
+            <Header />
+
+            <main className="flex-grow pt-24 pb-20 px-4 md:px-8">
+                <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
+                    
+                    {/* LEFT: FUND DETAILS (Sticky on Desktop) */}
+                    <div className="lg:col-span-7">
+                        <div className="sticky top-32">
+                            <Link href="/get-involved/donate" className="inline-flex items-center text-gray-500 hover:text-brand-brown-dark mb-6 text-xs font-bold uppercase tracking-widest transition-colors">
+                                <ArrowLeft className="w-4 h-4 mr-2" /> Back to Funds
+                            </Link>
+
+                            <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-lg mb-8">
+                                <Image 
+                                    src={fund.coverImage || "/fallback.webp"} 
+                                    alt={fund.title} 
+                                    fill 
+                                    className="object-cover"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-8 text-white">
+                                    <h1 className="font-agency text-4xl md:text-5xl font-bold mb-2">{fund.title}</h1>
+                                    {fund.tagline && <p className="text-white/80 font-lato text-lg">{fund.tagline}</p>}
+                                </div>
+                            </div>
+
+                            <div className="prose prose-lg text-gray-600 leading-relaxed font-lato">
+                                <h3 className="font-agency text-2xl text-brand-brown-dark">About this Fund</h3>
+                                <p>{fund.description}</p>
+                            </div>
+
+                            <div className="mt-8 p-6 bg-brand-sand/20 rounded-2xl border border-brand-gold/20 flex items-start gap-4">
+                                <ShieldCheck className="w-8 h-8 text-brand-gold flex-shrink-0" />
+                                <div>
+                                    <h4 className="font-bold text-brand-brown-dark text-sm mb-1">100% Secure Donation</h4>
+                                    <p className="text-xs text-gray-600">
+                                        Your donation is processed securely. We ensure transparency in every project we undertake.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* RIGHT: DONATION WIZARD CARD */}
+                    <div className="lg:col-span-5 relative z-10">
+                        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden sticky top-32">
+                            
+                            {/* Wizard Progress Bar */}
+                            {step < 4 && (
+                                <div className="bg-gray-50 px-8 py-4 border-b border-gray-100 flex justify-between items-center text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                    <span className={step >= 1 ? 'text-brand-brown-dark' : ''}>1. Amount</span>
+                                    <ChevronRight className="w-3 h-3" />
+                                    <span className={step >= 2 ? 'text-brand-brown-dark' : ''}>2. Details</span>
+                                    <ChevronRight className="w-3 h-3" />
+                                    <span className={step >= 3 ? 'text-brand-brown-dark' : ''}>3. Payment</span>
+                                </div>
+                            )}
+
+                            <div className="p-8">
+                                
+                                {/* STEP 1: AMOUNT */}
+                                {step === 1 && (
+                                    <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                                        <h2 className="font-agency text-3xl text-brand-brown-dark mb-6">Choose Donation Amount</h2>
+                                        
+                                        <div className="grid grid-cols-3 gap-3 mb-6">
+                                            {PRESET_AMOUNTS.map((amt) => (
+                                                <button
+                                                    key={amt}
+                                                    onClick={() => handleAmountSelect(amt)}
+                                                    className={`py-3 rounded-xl text-sm font-bold border transition-all ${
+                                                        amount === amt && customAmount === '' 
+                                                        ? 'bg-brand-brown-dark text-white border-brand-brown-dark shadow-md' 
+                                                        : 'bg-white text-gray-600 border-gray-200 hover:border-brand-gold'
+                                                    }`}
+                                                >
+                                                    ₦{amt.toLocaleString()}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <div className="relative mb-8">
+                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₦</span>
+                                            <input 
+                                                type="text" 
+                                                value={customAmount} 
+                                                onChange={handleCustomAmountChange} 
+                                                placeholder="Enter custom amount" 
+                                                className="w-full pl-8 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 font-bold text-gray-800 text-lg transition-all"
+                                            />
+                                        </div>
+
+                                        <button 
+                                            onClick={handleNextStep}
+                                            className="w-full py-4 bg-brand-gold text-white font-bold rounded-xl text-lg hover:bg-brand-brown-dark transition-all shadow-lg flex items-center justify-center gap-2"
+                                        >
+                                            Continue <ArrowRight className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* STEP 2: DETAILS */}
+                                {step === 2 && (
+                                    <div className="animate-in fade-in slide-in-from-right-4 duration-300 space-y-5">
+                                        <h2 className="font-agency text-3xl text-brand-brown-dark mb-2">Your Information</h2>
+                                        
+                                        <div className="relative">
+                                            <User className="absolute left-4 top-3.5 w-4 h-4 text-gray-400" />
+                                            <input 
+                                                type="text" 
+                                                placeholder="Full Name (Optional)" 
+                                                value={donor.name}
+                                                onChange={(e) => setDonor({...donor, name: e.target.value})}
+                                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 text-sm font-bold" 
+                                            />
+                                        </div>
+
+                                        <div className="relative">
+                                            <Mail className="absolute left-4 top-3.5 w-4 h-4 text-gray-400" />
+                                            <input 
+                                                type="email" 
+                                                placeholder="Email Address *" 
+                                                value={donor.email}
+                                                onChange={(e) => setDonor({...donor, email: e.target.value})}
+                                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 text-sm font-bold" 
+                                            />
+                                        </div>
+
+                                        <div className="relative">
+                                            <Phone className="absolute left-4 top-3.5 w-4 h-4 text-gray-400" />
+                                            <input 
+                                                type="text" 
+                                                placeholder="Phone Number (Optional)" 
+                                                value={donor.phone}
+                                                onChange={(e) => setDonor({...donor, phone: e.target.value})}
+                                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 text-sm font-bold" 
+                                            />
+                                        </div>
+
+                                        <div className="relative">
+                                            <MessageSquare className="absolute left-4 top-3.5 w-4 h-4 text-gray-400" />
+                                            <textarea 
+                                                placeholder="Leave a note or message (Optional)" 
+                                                rows="2"
+                                                value={donor.note}
+                                                onChange={(e) => setDonor({...donor, note: e.target.value})}
+                                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 text-sm font-bold resize-none" 
+                                            ></textarea>
+                                        </div>
+
+                                        <label className="flex items-center gap-3 p-3 border border-gray-100 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={donor.anonymous} 
+                                                onChange={(e) => setDonor({...donor, anonymous: e.target.checked})}
+                                                className="w-5 h-5 accent-brand-gold rounded" 
+                                            />
+                                            <span className="text-sm text-gray-600 font-bold">Make this donation anonymous</span>
+                                        </label>
+
+                                        <div className="flex gap-3 pt-2">
+                                            <button onClick={() => setStep(1)} className="px-6 py-4 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200">Back</button>
+                                            <button onClick={handleNextStep} className="flex-grow py-4 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-all shadow-lg">Review & Pay</button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* STEP 3: PAYMENT METHOD */}
+                                {step === 3 && (
+                                    <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                                        <h2 className="font-agency text-3xl text-brand-brown-dark mb-2">Select Payment Method</h2>
+                                        <p className="text-gray-500 text-sm mb-6">Total Amount: <span className="text-brand-brown-dark font-bold text-lg">₦{amount.toLocaleString()}</span></p>
+
+                                        <div className="space-y-4 mb-8">
+                                            <button 
+                                                onClick={() => setPaymentMethod('paystack')}
+                                                className={`w-full p-4 rounded-2xl border-2 flex items-center justify-between transition-all ${
+                                                    paymentMethod === 'paystack' 
+                                                    ? 'border-brand-gold bg-brand-sand/10 ring-1 ring-brand-gold' 
+                                                    : 'border-gray-100 hover:border-gray-300'
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
+                                                        <CreditCard className="w-5 h-5" />
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <span className="block font-bold text-gray-800">Pay Online (Paystack)</span>
+                                                        <span className="text-xs text-gray-500">Cards, USSD, Bank Transfer</span>
+                                                    </div>
+                                                </div>
+                                                {paymentMethod === 'paystack' && <div className="w-5 h-5 rounded-full bg-brand-gold flex items-center justify-center"><CheckCircle className="w-3 h-3 text-white" /></div>}
+                                            </button>
+
+                                            <button 
+                                                onClick={() => setPaymentMethod('bank')}
+                                                className={`w-full p-4 rounded-2xl border-2 flex items-center justify-between transition-all ${
+                                                    paymentMethod === 'bank' 
+                                                    ? 'border-brand-gold bg-brand-sand/10 ring-1 ring-brand-gold' 
+                                                    : 'border-gray-100 hover:border-gray-300'
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center text-green-600">
+                                                        <Landmark className="w-5 h-5" />
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <span className="block font-bold text-gray-800">Direct Bank Transfer</span>
+                                                        <span className="text-xs text-gray-500">Manual transfer to our account</span>
+                                                    </div>
+                                                </div>
+                                                {paymentMethod === 'bank' && <div className="w-5 h-5 rounded-full bg-brand-gold flex items-center justify-center"><CheckCircle className="w-3 h-3 text-white" /></div>}
+                                            </button>
+                                        </div>
+
+                                        <div className="flex gap-3">
+                                            <button onClick={() => setStep(2)} className="px-6 py-4 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200">Back</button>
+                                            <button onClick={processPayment} className="flex-grow py-4 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-all shadow-lg flex items-center justify-center gap-2">
+                                                <Lock className="w-4 h-4" /> {paymentMethod === 'paystack' ? 'Pay Now' : 'Show Bank Details'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* STEP 4: SUCCESS / BANK DETAILS */}
+                                {step === 4 && (
+                                    <div className="animate-in fade-in zoom-in-95 duration-300 text-center">
+                                        {paymentMethod === 'paystack' ? (
+                                            <>
+                                                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                                    <CheckCircle className="w-10 h-10 text-green-600" />
+                                                </div>
+                                                <h2 className="font-agency text-3xl text-brand-brown-dark mb-2">Donation Successful!</h2>
+                                                <p className="text-gray-500 text-sm mb-8">Thank you, {donor.name || 'Donor'}! Your support means everything to us. A receipt has been sent to your email.</p>
+                                                <Link href="/" className="block w-full py-4 bg-brand-brown-dark text-white font-bold rounded-xl hover:bg-brand-gold transition-colors">Return Home</Link>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="w-16 h-16 bg-brand-sand/30 rounded-full flex items-center justify-center mx-auto mb-6 text-brand-brown-dark">
+                                                    <Landmark className="w-8 h-8" />
+                                                </div>
+                                                <h2 className="font-agency text-2xl text-brand-brown-dark mb-2">Bank Transfer Details</h2>
+                                                <p className="text-gray-500 text-xs mb-6 px-4">Please transfer <strong className="text-black">₦{amount.toLocaleString()}</strong> to the account below. Use the reference code in your narration.</p>
+
+                                                <div className="bg-gray-50 rounded-2xl p-5 text-left space-y-4 mb-6 border border-gray-200">
+                                                    <div>
+                                                        <p className="text-xs text-gray-400 uppercase font-bold">Bank Name</p>
+                                                        <p className="font-bold text-gray-800">{bankDetails.bankName}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-gray-400 uppercase font-bold">Account Name</p>
+                                                        <p className="font-bold text-gray-800">{bankDetails.accountName}</p>
+                                                    </div>
+                                                    <div className="flex justify-between items-end">
+                                                        <div>
+                                                            <p className="text-xs text-gray-400 uppercase font-bold">Account Number</p>
+                                                            <p className="font-bold text-2xl text-brand-brown-dark tracking-widest">{bankDetails.accountNumber}</p>
+                                                        </div>
+                                                        <button onClick={() => copyToClipboard(bankDetails.accountNumber)} className="p-2 bg-white border rounded-lg hover:text-brand-gold"><Copy className="w-4 h-4" /></button>
+                                                    </div>
+                                                    <div className="pt-4 border-t border-gray-200">
+                                                        <p className="text-xs text-gray-400 uppercase font-bold mb-1">Payment Reference (Important)</p>
+                                                        <div className="flex justify-between items-center bg-white border border-brand-gold/30 rounded-lg p-3">
+                                                            <span className="font-mono font-bold text-brand-gold">{transactionRef}</span>
+                                                            <button onClick={() => copyToClipboard(transactionRef)}><Copy className="w-4 h-4 text-gray-400 hover:text-brand-gold" /></button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="bg-blue-50 p-4 rounded-xl flex gap-3 items-start text-left mb-6">
+                                                    <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                                                    <p className="text-xs text-blue-800">
+                                                        After transferring, please send your proof of payment via WhatsApp to <strong>+234 800 000 0000</strong> or wait for our confirmation email.
+                                                    </p>
+                                                </div>
+
+                                                <Link href="/" className="block w-full py-4 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-colors">I have made the transfer</Link>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+            <Footer />
+        </div>
+    );
+}
