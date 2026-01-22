@@ -175,9 +175,9 @@ export default function TeamSettingsPage() {
             disabled: !!takenBy 
         };
     });
+if (loading) return <div className="h-96 flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-brand-gold" /></div>;
 
-    if (loading) return <div className="h-96 flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-brand-gold" /></div>;
-return (
+    return (
         <div className="max-w-7xl mx-auto pb-20 px-4">
 
             {/* --- HEADER --- */}
