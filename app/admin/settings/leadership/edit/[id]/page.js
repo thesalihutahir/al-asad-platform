@@ -11,7 +11,7 @@ import { useModal } from '@/context/ModalContext';
 import { 
     ArrowLeft, Save, Trash2, Loader2, UploadCloud, 
     User, Briefcase, X, Camera, Eye, Check, ChevronDown, 
-    FileText, ListOrdered 
+    FileText 
 } from 'lucide-react';
 
 // --- CUSTOM SELECT COMPONENT ---
@@ -81,7 +81,6 @@ export default function EditLeadershipPage() {
         name: '',
         position: '',
         bio: '',
-        order: 1,
         visibility: 'Visible'
     });
 
@@ -103,7 +102,6 @@ export default function EditLeadershipPage() {
                         name: data.name || '',
                         position: data.position || '',
                         bio: data.bio || '',
-                        order: data.order || 1,
                         visibility: data.visibility || 'Visible'
                     });
                     setOriginalImage(data.image);
@@ -150,7 +148,6 @@ export default function EditLeadershipPage() {
             const docRef = doc(db, "leadership_members", id);
             await updateDoc(docRef, {
                 ...formData,
-                order: Number(formData.order), // Ensure number
                 image: imageUrl,
                 updatedAt: serverTimestamp()
             });
@@ -196,7 +193,7 @@ export default function EditLeadershipPage() {
                     </Link>
                     <div>
                         <h1 className="font-agency text-4xl text-brand-brown-dark leading-none mb-1">Edit Leadership Profile</h1>
-                        <p className="font-lato text-sm text-gray-500">Update details, hierarchy order, and visibility.</p>
+                        <p className="font-lato text-sm text-gray-500">Update details and visibility.</p>
                     </div>
                 </div>
                 <div className="flex gap-3">
@@ -280,22 +277,8 @@ export default function EditLeadershipPage() {
 
                         <hr className="border-gray-100" />
 
-                        {/* 3. Settings (Order & Visibility) */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1 mb-2 block">Display Order</label>
-                                <div className="relative">
-                                    <ListOrdered className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                    <input 
-                                        type="number" 
-                                        min="1" 
-                                        value={formData.order} 
-                                        onChange={(e) => setFormData({...formData, order: e.target.value})} 
-                                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-transparent rounded-xl text-sm focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 transition-all outline-none font-bold text-gray-700" 
-                                    />
-                                </div>
-                                <p className="text-[10px] text-gray-400 mt-1 ml-1">Lower numbers appear first.</p>
-                            </div>
+                        {/* 3. Settings (Visibility Only) */}
+                        <div className="grid grid-cols-1">
                             <div>
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1 mb-2 block">Visibility</label>
                                 <CustomSelect 
