@@ -87,13 +87,13 @@ export default function TeamSettingsPage() {
 
     // --- CONSTANTS ---
     const PRIMARY_ROLES = [
-        "Media Team Lead", 
+        "Team Lead", // Updated from Media Team Lead
         "Operations Coordinator", 
         "Content Manager",
+        "Financial Manager", // Added New Role
         "Public Relations Officer", 
         "Livestream Lead", 
         "Creative Director",
-        "Financial Manager", // Added New Role
         "Esteemed Member"
     ];
 
@@ -281,8 +281,7 @@ if (loading) return <div className="h-96 flex items-center justify-center"><Load
                     </div>
                 </div>
             )}
-
-            {/* --- MEMBERS GRID LIST --- */}
+{/* --- MEMBERS GRID LIST --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {members.map((member) => (
                     <div key={member.id} onClick={() => setViewMember(member)} className="group bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:border-brand-gold/30 hover:shadow-lg transition-all duration-300 flex items-start gap-5 relative cursor-pointer">
