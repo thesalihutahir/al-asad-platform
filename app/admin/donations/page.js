@@ -10,8 +10,8 @@ import {
 import { 
     Search, Plus, TrendingUp, Users, Clock, 
     CreditCard, Landmark, CheckCircle, X, 
-    Trash2, Edit, Eye, FileText, Calendar, 
-    Mail, Phone, MessageSquare, AlertTriangle, Copy
+    Trash2, Edit, Eye, FileText, 
+    Mail, Phone, Copy, AlertTriangle
 } from 'lucide-react';
 
 export default function AdminDonationsPage() {
@@ -31,16 +31,18 @@ export default function AdminDonationsPage() {
     useEffect(() => {
         setLoading(true);
         
-        // 1. Donations
+        // 1. Listen to Donations
         const qDonations = query(collection(db, "donations"), orderBy("createdAt", "desc"));
         const unsubDonations = onSnapshot(qDonations, (snapshot) => {
-            setDonations(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setDonations(data);
         });
 
-        // 2. Funds
+        // 2. Listen to Funds
         const qFunds = query(collection(db, "donation_funds"), orderBy("createdAt", "desc"));
         const unsubFunds = onSnapshot(qFunds, (snapshot) => {
-            setFunds(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setFunds(data);
             setLoading(false);
         });
 
@@ -54,7 +56,7 @@ export default function AdminDonationsPage() {
     const verifyDonation = async (donation) => {
         if(confirm(`Confirm receipt of ₦${donation.amount.toLocaleString()} from ${donation.donorName}?`)) {
             await updateDoc(doc(db, "donations", donation.id), { status: 'Success' });
-            setViewDonation(null); // Close modal
+            setViewDonation(null); 
         }
     };
 
@@ -66,7 +68,7 @@ export default function AdminDonationsPage() {
     };
 
     const deleteFund = async (id) => {
-        if(confirm("Delete this fund? This will NOT delete the donation records associated with it, but the fund will disappear from the public site.")) {
+        if(confirm("Delete this fund? This will NOT delete associated donations, but the fund will disappear from the public site.")) {
             await deleteDoc(doc(db, "donation_funds", id));
             setViewFund(null);
         }
@@ -75,24 +77,26 @@ export default function AdminDonationsPage() {
     const toggleFundStatus = async (fund) => {
         const newStatus = fund.status === 'Active' ? 'Paused' : 'Active';
         await updateDoc(doc(db, "donation_funds", fund.id), { status: newStatus });
-        // Update local state for immediate UI feedback if needed, but snapshot handles it
     };
 
-    // --- FILTERS & STATS ---
+    // --- FILTERS (SAFE) ---
     const filteredDonations = donations.filter(d => {
-        const matchesSearch = d.donorName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                              d.reference?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                              d.donorEmail?.toLowerCase().includes(searchTerm.toLowerCase());
+        const searchLower = searchTerm.toLowerCase();
+        // Safe check using || "" to prevent undefined errors hiding rows
+        const matchesSearch = (d.donorName || "").toLowerCase().includes(searchLower) || 
+                              (d.reference || "").toLowerCase().includes(searchLower) ||
+                              (d.donorEmail || "").toLowerCase().includes(searchLower);
         const matchesStatus = statusFilter === 'All' || d.status === statusFilter;
         return matchesSearch && matchesStatus;
     });
 
-    const totalRaised = donations.filter(d => d.status === 'Success').reduce((acc, curr) => acc + curr.amount, 0);
+    // --- STATS ---
+    const totalRaised = donations.filter(d => d.status === 'Success').reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
     const totalDonors = new Set(donations.map(d => d.donorEmail)).size;
     const pendingCount = donations.filter(d => d.status === 'Pending').length;
 
     // --- HELPERS ---
-    const formatCurrency = (amount) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(amount);
+    const formatCurrency = (amount) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(amount || 0);
     
     const formatDate = (timestamp) => {
         if (!timestamp) return 'N/A';
@@ -165,7 +169,7 @@ export default function AdminDonationsPage() {
                     </div>
 
                     {/* Table */}
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left whitespace-nowrap">
                                 <thead className="bg-gray-50 border-b border-gray-100">
@@ -183,7 +187,7 @@ export default function AdminDonationsPage() {
                                         filteredDonations.map((d) => (
                                             <tr key={d.id} onClick={() => setViewDonation(d)} className="hover:bg-gray-50 transition-colors cursor-pointer group">
                                                 <td className="px-6 py-4">
-                                                    <div className="font-bold text-sm text-gray-800">{d.donorName}</div>
+                                                    <div className="font-bold text-sm text-gray-800">{d.donorName || "Anonymous"}</div>
                                                     <div className="text-xs text-gray-400">{d.donorEmail}</div>
                                                 </td>
                                                 <td className="px-6 py-4">
@@ -211,7 +215,7 @@ export default function AdminDonationsPage() {
                                             </tr>
                                         ))
                                     ) : (
-                                        <tr><td colSpan="6" className="px-6 py-12 text-center text-gray-400 text-sm">No transactions found.</td></tr>
+                                        <tr><td colSpan="6" className="px-6 py-20 text-center text-gray-400 text-sm">No transactions found.</td></tr>
                                     )}
                                 </tbody>
                             </table>
@@ -249,7 +253,6 @@ export default function AdminDonationsPage() {
                             </div>
                         </div>
                     ))}
-                    {/* Add Fund Card */}
                     <Link href="/admin/donations/funds/new" className="border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center p-8 text-gray-400 hover:border-brand-gold hover:text-brand-gold transition-colors bg-gray-50/50 hover:bg-white min-h-[250px]">
                         <Plus className="w-10 h-10 mb-2 opacity-50" />
                         <span className="font-bold text-sm">Create New Fund</span>
@@ -261,13 +264,13 @@ export default function AdminDonationsPage() {
             {viewDonation && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-                        {/* Modal Header */}
+                        {/* Header */}
                         <div className="bg-brand-brown-dark px-6 py-4 flex justify-between items-center text-white">
                             <h3 className="font-agency text-xl">Transaction Details</h3>
                             <button onClick={() => setViewDonation(null)} className="p-1 hover:bg-white/10 rounded-full transition-colors"><X className="w-5 h-5" /></button>
                         </div>
                         
-                        {/* Modal Content */}
+                        {/* Content */}
                         <div className="p-6 space-y-6">
                             <div className="text-center pb-4 border-b border-gray-100">
                                 <span className="block text-xs text-gray-400 uppercase font-bold tracking-widest mb-1">Amount Donated</span>
@@ -313,7 +316,7 @@ export default function AdminDonationsPage() {
                             )}
                         </div>
 
-                        {/* Modal Footer */}
+                        {/* Footer */}
                         <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
                             {viewDonation.status === 'Pending' && (
                                 <button onClick={() => verifyDonation(viewDonation)} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-sm transition-colors shadow-sm flex items-center gap-2">
@@ -334,7 +337,6 @@ export default function AdminDonationsPage() {
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 relative">
                         <button onClick={() => setViewFund(null)} className="absolute top-4 right-4 z-10 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors backdrop-blur-sm"><X className="w-5 h-5" /></button>
                         
-                        {/* Cover Image Header */}
                         <div className="relative w-full h-48 bg-gray-200">
                             <Image src={viewFund.coverImage || "/fallback.webp"} alt={viewFund.title} fill className="object-cover" />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
