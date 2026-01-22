@@ -10,7 +10,7 @@ import { useModal } from '@/context/ModalContext';
 import { 
     ArrowLeft, Plus, Trash2, Loader2, UploadCloud, 
     User, Briefcase, X, Pencil, Camera, Eye, 
-    Check, ChevronDown, ListOrdered, Globe, EyeOff
+    Check, ChevronDown, ListOrdered, EyeOff, FileText
 } from 'lucide-react';
 
 // --- CUSTOM SELECT COMPONENT ---
@@ -75,9 +75,9 @@ export default function LeadershipManagerPage() {
     const [formData, setFormData] = useState({
         name: '',
         position: '',
+        bio: '', // Added Bio
         order: 1,
-        visibility: 'Visible', // Visible or Hidden
-        bio: ''
+        visibility: 'Visible'
     });
 
     const [imageFile, setImageFile] = useState(null);
@@ -85,7 +85,6 @@ export default function LeadershipManagerPage() {
 
     // --- FETCH DATA ---
     useEffect(() => {
-        // Order by 'order' field ascending (1, 2, 3...)
         const q = query(collection(db, "leadership_members"), orderBy("order", "asc"));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             setMembers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
@@ -115,8 +114,9 @@ export default function LeadershipManagerPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.name || !formData.position) { 
-            alert("Name and Position are required."); 
+        // Validation: Added check for bio
+        if (!formData.name || !formData.position || !formData.bio) { 
+            alert("Name, Position, and Biography are required."); 
             return; 
         }
 
@@ -131,14 +131,14 @@ export default function LeadershipManagerPage() {
 
             await addDoc(collection(db, "leadership_members"), { 
                 ...formData, 
-                order: Number(formData.order), // Ensure number type
+                order: Number(formData.order),
                 image: imageUrl, 
                 createdAt: serverTimestamp() 
             });
             
             // Reset
             setShowForm(false);
-            setFormData({ name: '', position: '', order: members.length + 1, visibility: 'Visible', bio: '' });
+            setFormData({ name: '', position: '', bio: '', order: members.length + 1, visibility: 'Visible' });
             setImageFile(null);
             setImagePreview(null);
             
@@ -227,6 +227,21 @@ if (loading) return <div className="h-96 flex items-center justify-center"><Load
                                 </div>
                             </div>
 
+                            {/* Bio Field (Added) */}
+                            <div>
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1 mb-1.5 block">Biography <span className="text-red-500">*</span></label>
+                                <div className="relative">
+                                    <FileText className="absolute left-4 top-3.5 w-4 h-4 text-gray-400" />
+                                    <textarea 
+                                        rows="4"
+                                        value={formData.bio} 
+                                        onChange={(e) => setFormData({...formData, bio: e.target.value})} 
+                                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-transparent rounded-xl text-sm focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 transition-all outline-none font-bold text-gray-700 placeholder-gray-400 resize-none" 
+                                        placeholder="Brief introduction and background..." 
+                                    />
+                                </div>
+                            </div>
+
                             <hr className="border-gray-100" />
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -269,7 +284,10 @@ if (loading) return <div className="h-96 flex items-center justify-center"><Load
                                 </div>
                                 <div className="p-5 text-left border-t border-gray-100">
                                     <h4 className="font-agency text-2xl text-brand-brown-dark leading-none mb-1">{formData.name || "Leader Name"}</h4>
-                                    <p className="text-xs font-bold text-brand-gold uppercase tracking-wide">{formData.position || "Position Title"}</p>
+                                    <p className="text-xs font-bold text-brand-gold uppercase tracking-wide mb-3">{formData.position || "Position Title"}</p>
+                                    <p className="text-xs text-gray-500 line-clamp-3 italic">
+                                        {formData.bio || "Biography preview will appear here..."}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -320,13 +338,19 @@ if (loading) return <div className="h-96 flex items-center justify-center"><Load
                                 <p className="text-sm font-bold text-brand-gold uppercase tracking-widest">{viewMember.position}</p>
                             </div>
                         </div>
-                        <div className="p-6 bg-gray-50 flex justify-between items-center">
-                            <div className="text-xs text-gray-500">
-                                Display Order: <span className="font-bold text-gray-800">{viewMember.order}</span>
+                        <div className="p-6 bg-white space-y-4">
+                            <div>
+                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Biography</h4>
+                                <p className="text-sm text-gray-600 leading-relaxed">{viewMember.bio}</p>
                             </div>
-                            <div className="flex gap-2">
-                                <Link href={`/admin/settings/leadership/edit/${viewMember.id}`} className="px-4 py-2 bg-white border border-gray-200 hover:border-brand-gold text-gray-700 font-bold rounded-xl text-xs transition-colors shadow-sm">Edit</Link>
-                                <button onClick={() => { handleDelete(viewMember.id); setViewMember(null); }} className="px-4 py-2 bg-red-50 text-red-600 font-bold rounded-xl text-xs hover:bg-red-100 transition-colors">Delete</button>
+                            <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
+                                <div className="text-xs text-gray-500">
+                                    Display Order: <span className="font-bold text-gray-800">{viewMember.order}</span>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Link href={`/admin/settings/leadership/edit/${viewMember.id}`} className="px-4 py-2 bg-white border border-gray-200 hover:border-brand-gold text-gray-700 font-bold rounded-xl text-xs transition-colors shadow-sm">Edit</Link>
+                                    <button onClick={() => { handleDelete(viewMember.id); setViewMember(null); }} className="px-4 py-2 bg-red-50 text-red-600 font-bold rounded-xl text-xs hover:bg-red-100 transition-colors">Delete</button>
+                                </div>
                             </div>
                         </div>
                     </div>
