@@ -1,15 +1,17 @@
-// src/app/api/paystack/webhook/route.js
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { adminDb } from '@/lib/firebase-admin';
-import { FieldValue } from 'firebase-admin/firestore';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 export async function POST(request) {
     try {
         const secret = process.env.PAYSTACK_SECRET_KEY;
         const signature = request.headers.get('x-paystack-signature');
         
-        // Read text body for signature verification
+        if (!secret) {
+            return NextResponse.json({ message: "Secret key missing" }, { status: 500 });
+        }
+
         const rawBody = await request.text();
         
         const hash = crypto.createHmac('sha512', secret).update(rawBody).digest('hex');
@@ -24,22 +26,21 @@ export async function POST(request) {
             const data = event.data;
             const reference = data.reference;
 
-            // Update Firestore
-            const donationsRef = adminDb.collection('donations');
-            const snapshot = await donationsRef.where('reference', '==', reference).limit(1).get();
+            const donationsRef = collection(db, 'donations');
+            const q = query(donationsRef, where('reference', '==', reference));
+            const snapshot = await getDocs(q);
 
             if (!snapshot.empty) {
-                const docRef = snapshot.docs[0].ref;
-                if (snapshot.docs[0].data().status !== 'Success') {
-                    await docRef.update({
+                const docSnapshot = snapshot.docs[0];
+                if (docSnapshot.data().status !== 'Success') {
+                    await updateDoc(docSnapshot.ref, {
                         status: 'Success',
-                        paidAt: FieldValue.serverTimestamp(),
-                        updatedAt: FieldValue.serverTimestamp(),
+                        paidAt: serverTimestamp(),
+                        updatedAt: serverTimestamp(),
                         paystackReference: data.reference,
-                        paystackTransactionId: data.id,
+                        paystackTransactionId: String(data.id),
                         gateway: "paystack"
                     });
-                    console.log(`Webhook: Updated donation ${reference} to Success`);
                 }
             }
         }
