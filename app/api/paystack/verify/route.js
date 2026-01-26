@@ -11,7 +11,7 @@ export async function POST(request) {
             return NextResponse.json({ success: false, message: "No reference provided" }, { status: 400 });
         }
 
-        // 1. Find Donation in Firestore FIRST
+        // 1. Find Donation in Firestore
         const donationsRef = collection(db, 'donations');
         const q = query(donationsRef, where('reference', '==', reference));
         const snapshot = await getDocs(q);
@@ -26,36 +26,48 @@ export async function POST(request) {
         // 2. Verify with Paystack
         const paystackResponse = await verifyPaystackTransaction(reference);
         const pData = paystackResponse?.data;
+        const pStatus = pData?.status; // 'success', 'failed', 'abandoned', or undefined
 
-        // 3. Check for Failure
-        if (!paystackResponse.status || pData?.status !== 'success') {
-            // Mark as Failed in Database
-            if (docSnapshot.data().status !== 'Failed') {
-                 await updateDoc(docRef, {
-                    status: 'Failed',
-                    updatedAt: serverTimestamp(),
-                    gateway: "paystack",
-                    paystackMessage: paystackResponse.message || "Verification failed"
-                });
-            }
-            return NextResponse.json({ success: false, message: "Transaction failed or declined" }, { status: 400 });
+        // 3. Determine App Status
+        let newStatus = 'Pending';
+        
+        if (pStatus === 'success') {
+            newStatus = 'Success';
+        } else if (pStatus === 'failed') {
+            newStatus = 'Failed';
+        } else if (pStatus === 'abandoned') {
+            newStatus = 'Cancelled';
+        } else if (!paystackResponse.status) {
+            // Transaction not found at Paystack (e.g. user closed immediately)
+            newStatus = 'Cancelled';
         }
 
-        // 4. Update Success (If success)
-        if (docSnapshot.data().status !== 'Success') {
-            await updateDoc(docRef, {
-                status: 'Success',
-                paidAt: serverTimestamp(),
+        // 4. Update Database
+        if (docSnapshot.data().status !== newStatus && docSnapshot.data().status !== 'Success') {
+            const updateData = {
+                status: newStatus,
                 updatedAt: serverTimestamp(),
-                paystackReference: pData.reference,
-                paystackTransactionId: String(pData.id),
-                paystackChannel: pData.channel,
-                amount: pData.amount / 100,
                 gateway: "paystack"
-            });
+            };
+
+            // If we have Paystack data, save it
+            if (pData) {
+                updateData.paystackReference = pData.reference;
+                updateData.paystackTransactionId = String(pData.id);
+                updateData.paystackChannel = pData.channel;
+                if (pData.amount) updateData.amount = pData.amount / 100;
+                if (paystackResponse.message) updateData.paystackMessage = paystackResponse.message;
+            }
+
+            await updateDoc(docRef, updateData);
         }
 
-        return NextResponse.json({ success: true, message: "Verified successfully" });
+        // 5. Response
+        if (newStatus === 'Success') {
+            return NextResponse.json({ success: true, message: "Verified successfully" });
+        } else {
+            return NextResponse.json({ success: false, message: `Transaction ${newStatus}` });
+        }
 
     } catch (error) {
         console.error("Verification API Error:", error);
