@@ -6,40 +6,36 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { usePaystackPayment } from 'react-paystack';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { 
     ArrowLeft, ArrowRight, CreditCard, Landmark, CheckCircle, 
-    Copy, User, Mail, Phone, MessageSquare, ShieldCheck,
-    AlertCircle, ChevronRight, Lock, Loader2 
+    Copy, User, Mail, Phone, ChevronRight, Lock, Loader2, AlertCircle
 } from 'lucide-react';
 
 export default function FundDonationWizard({ fundId }) {
     const router = useRouter();
 
-    // --- STATE ---
     const [fund, setFund] = useState(null);
     const [loading, setLoading] = useState(true);
     const [step, setStep] = useState(1); 
-    const [processing, setProcessing] = useState(false); // For API calls
+    const [processing, setProcessing] = useState(false);
 
-    // Donation Data
     const [amount, setAmount] = useState(5000);
     const [customAmount, setCustomAmount] = useState('');
     const [donor, setDonor] = useState({ name: '', email: '', phone: '', note: '' });
     const [paymentMethod, setPaymentMethod] = useState('paystack'); 
     
-    // Critical: The Reference is now the Document ID
+    // Donation Reference
     const [donationRef, setDonationRef] = useState(""); 
 
     const PRESET_AMOUNTS = [1000, 5000, 10000, 20000, 50000, 100000];
     
-    // --- HELPER: Generate Ref ---
+    // Generate Ref Helper
     const generateRef = () => {
-        // Format: FUND-{Timestamp}-{Random}
         return `DON-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
     };
 
-    // --- FETCH FUND ---
+    // Fetch Fund Data
     useEffect(() => {
         const fetchFund = async () => {
             if (!fundId) return;
@@ -60,9 +56,9 @@ export default function FundDonationWizard({ fundId }) {
         fetchFund();
     }, [fundId, router]);
 
-    // --- PAYSTACK HOOK ---
+    // Paystack Configuration
     const config = {
-        reference: donationRef, // Must match the Doc ID we created
+        reference: donationRef, 
         email: donor.email,
         amount: Math.ceil(amount * 100), // Kobo
         publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
@@ -75,14 +71,13 @@ export default function FundDonationWizard({ fundId }) {
     
     const initializePaystack = usePaystackPayment(config);
 
-    // --- LOGIC: CREATE RECORD FIRST ---
+    // LOGIC: Create Firestore Record BEFORE Payment
     const createPendingRecord = async (method) => {
         setProcessing(true);
         const newRef = generateRef();
         setDonationRef(newRef);
 
         try {
-            // We use setDoc with a custom ID (the ref) so we can easily find it later
             await setDoc(doc(db, "donations", newRef), {
                 fundId: fund.id,
                 fundTitle: fund.title,
@@ -93,7 +88,7 @@ export default function FundDonationWizard({ fundId }) {
                 message: donor.note || "",
                 method: method,
                 reference: newRef,
-                status: "Pending", // Always starts as Pending
+                status: "Pending",
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             });
@@ -106,7 +101,6 @@ export default function FundDonationWizard({ fundId }) {
         }
     };
 
-    // --- HANDLERS ---
     const handleNextStep = () => {
         if (step === 1 && amount < 100) return alert("Minimum donation is ₦100");
         if (step === 2 && !donor.email) return alert("Please provide an email address.");
@@ -114,30 +108,18 @@ export default function FundDonationWizard({ fundId }) {
     };
 
     const handlePaystackPayment = async () => {
-        // 1. Create Record
         const ref = await createPendingRecord('paystack');
         if (!ref) return;
 
-        // 2. Trigger Paystack (Wait a moment for state to update if needed, though ref is passed directly here)
-        // Note: We need to pass a fresh config object because 'config' state might not be updated yet
+        // Force config update with new ref
         const freshConfig = { ...config, reference: ref };
         
-        // We can't pass config to initializePaystack dynamically in all versions of the hook. 
-        // Better approach: Set state, wait for render, then trigger. 
-        // However, standard usePaystackPayment uses the config passed at initialization.
-        // If the hook doesn't support dynamic updates, we use the direct Paystack JS or force update.
-        // For this implementation, let's assume the hook updates when config changes.
-        // *Self-Correction:* usePaystackPayment often caches config. 
-        // Let's use the callback version more safely or just proceed since we setDonationRef.
-        
-        // Actually, safer to just pause and let the user click "Proceed to Pay" or force re-render.
-        // But for UX, we proceed.
-        
+        // Open Paystack
         initializePaystack({
-            config: freshConfig, // Pass explicitly if library supports it, otherwise it uses the hook's init config
+            config: freshConfig,
             onSuccess: async () => {
-                // 3. Verify on Server
                 try {
+                    // Call our new API to verify
                     const res = await fetch('/api/paystack/verify', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
@@ -157,9 +139,19 @@ export default function FundDonationWizard({ fundId }) {
                     setProcessing(false);
                 }
             },
-            onClose: () => {
+            onClose: async () => {
                 alert("Payment cancelled.");
                 setProcessing(false);
+                try {
+                    // Update status to Cancelled immediately
+                    const docRef = doc(db, "donations", ref);
+                    await updateDoc(docRef, {
+                        status: 'Cancelled',
+                        updatedAt: serverTimestamp()
+                    });
+                } catch (error) {
+                    console.error("Error marking cancelled:", error);
+                }
             }
         });
     };
@@ -172,19 +164,17 @@ export default function FundDonationWizard({ fundId }) {
         }
     };
 
-    // --- RENDER HELPERS ---
     if (loading) return <div className="flex justify-center items-center h-64"><Loader2 className="w-10 h-10 animate-spin text-brand-gold" /></div>;
     if (!fund) return null;
 
     return (
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
-            {/* LEFT COLUMN (Fund Info) - Same as before ... */}
+            {/* Fund Info (Left) */}
             <div className="lg:col-span-7">
                  <div className="sticky top-32">
                     <Link href="/get-involved/donate" className="inline-flex items-center text-gray-500 hover:text-brand-brown-dark mb-6 text-xs font-bold uppercase tracking-widest transition-colors">
                         <ArrowLeft className="w-4 h-4 mr-2" /> Back to Funds
                     </Link>
-
                     <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-lg mb-8">
                         <Image src={fund.coverImage || "/fallback.webp"} alt={fund.title} fill className="object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-8 text-white">
@@ -192,7 +182,6 @@ export default function FundDonationWizard({ fundId }) {
                             {fund.tagline && <p className="text-white/80 font-lato text-lg">{fund.tagline}</p>}
                         </div>
                     </div>
-
                     <div className="prose prose-lg text-gray-600 leading-relaxed font-lato">
                         <h3 className="font-agency text-2xl text-brand-brown-dark">About this Fund</h3>
                         <p>{fund.description}</p>
@@ -200,11 +189,10 @@ export default function FundDonationWizard({ fundId }) {
                 </div>
             </div>
 
-            {/* RIGHT COLUMN (Wizard) */}
+            {/* Donation Wizard (Right) */}
             <div className="lg:col-span-5 relative z-10">
                 <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden sticky top-32">
                     
-                    {/* Steps Header */}
                     {step < 4 && (
                         <div className="bg-gray-50 px-8 py-4 border-b border-gray-100 flex justify-between items-center text-xs font-bold text-gray-400 uppercase tracking-wider">
                             <span className={step >= 1 ? 'text-brand-brown-dark' : ''}>1. Amount</span>
@@ -216,7 +204,7 @@ export default function FundDonationWizard({ fundId }) {
                     )}
 
                     <div className="p-8">
-                        {/* STEP 1: AMOUNT */}
+                        {/* Step 1: Amount */}
                         {step === 1 && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
                                 <h2 className="font-agency text-3xl text-brand-brown-dark mb-6">Choose Amount</h2>
@@ -233,7 +221,7 @@ export default function FundDonationWizard({ fundId }) {
                             </div>
                         )}
 
-                        {/* STEP 2: DONOR INFO */}
+                        {/* Step 2: Details */}
                         {step === 2 && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-300 space-y-5">
                                 <h2 className="font-agency text-3xl text-brand-brown-dark mb-2">Your Details</h2>
@@ -247,7 +235,7 @@ export default function FundDonationWizard({ fundId }) {
                             </div>
                         )}
 
-                        {/* STEP 3: PAYMENT METHOD */}
+                        {/* Step 3: Payment */}
                         {step === 3 && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
                                 <h2 className="font-agency text-3xl text-brand-brown-dark mb-2">Select Payment</h2>
@@ -290,21 +278,21 @@ export default function FundDonationWizard({ fundId }) {
                             </div>
                         )}
 
-                        {/* STEP 4: SUCCESS / BANK DETAILS */}
+                        {/* Step 4: Success / Bank Info */}
                         {step === 4 && (
                             <div className="animate-in fade-in zoom-in-95 duration-300 text-center">
                                 {paymentMethod === 'paystack' ? (
                                     <>
                                         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"><CheckCircle className="w-10 h-10 text-green-600" /></div>
                                         <h2 className="font-agency text-3xl text-brand-brown-dark mb-2">Thank You!</h2>
-                                        <p className="text-gray-500 text-sm mb-8">Your donation was successful. A receipt has been sent to your email.</p>
+                                        <p className="text-gray-500 text-sm mb-8">Your donation was successful. May Allah accept it.</p>
                                         <Link href="/" className="block w-full py-4 bg-brand-brown-dark text-white font-bold rounded-xl hover:bg-brand-gold transition-colors">Return Home</Link>
                                     </>
                                 ) : (
                                     <>
                                         <div className="w-16 h-16 bg-brand-sand/30 rounded-full flex items-center justify-center mx-auto mb-6 text-brand-brown-dark"><Landmark className="w-8 h-8" /></div>
-                                        <h2 className="font-agency text-2xl text-brand-brown-dark mb-2">Bank Transfer Instructions</h2>
-                                        <p className="text-gray-500 text-xs mb-6 px-4">Please transfer <strong className="text-black">₦{amount.toLocaleString()}</strong> to:</p>
+                                        <h2 className="font-agency text-2xl text-brand-brown-dark mb-2">Bank Transfer Details</h2>
+                                        <p className="text-gray-500 text-xs mb-6 px-4">Transfer <strong className="text-black">₦{amount.toLocaleString()}</strong> to:</p>
                                         
                                         <div className="bg-gray-50 rounded-2xl p-5 text-left space-y-4 mb-6 border border-gray-200">
                                             <div><p className="text-xs text-gray-400 uppercase font-bold">Bank</p><p className="font-bold text-gray-800">{fund.bankDetails?.bankName || "Jaiz Bank"}</p></div>
