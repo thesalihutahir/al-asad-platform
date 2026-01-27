@@ -1,17 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { usePaystackPayment } from 'react-paystack';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { generateReceipt } from '@/lib/pdfGenerator';
+import { generateReceipt } from '@/lib/pdfGenerator'; 
 import { 
     ArrowLeft, ArrowRight, CreditCard, Landmark, CheckCircle, 
     Copy, User, Mail, Phone, MessageSquare, ShieldCheck,
-    AlertCircle, ChevronRight, Lock, Loader2, Download, FileText, Share2
+    AlertCircle, ChevronRight, Lock, Loader2, Download, FileText
 } from 'lucide-react';
 
 export default function FundDonationWizard({ fundId }) {
@@ -31,7 +31,7 @@ export default function FundDonationWizard({ fundId }) {
     // Initialize reference state
     const [transactionRef, setTransactionRef] = useState(""); 
     
-    // State to hold the final transaction object for the receipt display
+    // State to hold the final transaction object for the receipt button
     const [finalTransaction, setFinalTransaction] = useState(null);
 
     const PRESET_AMOUNTS = [1000, 5000, 10000, 20000, 50000, 100000];
@@ -123,10 +123,10 @@ export default function FundDonationWizard({ fundId }) {
             method: paymentMethod,
             reference: ref,
             status: status,
-            createdAt: new Date().toISOString() // Use string for instant display, Firestore will use serverTimestamp
+            createdAt: serverTimestamp()
         };
 
-        // Save to State for the Receipt Display
+        // Save to State for the Receipt Button
         setFinalTransaction(transactionData);
 
         // Generate PDF Automatically
@@ -138,9 +138,7 @@ export default function FundDonationWizard({ fundId }) {
 
         // Save to Database
         try {
-            // Create a copy for Firestore with serverTimestamp
-            const firestoreData = { ...transactionData, createdAt: serverTimestamp() };
-            await addDoc(collection(db, "donations"), firestoreData);
+            await addDoc(collection(db, "donations"), transactionData);
         } catch (error) {
             console.error("Error recording donation:", error);
         }
@@ -165,7 +163,6 @@ export default function FundDonationWizard({ fundId }) {
                 }
             );
         } else {
-            // Manual Bank Transfer
             const manualRef = `BANK-${Date.now().toString().slice(-6)}`;
             setTransactionRef(manualRef);
             recordDonation(manualRef, 'Pending');
@@ -278,69 +275,88 @@ export default function FundDonationWizard({ fundId }) {
                             </div>
                         )}
 
-                        {/* STEP 4: SUCCESS / BANK DETAILS */}
+                        {/* STEP 4: SUCCESS / RECEIPT CARD */}
                         {step === 4 && (
-                            <div className="animate-in fade-in zoom-in-95 duration-300 text-center">
-                                {paymentMethod === 'paystack' ? (
-                                    <>
-                                        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"><CheckCircle className="w-10 h-10 text-green-600" /></div>
-                                        <h2 className="font-agency text-3xl text-brand-brown-dark mb-2">Donation Successful!</h2>
-                                        <p className="text-gray-500 text-sm mb-6">May Allah reward you abundantly.</p>
+                            <div className="animate-in fade-in zoom-in-95 duration-300">
+                                
+                                {/* VISUAL RECEIPT CARD */}
+                                <div className="bg-white border border-gray-100 rounded-2xl shadow-lg p-0 overflow-hidden mb-6 relative">
+                                    {/* Decorative Top Border */}
+                                    <div className="h-3 bg-brand-brown-dark w-full"></div>
+                                    
+                                    <div className="p-6 text-center">
+                                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-sm">
+                                            <CheckCircle className="w-8 h-8 text-green-600" />
+                                        </div>
                                         
-                                        {/* DIGITAL RECEIPT CARD */}
-                                        {finalTransaction && (
-                                            <div className="bg-brand-sand/10 border border-brand-gold/30 rounded-2xl p-6 mb-8 text-left relative overflow-hidden">
-                                                <div className="absolute top-0 right-0 bg-brand-gold text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase">Official Receipt</div>
-                                                <div className="space-y-3">
-                                                    <div className="flex justify-between items-center border-b border-brand-gold/10 pb-3">
-                                                        <span className="text-xs text-gray-500 uppercase font-bold">Amount Paid</span>
-                                                        <span className="text-2xl font-agency font-bold text-brand-brown-dark">₦{Number(finalTransaction.amount).toLocaleString()}</span>
-                                                    </div>
-                                                    <div className="grid grid-cols-2 gap-4 text-sm">
-                                                        <div><span className="block text-xs text-gray-400">Reference</span><span className="font-mono font-bold text-gray-700">{finalTransaction.reference}</span></div>
-                                                        <div><span className="block text-xs text-gray-400">Date</span><span className="font-bold text-gray-700">{new Date().toLocaleDateString()}</span></div>
-                                                        <div><span className="block text-xs text-gray-400">Donor</span><span className="font-bold text-gray-700">{finalTransaction.donorName}</span></div>
-                                                        <div><span className="block text-xs text-gray-400">Method</span><span className="font-bold text-gray-700 capitalize">{finalTransaction.method}</span></div>
-                                                    </div>
-                                                </div>
-                                                <button 
-                                                    onClick={() => generateReceipt(finalTransaction)}
-                                                    className="w-full mt-6 py-3 bg-brand-brown-dark text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-brand-gold transition-colors"
-                                                >
-                                                    <Download className="w-4 h-4" /> Save Receipt PDF
-                                                </button>
-                                            </div>
-                                        )}
+                                        <h3 className="font-agency text-2xl text-brand-brown-dark uppercase tracking-wide mb-1">
+                                            {paymentMethod === 'paystack' ? 'Donation Successful' : 'Payment Pending'}
+                                        </h3>
+                                        <p className="text-xs text-gray-500 mb-6">
+                                            {paymentMethod === 'paystack' ? 'Thank you for your generous support!' : 'Please complete your bank transfer.'}
+                                        </p>
 
-                                        <Link href="/" className="block w-full py-4 text-gray-500 font-bold hover:text-brand-brown-dark transition-colors">Return Home</Link>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className="w-16 h-16 bg-brand-sand/30 rounded-full flex items-center justify-center mx-auto mb-6 text-brand-brown-dark"><Landmark className="w-8 h-8" /></div>
-                                        <h2 className="font-agency text-2xl text-brand-brown-dark mb-2">Bank Transfer Details</h2>
-                                        <p className="text-gray-500 text-xs mb-6 px-4">Please transfer <strong className="text-black">₦{amount.toLocaleString()}</strong> to:</p>
-                                        
-                                        <div className="bg-gray-50 rounded-2xl p-5 text-left space-y-4 mb-6 border border-gray-200">
-                                            <div><p className="text-xs text-gray-400 uppercase font-bold">Bank Name</p><p className="font-bold text-gray-800">{bankDetails.bankName}</p></div>
-                                            <div><p className="text-xs text-gray-400 uppercase font-bold">Account Name</p><p className="font-bold text-gray-800">{bankDetails.accountName}</p></div>
-                                            <div className="flex justify-between items-end"><div><p className="text-xs text-gray-400 uppercase font-bold">Account Number</p><p className="font-bold text-2xl text-brand-brown-dark tracking-widest">{bankDetails.accountNumber}</p></div><button onClick={() => copyToClipboard(bankDetails.accountNumber)} className="p-2 bg-white border rounded-lg hover:text-brand-gold"><Copy className="w-4 h-4" /></button></div>
-                                            <div className="pt-4 border-t border-gray-200"><p className="text-xs text-gray-400 uppercase font-bold mb-1">Reference (Important)</p><div className="flex justify-between items-center bg-white border border-brand-gold/30 rounded-lg p-3"><span className="font-mono font-bold text-brand-gold">{transactionRef}</span><button onClick={() => copyToClipboard(transactionRef)}><Copy className="w-4 h-4 text-gray-400 hover:text-brand-gold" /></button></div></div>
+                                        {/* TICKET HOLES */}
+                                        <div className="relative flex items-center justify-between my-6">
+                                            <div className="w-6 h-6 bg-gray-100 rounded-full -ml-9"></div>
+                                            <div className="flex-grow border-t-2 border-dashed border-gray-200"></div>
+                                            <div className="w-6 h-6 bg-gray-100 rounded-full -mr-9"></div>
                                         </div>
 
-                                        {/* Receipt / Slip Button for Bank Transfer */}
-                                        {finalTransaction && (
-                                            <button 
-                                                onClick={() => generateReceipt(finalTransaction)}
-                                                className="w-full mb-4 flex items-center justify-center gap-2 py-3 bg-brand-sand/30 text-brand-brown-dark font-bold rounded-xl hover:bg-brand-sand/50 transition-colors border border-brand-gold/20"
-                                            >
-                                                <FileText className="w-4 h-4" /> Download Payment Slip
-                                            </button>
-                                        )}
+                                        {/* DETAILS */}
+                                        <div className="space-y-3 text-sm">
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-500">Amount</span>
+                                                <span className="font-bold text-brand-brown-dark text-lg">₦{amount.toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-500">Reference</span>
+                                                <span className="font-mono font-bold text-gray-700">{finalTransaction?.reference || transactionRef}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-500">Date</span>
+                                                <span className="font-bold text-gray-700">{new Date().toLocaleDateString()}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-500">Donor</span>
+                                                <span className="font-bold text-gray-700">{donor.name || "Anonymous"}</span>
+                                            </div>
+                                            
+                                            {/* Bank Details (Only for Bank) */}
+                                            {paymentMethod === 'bank' && (
+                                                <div className="mt-4 pt-4 border-t border-gray-100 text-left bg-brand-sand/10 p-3 rounded-lg">
+                                                    <p className="text-xs font-bold text-gray-400 uppercase mb-2">Transfer To:</p>
+                                                    <p className="font-bold text-brand-brown-dark">{bankDetails.bankName}</p>
+                                                    <p className="font-mono text-gray-600">{bankDetails.accountNumber}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Auto-Download Message */}
+                                    <div className="bg-gray-50 p-3 text-center border-t border-gray-100">
+                                        <p className="text-[10px] text-gray-400 flex items-center justify-center gap-1">
+                                            <Download className="w-3 h-3" /> Receipt downloading automatically...
+                                        </p>
+                                    </div>
+                                </div>
 
-                                        <div className="bg-blue-50 p-4 rounded-xl flex gap-3 items-start text-left mb-6"><AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" /><p className="text-xs text-blue-800">After transferring, please share your Payment Slip or proof to <strong>+234 800 000 0000</strong>.</p></div>
-                                        <Link href="/" className="block w-full py-4 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-colors">I have made the transfer</Link>
-                                    </>
-                                )}
+                                {/* MANUAL ACTIONS */}
+                                <div className="space-y-3">
+                                    {finalTransaction && (
+                                        <button 
+                                            onClick={() => generateReceipt(finalTransaction)}
+                                            className="w-full flex items-center justify-center gap-2 py-3 bg-brand-gold text-brand-brown-dark font-bold rounded-xl shadow-md hover:bg-white border border-transparent hover:border-brand-gold transition-colors"
+                                        >
+                                            <FileText className="w-4 h-4" /> Download {paymentMethod === 'paystack' ? 'Receipt' : 'Payment Slip'}
+                                        </button>
+                                    )}
+                                    
+                                    <Link href="/" className="block w-full text-center py-3 text-gray-500 hover:text-brand-brown-dark font-bold text-sm transition-colors">
+                                        Return to Home
+                                    </Link>
+                                </div>
+
                             </div>
                         )}
                     </div>
