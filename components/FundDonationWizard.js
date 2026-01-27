@@ -30,12 +30,10 @@ export default function FundDonationWizard({ fundId }) {
 
     const PRESET_AMOUNTS = [1000, 5000, 10000, 20000, 50000, 100000];
     
-    // Generate Ref Helper
     const generateRef = () => {
         return `DON-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
     };
 
-    // Fetch Fund Data
     useEffect(() => {
         const fetchFund = async () => {
             if (!fundId) return;
@@ -56,11 +54,10 @@ export default function FundDonationWizard({ fundId }) {
         fetchFund();
     }, [fundId, router]);
 
-    // Paystack Configuration
     const config = {
         reference: donationRef, 
         email: donor.email,
-        amount: Math.ceil(amount * 100), // Kobo
+        amount: Math.ceil(amount * 100), 
         publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
         metadata: {
             fundId: fund?.id,
@@ -71,7 +68,6 @@ export default function FundDonationWizard({ fundId }) {
     
     const initializePaystack = usePaystackPayment(config);
 
-    // LOGIC: Create Firestore Record BEFORE Payment
     const createPendingRecord = async (method) => {
         setProcessing(true);
         const newRef = generateRef();
@@ -111,15 +107,12 @@ export default function FundDonationWizard({ fundId }) {
         const ref = await createPendingRecord('paystack');
         if (!ref) return;
 
-        // Force config update with new ref
         const freshConfig = { ...config, reference: ref };
         
-        // Open Paystack
         initializePaystack({
             config: freshConfig,
             onSuccess: async () => {
                 try {
-                    // Call our new API to verify
                     const res = await fetch('/api/paystack/verify', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
@@ -134,23 +127,26 @@ export default function FundDonationWizard({ fundId }) {
                     }
                 } catch (err) {
                     console.error("Verification error", err);
-                    alert("Network error verifying payment. We will check automatically.");
                 } finally {
                     setProcessing(false);
                 }
             },
             onClose: async () => {
-                alert("Payment cancelled.");
-                setProcessing(false);
+                // CHANGED: We now verify on close to distinguish 'Failed' vs 'Cancelled'
+                setProcessing(true);
                 try {
-                    // Update status to Cancelled immediately
-                    const docRef = doc(db, "donations", ref);
-                    await updateDoc(docRef, {
-                        status: 'Cancelled',
-                        updatedAt: serverTimestamp()
+                    await fetch('/api/paystack/verify', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ reference: ref })
                     });
+                    // We don't alert failure here, as the user knowingly closed it.
+                    // Just update the DB silently.
+                    alert("Transaction ended.");
                 } catch (error) {
-                    console.error("Error marking cancelled:", error);
+                    console.error("Error verifying on close:", error);
+                } finally {
+                    setProcessing(false);
                 }
             }
         });
@@ -169,7 +165,6 @@ export default function FundDonationWizard({ fundId }) {
 
     return (
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
-            {/* Fund Info (Left) */}
             <div className="lg:col-span-7">
                  <div className="sticky top-32">
                     <Link href="/get-involved/donate" className="inline-flex items-center text-gray-500 hover:text-brand-brown-dark mb-6 text-xs font-bold uppercase tracking-widest transition-colors">
@@ -189,10 +184,8 @@ export default function FundDonationWizard({ fundId }) {
                 </div>
             </div>
 
-            {/* Donation Wizard (Right) */}
             <div className="lg:col-span-5 relative z-10">
                 <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden sticky top-32">
-                    
                     {step < 4 && (
                         <div className="bg-gray-50 px-8 py-4 border-b border-gray-100 flex justify-between items-center text-xs font-bold text-gray-400 uppercase tracking-wider">
                             <span className={step >= 1 ? 'text-brand-brown-dark' : ''}>1. Amount</span>
@@ -204,7 +197,6 @@ export default function FundDonationWizard({ fundId }) {
                     )}
 
                     <div className="p-8">
-                        {/* Step 1: Amount */}
                         {step === 1 && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
                                 <h2 className="font-agency text-3xl text-brand-brown-dark mb-6">Choose Amount</h2>
@@ -221,7 +213,6 @@ export default function FundDonationWizard({ fundId }) {
                             </div>
                         )}
 
-                        {/* Step 2: Details */}
                         {step === 2 && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-300 space-y-5">
                                 <h2 className="font-agency text-3xl text-brand-brown-dark mb-2">Your Details</h2>
@@ -235,7 +226,6 @@ export default function FundDonationWizard({ fundId }) {
                             </div>
                         )}
 
-                        {/* Step 3: Payment */}
                         {step === 3 && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
                                 <h2 className="font-agency text-3xl text-brand-brown-dark mb-2">Select Payment</h2>
@@ -278,7 +268,6 @@ export default function FundDonationWizard({ fundId }) {
                             </div>
                         )}
 
-                        {/* Step 4: Success / Bank Info */}
                         {step === 4 && (
                             <div className="animate-in fade-in zoom-in-95 duration-300 text-center">
                                 {paymentMethod === 'paystack' ? (
