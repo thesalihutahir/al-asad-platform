@@ -5,8 +5,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
-import { useModal } from '@/context/ModalContext'; // Using your context
-import CustomSelect from '@/components/CustomSelect'; // Using your component
+import { useModal } from '@/context/ModalContext'; 
+import CustomSelect from '@/components/CustomSelect';
+import { generateTransactionReport, generateReceipt } from '@/lib/pdfGenerator'; // Import our new utility
 import { 
     collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp 
 } from 'firebase/firestore';
@@ -15,7 +16,7 @@ import {
     CreditCard, Landmark, CheckCircle, X, 
     Trash2, Edit, Eye, Filter, RefreshCw, 
     AlertTriangle, ArrowUpRight, Copy, ShieldCheck, Flag, 
-    FileBarChart, Calendar, Download, ChevronRight
+    FileBarChart, Calendar, Download, ChevronRight, FileText
 } from 'lucide-react';
 
 // --- SUB-COMPONENTS ---
@@ -50,7 +51,7 @@ const StatusBadge = ({ status }) => {
 
 export default function AdminDonationsPage() {
     const { user } = useAuth();
-    const { showConfirm, showSuccess } = useModal(); // Using global modal context
+    const { showConfirm, showSuccess } = useModal();
     
     // --- STATE ---
     const [activeTab, setActiveTab] = useState('reconciliation');
@@ -66,6 +67,10 @@ export default function AdminDonationsPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
     const [methodFilter, setMethodFilter] = useState('All');
+    
+    // Date Range State
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
 
     // Modals
     const [viewDonation, setViewDonation] = useState(null);
@@ -94,19 +99,42 @@ export default function AdminDonationsPage() {
     const successCount = donations.filter(d => d.status === 'Success').length;
     const uniqueDonors = new Set(donations.filter(d => d.status === 'Success').map(d => d.donorEmail)).size;
 
-    // Filter Logic
+    // --- FILTER LOGIC ---
     const filteredDonations = donations.filter(d => {
+        // 1. Text Search
         const matchesSearch = (d.donorName || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
                               (d.reference || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
                               (d.donorEmail || "").toLowerCase().includes(searchTerm.toLowerCase());
+        
+        // 2. Dropdown Filters
         const matchesStatus = statusFilter === 'All' || d.status === statusFilter;
         const matchesMethod = methodFilter === 'All' || d.method === methodFilter;
-        return matchesSearch && matchesStatus && matchesMethod;
+
+        // 3. Date Range Filter
+        let matchesDate = true;
+        if (startDate || endDate) {
+            const rowDate = d.createdAt?.seconds ? new Date(d.createdAt.seconds * 1000) : new Date();
+            // Reset times for accurate comparison
+            rowDate.setHours(0,0,0,0);
+            
+            if (startDate) {
+                const start = new Date(startDate);
+                start.setHours(0,0,0,0);
+                if (rowDate < start) matchesDate = false;
+            }
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23,59,59,999);
+                if (rowDate > end) matchesDate = false;
+            }
+        }
+
+        return matchesSearch && matchesStatus && matchesMethod && matchesDate;
     });
 
     const pendingQueue = donations.filter(d => d.status === 'Pending');
 
-    // Statement Logic (Grouping by Month)
+    // Statement Logic
     const getMonthlyStatements = () => {
         const stats = {};
         donations.forEach(d => {
@@ -126,14 +154,24 @@ export default function AdminDonationsPage() {
             stats[key].count += 1;
             stats[key].donors.add(d.donorEmail);
         });
-        return Object.values(stats).sort((a, b) => new Date(b.month) - new Date(a.month)); // Sort descending
+        return Object.values(stats).sort((a, b) => new Date(b.month) - new Date(a.month));
     };
 
     // --- ACTIONS ---
 
     const copyToClipboard = (text) => {
         navigator.clipboard.writeText(text);
-        // Simple toast or alert here
+        alert("Copied to clipboard!");
+    };
+
+    const handleDownloadReport = () => {
+        if (filteredDonations.length === 0) return alert("No transactions match your current filters.");
+        const period = (startDate && endDate) ? `${startDate} to ${endDate}` : "All Time / Current View";
+        generateTransactionReport(filteredDonations, period);
+    };
+
+    const handleDownloadReceipt = (donation) => {
+        generateReceipt(donation);
     };
 
     const handleVerifyBank = async (donation) => {
@@ -264,7 +302,7 @@ export default function AdminDonationsPage() {
                                             <div 
                                                 key={item.id} 
                                                 onClick={() => setSelectedWorkItem(item)}
-                                                className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${selectedWorkItem?.id === item.id ? 'bg-brand-sand/20 border-l-4 border-brand-gold' : 'border-l-4 border-transparent'}`}
+                                                className={`p-4 cursor-pointer hover:bg-brand-sand/10 transition-colors ${selectedWorkItem?.id === item.id ? 'bg-brand-sand/20 border-l-4 border-brand-gold' : 'border-l-4 border-transparent'}`}
                                             >
                                                 <div className="flex justify-between items-start mb-1">
                                                     <span className="font-bold text-gray-800">₦{Number(item.amount).toLocaleString()}</span>
@@ -366,23 +404,52 @@ export default function AdminDonationsPage() {
                 {/* --- TAB: TRANSACTIONS --- */}
                 {activeTab === 'transactions' && (
                     <div className="p-4 sm:p-6 space-y-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div className="lg:col-span-2 relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                <input type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/20" />
+                        {/* Filters */}
+                        <div className="flex flex-col gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div className="lg:col-span-2 relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/20" />
+                                </div>
+                                <CustomSelect 
+                                    options={[{value:'All', label:'All Statuses'}, {value:'Success', label:'Success'}, {value:'Pending', label:'Pending'}, {value:'Failed', label:'Failed'}]}
+                                    value={statusFilter}
+                                    onChange={setStatusFilter}
+                                    icon={Filter}
+                                />
+                                <CustomSelect 
+                                    options={[{value:'All', label:'All Methods'}, {value:'paystack', label:'Paystack'}, {value:'bank', label:'Bank Transfer'}]}
+                                    value={methodFilter}
+                                    onChange={setMethodFilter}
+                                    icon={CreditCard}
+                                />
                             </div>
-                            <CustomSelect 
-                                options={[{value:'All', label:'All Statuses'}, {value:'Success', label:'Success'}, {value:'Pending', label:'Pending'}, {value:'Failed', label:'Failed'}]}
-                                value={statusFilter}
-                                onChange={setStatusFilter}
-                                icon={Filter}
-                            />
-                            <CustomSelect 
-                                options={[{value:'All', label:'All Methods'}, {value:'paystack', label:'Paystack'}, {value:'bank', label:'Bank Transfer'}]}
-                                value={methodFilter}
-                                onChange={setMethodFilter}
-                                icon={CreditCard}
-                            />
+                            
+                            {/* Date Filter & Export */}
+                            <div className="flex flex-col sm:flex-row items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                <span className="text-xs font-bold text-gray-500 uppercase flex-shrink-0">Filter Date Range:</span>
+                                <div className="flex flex-1 gap-2 w-full">
+                                    <input 
+                                        type="date" 
+                                        value={startDate} 
+                                        onChange={(e) => setStartDate(e.target.value)} 
+                                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-gold/20"
+                                    />
+                                    <span className="text-gray-400 self-center">-</span>
+                                    <input 
+                                        type="date" 
+                                        value={endDate} 
+                                        onChange={(e) => setEndDate(e.target.value)} 
+                                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-gold/20"
+                                    />
+                                </div>
+                                <button 
+                                    onClick={handleDownloadReport}
+                                    className="w-full sm:w-auto px-6 py-2 bg-brand-brown-dark text-white rounded-lg text-sm font-bold shadow-md hover:bg-brand-gold transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <Download className="w-4 h-4" /> Download PDF Report
+                                </button>
+                            </div>
                         </div>
 
                         <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white">
@@ -423,8 +490,11 @@ export default function AdminDonationsPage() {
                                 <h2 className="text-2xl font-agency mb-2">Financial Statements</h2>
                                 <p className="text-white/70 text-sm max-w-md">Comprehensive breakdown of all inflows grouped by period.</p>
                             </div>
-                            <button className="bg-brand-gold text-brand-brown-dark px-6 py-3 rounded-xl font-bold text-sm shadow-lg flex items-center gap-2 hover:bg-white transition-colors">
-                                <Download className="w-4 h-4" /> Export CSV
+                            <button 
+                                onClick={() => generateTransactionReport(donations, "All Time", "Full Account Statement")}
+                                className="bg-brand-gold text-brand-brown-dark px-6 py-3 rounded-xl font-bold text-sm shadow-lg flex items-center gap-2 hover:bg-white transition-colors"
+                            >
+                                <Download className="w-4 h-4" /> Export All as PDF
                             </button>
                         </div>
 
@@ -502,9 +572,22 @@ export default function AdminDonationsPage() {
                                 <div className="flex justify-between text-sm pt-4 border-t border-gray-200"><span className="text-gray-500">Donor</span><span className="font-bold text-gray-800">{viewDonation.donorName}</span></div>
                                 <div className="flex justify-between text-sm"><span className="text-gray-500">Email</span><span className="font-bold text-gray-800">{viewDonation.donorEmail}</span></div>
                             </div>
-                            {viewDonation.status !== 'Success' && (
-                                <button onClick={() => handleDelete(viewDonation.id, 'donation')} className="w-full py-3 text-red-500 font-bold text-sm border border-red-100 rounded-xl hover:bg-red-50">Delete Record</button>
-                            )}
+                            
+                            <div className="flex flex-col gap-3">
+                                {/* RECEIPT BUTTON */}
+                                {viewDonation.status === 'Success' && (
+                                    <button 
+                                        onClick={() => handleDownloadReceipt(viewDonation)} 
+                                        className="w-full py-3 text-brand-brown-dark bg-brand-gold/10 font-bold text-sm border border-brand-gold/50 rounded-xl hover:bg-brand-gold hover:text-white transition-all flex justify-center items-center gap-2"
+                                    >
+                                        <FileText className="w-4 h-4" /> Download Official Receipt
+                                    </button>
+                                )}
+                                
+                                {viewDonation.status !== 'Success' && (
+                                    <button onClick={() => handleDelete(viewDonation.id, 'donation')} className="w-full py-3 text-red-500 font-bold text-sm border border-red-100 rounded-xl hover:bg-red-50">Delete Record</button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
