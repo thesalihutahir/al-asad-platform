@@ -4,93 +4,130 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 // Firebase
 import { db } from '@/lib/firebase';
-import { collection, query, orderBy, limit, getDocs, getCountFromServer } from 'firebase/firestore'; 
+import { 
+    collection, query, orderBy, limit, onSnapshot, 
+    getCountFromServer, where, getDocs 
+} from 'firebase/firestore'; 
 // Context
 import { useAuth } from '@/context/AuthContext';
 
 import { 
     Users, 
     FileText, 
-    Video, 
-    Mic, 
-    ArrowUpRight, 
-    PlusCircle,
-    Download,
-    Loader2
+    Handshake, 
+    TrendingUp,
+    Loader2,
+    Shield,
+    Clock,
+    FileBarChart,
+    Search
 } from 'lucide-react';
 
 export default function AdminDashboard() {
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     
-    // Data State
-    const [counts, setCounts] = useState({
+    // Stats State
+    const [stats, setStats] = useState({
+        donationAmount: 0,
+        donationCount: 0,
         volunteers: 0,
-        blogs: 0,
-        videos: 0,
-        audios: 0
+        partners: 0,
+        contentCount: 0 // Blogs (Articles + News + Research)
     });
-    const [recentVolunteers, setRecentVolunteers] = useState([]);
 
-    // --- FETCH DASHBOARD DATA ---
+    // Audit Logs State
+    const [logs, setLogs] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    // --- 1. FETCH STATS ---
     useEffect(() => {
-        const fetchDashboardData = async () => {
+        const fetchStats = async () => {
             try {
-                // 1. Fetch Counts (Efficiently)
-                const volCount = await getCountFromServer(collection(db, "volunteers"));
-                const blogCount = await getCountFromServer(collection(db, "posts"));
-                const vidCount = await getCountFromServer(collection(db, "videos"));
-                const audioCount = await getCountFromServer(collection(db, "audios"));
+                // A. Donations (Sum & Count of Successful ones)
+                const donationsRef = collection(db, "donations");
+                const qDonations = query(donationsRef, where("status", "==", "Success"));
+                const donationSnapshot = await getDocs(qDonations);
+                
+                const totalRaised = donationSnapshot.docs.reduce((acc, doc) => acc + Number(doc.data().amount || 0), 0);
+                const totalDonations = donationSnapshot.size;
 
-                setCounts({
-                    volunteers: volCount.data().count,
-                    blogs: blogCount.data().count,
-                    videos: vidCount.data().count,
-                    audios: audioCount.data().count
+                // B. Volunteers Count
+                const volSnap = await getCountFromServer(collection(db, "volunteers"));
+                
+                // C. Partners Count
+                const partnerSnap = await getCountFromServer(collection(db, "partners"));
+
+                // D. Content Count (Articles + News + Research)
+                // We check all 3 collections used in your Blog creation page
+                const articlesSnap = await getCountFromServer(collection(db, "articles"));
+                const newsSnap = await getCountFromServer(collection(db, "news"));
+                const researchSnap = await getCountFromServer(collection(db, "research"));
+                const totalContent = articlesSnap.data().count + newsSnap.data().count + researchSnap.data().count;
+
+                setStats({
+                    donationAmount: totalRaised,
+                    donationCount: totalDonations,
+                    volunteers: volSnap.data().count,
+                    partners: partnerSnap.data().count,
+                    contentCount: totalContent
                 });
 
-                // 2. Fetch Recent Volunteers (Limit 5)
-                const volQuery = query(
-                    collection(db, "volunteers"), 
-                    orderBy("submittedAt", "desc"), 
-                    limit(5)
-                );
-                const volSnapshot = await getDocs(volQuery);
-                const volData = volSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                setRecentVolunteers(volData);
-
             } catch (error) {
-                console.error("Error fetching dashboard data:", error);
-            } finally {
-                setLoading(false);
+                console.error("Error fetching stats:", error);
             }
         };
 
-        fetchDashboardData();
+        fetchStats();
     }, []);
 
-    // Helper: Format Time Ago
-    const formatTimeAgo = (timestamp) => {
-        if (!timestamp) return 'Just now';
-        const date = timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp);
-        const now = new Date();
-        const diffInSeconds = Math.floor((now - date) / 1000);
+    // --- 2. FETCH AUDIT LOGS (Real-time) ---
+    useEffect(() => {
+        const q = query(collection(db, 'audit_logs'), orderBy('createdAt', 'desc'), limit(50));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            setLogs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            setLoading(false);
+        });
+        return () => unsubscribe();
+    }, []);
 
-        if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
-        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-        return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    };
+    // --- HELPERS ---
+    const filteredLogs = logs.filter(log => 
+        log.summary?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        log.actor?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        log.action?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     // Stats Configuration
-    const stats = [
-        { title: "Total Volunteers", value: counts.volunteers, icon: Users, color: "bg-blue-500" },
-        { title: "Published Blogs", value: counts.blogs, icon: FileText, color: "bg-green-500" },
-        { title: "Videos Uploaded", value: counts.videos, icon: Video, color: "bg-red-500" },
-        { title: "Audio Lectures", value: counts.audios, icon: Mic, color: "bg-purple-500" },
+    const statCards = [
+        { 
+            title: "Total Donations", 
+            value: `₦${stats.donationAmount.toLocaleString()}`, 
+            sub: `${stats.donationCount} successful transactions`,
+            icon: TrendingUp, 
+            color: "bg-green-100 text-green-600" 
+        },
+        { 
+            title: "Active Volunteers", 
+            value: stats.volunteers, 
+            sub: "Registered members",
+            icon: Users, 
+            color: "bg-blue-100 text-blue-600" 
+        },
+        { 
+            title: "Partnerships", 
+            value: stats.partners, 
+            sub: "Organizations & Sponsors",
+            icon: Handshake, 
+            color: "bg-purple-100 text-purple-600" 
+        },
+        { 
+            title: "Published Content", 
+            value: stats.contentCount, 
+            sub: "Blogs, News & Research",
+            icon: FileText, 
+            color: "bg-orange-100 text-orange-600" 
+        },
     ];
 
     if (loading) {
@@ -102,141 +139,120 @@ export default function AdminDashboard() {
     }
 
     return (
-        <div className="space-y-8">
+        <div className="max-w-7xl mx-auto pb-20 p-4 sm:p-6 lg:p-8 font-lato space-y-8">
 
             {/* 1. WELCOME HEADER */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="font-agency text-3xl text-brand-brown-dark">Dashboard Overview</h1>
-                    <p className="font-lato text-sm text-gray-500">
-                        Welcome back, {user?.displayName || 'Administrator'}. Here is what's happening today.
-                    </p>
-                </div>
-                <div className="flex gap-3">
-                    <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">
-                        <Download className="w-4 h-4" />
-                        Export Report
-                    </button>
-                    <Link href="/admin/blogs/new" className="flex items-center gap-2 px-4 py-2 bg-brand-gold text-white rounded-lg text-sm font-bold hover:bg-brand-brown-dark transition-colors shadow-md">
-                        <PlusCircle className="w-4 h-4" />
-                        Create New
-                    </Link>
-                </div>
+            <div>
+                <h1 className="font-agency text-3xl text-brand-brown-dark">Dashboard Overview</h1>
+                <p className="font-lato text-sm text-gray-500">
+                    Welcome back, {user?.displayName || 'Administrator'}. System status as of today.
+                </p>
             </div>
 
             {/* 2. STATS GRID */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {stats.map((stat, index) => {
+                {statCards.map((stat, index) => {
                     const Icon = stat.icon;
                     return (
-                        <div key={index} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white shadow-sm ${stat.color}`}>
-                                <Icon className="w-6 h-6" />
+                        <div key={index} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${stat.color}`}>
+                                    <Icon className="w-5 h-5" />
+                                </div>
                             </div>
                             <div>
-                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">{stat.title}</p>
-                                <h3 className="font-agency text-3xl text-brand-brown-dark">{stat.value}</h3>
+                                <h3 className="font-agency text-3xl font-bold text-gray-800">{stat.value}</h3>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{stat.title}</p>
+                                <p className="text-[10px] text-gray-500">{stat.sub}</p>
                             </div>
                         </div>
                     );
                 })}
             </div>
 
-            {/* 3. MAIN CONTENT SPLIT */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-                {/* LEFT: Recent Volunteer Applications */}
-                <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                        <h2 className="font-agency text-xl text-brand-brown-dark">Recent Volunteer Requests</h2>
-                        <Link href="/admin/volunteers" className="text-xs font-bold text-brand-gold hover:underline">View All</Link>
+            {/* 3. AUDIT LOG SECTION */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                {/* Audit Header */}
+                <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 className="font-agency text-xl text-brand-brown-dark flex items-center gap-2">
+                            <Shield className="w-5 h-5 text-brand-gold" /> System Audit Log
+                        </h2>
+                        <p className="text-xs text-gray-500">Real-time tracking of administrative actions.</p>
                     </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input 
+                            type="text" 
+                            placeholder="Search actions, emails..." 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/20 w-full md:w-64"
+                        />
+                    </div>
+                </div>
+
+                {/* Audit Table */}
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-gray-50 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                            <tr>
+                                <th className="px-6 py-4">Action</th>
+                                <th className="px-6 py-4">Summary</th>
+                                <th className="px-6 py-4">Actor</th>
+                                <th className="px-6 py-4">Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50 text-sm">
+                            {filteredLogs.length === 0 ? (
                                 <tr>
-                                    <th className="px-6 py-4">Name</th>
-                                    <th className="px-6 py-4">Interest</th>
-                                    <th className="px-6 py-4">Time</th>
-                                    <th className="px-6 py-4">Status</th>
-                                    <th className="px-6 py-4">Action</th>
+                                    <td colSpan="4" className="px-6 py-12 text-center text-gray-400">
+                                        No logs found matching your search.
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {recentVolunteers.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="5" className="px-6 py-8 text-center text-gray-400 text-sm">No recent applications found.</td>
+                            ) : (
+                                filteredLogs.map((log) => (
+                                    <tr key={log.id} className="hover:bg-gray-50/50 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold bg-gray-100 text-gray-600 font-mono uppercase tracking-wide">
+                                                {log.action}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-gray-700 font-medium">
+                                            {log.summary}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-6 h-6 rounded-full bg-brand-sand/30 flex items-center justify-center text-[10px] font-bold text-brand-brown-dark uppercase">
+                                                    {log.actor?.displayName?.charAt(0) || 'U'}
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs font-bold text-gray-800">{log.actor?.displayName || 'Unknown'}</span>
+                                                    <span className="text-[10px] text-gray-500">{log.actor?.email}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-gray-500 text-xs">
+                                            <div className="flex items-center gap-1.5">
+                                                <Clock className="w-3 h-3" />
+                                                {log.createdAt?.seconds 
+                                                    ? new Date(log.createdAt.seconds * 1000).toLocaleString() 
+                                                    : 'Just now'}
+                                            </div>
+                                        </td>
                                     </tr>
-                                ) : (
-                                    recentVolunteers.map((vol) => (
-                                        <tr key={vol.id} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-4 font-bold text-brand-brown-dark">{vol.fullName}</td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">{vol.department}</td>
-                                            <td className="px-6 py-4 text-xs text-gray-400">{formatTimeAgo(vol.submittedAt)}</td>
-                                            <td className="px-6 py-4">
-                                                <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${
-                                                    vol.status === 'Approved' ? 'bg-green-100 text-green-700' :
-                                                    vol.status === 'Rejected' ? 'bg-red-100 text-red-700' :
-                                                    'bg-blue-100 text-blue-700'
-                                                }`}>
-                                                    {vol.status || 'Pending'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <Link href="/admin/volunteers" className="text-gray-400 hover:text-brand-gold">
-                                                    <ArrowUpRight className="w-4 h-4" />
-                                                </Link>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
                 </div>
-
-                {/* RIGHT: Quick Actions */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                    <h2 className="font-agency text-xl text-brand-brown-dark mb-4">Quick Actions</h2>
-                    <div className="space-y-3">
-                        <Link href="/admin/blogs/new" className="block w-full p-4 rounded-xl border border-gray-100 hover:border-brand-gold hover:bg-brand-sand/20 transition-all group">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-green-100 text-green-600 p-2 rounded-lg group-hover:bg-green-600 group-hover:text-white transition-colors">
-                                    <FileText className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-gray-700 text-sm">Post New Blog</h3>
-                                    <p className="text-xs text-gray-400">Write an article or update</p>
-                                </div>
-                            </div>
-                        </Link>
-
-                        <Link href="/admin/videos" className="block w-full p-4 rounded-xl border border-gray-100 hover:border-brand-gold hover:bg-brand-sand/20 transition-all group">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-red-100 text-red-600 p-2 rounded-lg group-hover:bg-red-600 group-hover:text-white transition-colors">
-                                    <Video className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-gray-700 text-sm">Add YouTube Video</h3>
-                                    <p className="text-xs text-gray-400">Link a new lecture</p>
-                                </div>
-                            </div>
-                        </Link>
-
-                        <Link href="/admin/audios" className="block w-full p-4 rounded-xl border border-gray-100 hover:border-brand-gold hover:bg-brand-sand/20 transition-all group">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-purple-100 text-purple-600 p-2 rounded-lg group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                                    <Mic className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-gray-700 text-sm">Upload Audio</h3>
-                                    <p className="text-xs text-gray-400">Add MP3 sermon/tafsir</p>
-                                </div>
-                            </div>
-                        </Link>
-                    </div>
+                
+                {/* Footer Link */}
+                <div className="p-4 bg-gray-50 border-t border-gray-100 text-center">
+                    <Link href="/admin/audit" className="text-xs font-bold text-brand-brown-dark hover:text-brand-gold uppercase tracking-widest flex items-center justify-center gap-1">
+                        View Full History <FileBarChart className="w-3 h-3" />
+                    </Link>
                 </div>
-
             </div>
 
         </div>
