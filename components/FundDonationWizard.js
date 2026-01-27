@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { usePaystackPayment } from 'react-paystack';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { generateReceipt } from '@/lib/pdfGenerator';
+import { generateReceipt } from '@/lib/pdfGenerator'; // Import PDF generator
 import { 
     ArrowLeft, ArrowRight, CreditCard, Landmark, CheckCircle, 
     Copy, User, Mail, Phone, MessageSquare, ShieldCheck,
@@ -17,40 +17,46 @@ import {
 export default function FundDonationWizard({ fundId }) {
     const router = useRouter();
 
+    // --- STATE ---
     const [fund, setFund] = useState(null);
     const [loading, setLoading] = useState(true);
     const [step, setStep] = useState(1); 
-    const [processing, setProcessing] = useState(false);
 
+    // Donation Data
     const [amount, setAmount] = useState(5000);
     const [customAmount, setCustomAmount] = useState('');
     const [donor, setDonor] = useState({ name: '', email: '', phone: '', note: '', anonymous: false });
     const [paymentMethod, setPaymentMethod] = useState('paystack'); 
     
-    // Donation Reference
+    // Initialize reference state
     const [transactionRef, setTransactionRef] = useState(""); 
     
-    // State to hold the final transaction object for display
+    // State to hold the final transaction object for the receipt button
     const [finalTransaction, setFinalTransaction] = useState(null);
 
     const PRESET_AMOUNTS = [1000, 5000, 10000, 20000, 50000, 100000];
     
+    // --- HELPER: Generate New Ref ---
     const generateRef = () => {
         const ref = `REF-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         setTransactionRef(ref);
         return ref;
     };
 
+    // --- ON MOUNT ---
     useEffect(() => {
         generateRef();
     }, []);
 
+    // --- FETCH FUND ---
     useEffect(() => {
         const fetchFund = async () => {
             if (!fundId) return;
+            
             try {
                 const docRef = doc(db, "donation_funds", fundId);
                 const docSnap = await getDoc(docRef);
+
                 if (docSnap.exists()) {
                     setFund({ id: docSnap.id, ...docSnap.data() });
                 } else {
@@ -62,9 +68,11 @@ export default function FundDonationWizard({ fundId }) {
                 setLoading(false);
             }
         };
+
         fetchFund();
     }, [fundId, router]);
 
+    // --- PAYSTACK CONFIG ---
     const paystackKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "pk_test_placeholder";
     
     const config = {
@@ -81,6 +89,7 @@ export default function FundDonationWizard({ fundId }) {
     
     const initializePaystack = usePaystackPayment(config);
 
+    // --- HANDLERS ---
     const handleAmountSelect = (val) => {
         setAmount(val);
         setCustomAmount('');
@@ -95,11 +104,14 @@ export default function FundDonationWizard({ fundId }) {
     const handleNextStep = () => {
         if (step === 1 && amount < 100) return alert("Minimum donation is ₦100");
         if (step === 2 && !donor.email) return alert("Please provide an email address.");
+        
         if (step === 2) generateRef();
+        
         setStep(prev => prev + 1);
     };
 
     const recordDonation = async (ref, status) => {
+        // Construct the full object
         const transactionData = {
             fundId: fund.id,
             fundTitle: fund.title,
@@ -111,31 +123,35 @@ export default function FundDonationWizard({ fundId }) {
             method: paymentMethod,
             reference: ref,
             status: status,
-            createdAt: serverTimestamp() 
+            createdAt: serverTimestamp() // Note: This field won't display in PDF immediately since it's a Firestore object
         };
 
+        // Save to State for the Receipt Button
         setFinalTransaction(transactionData);
 
-        // Auto-download PDF
+        // Generate PDF Automatically
         try {
             generateReceipt(transactionData);
         } catch (e) {
-            console.error("Auto-download failed:", e);
+            console.error("Auto-download failed (browser might have blocked it):", e);
         }
 
+        // Save to Database
         try {
             await addDoc(collection(db, "donations"), transactionData);
         } catch (error) {
             console.error("Error recording donation:", error);
+            alert("Payment successful but failed to save record. Please contact support.");
         }
     };
 
     const processPayment = () => {
         if (paymentMethod === 'paystack') {
             if (paystackKey === "pk_test_placeholder") {
-                alert("Paystack Key not set.");
+                alert("Paystack Key not set in environment variables.");
                 return;
             }
+            
             initializePaystack(
                 (response) => {
                     recordDonation(response.reference, 'Success');
@@ -148,6 +164,7 @@ export default function FundDonationWizard({ fundId }) {
                 }
             );
         } else {
+            // Manual Bank Transfer
             const manualRef = `BANK-${Date.now().toString().slice(-6)}`;
             setTransactionRef(manualRef);
             recordDonation(manualRef, 'Pending');
@@ -217,6 +234,7 @@ export default function FundDonationWizard({ fundId }) {
                     )}
 
                     <div className="p-8">
+                        {/* STEP 1: AMOUNT */}
                         {step === 1 && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
                                 <h2 className="font-agency text-3xl text-brand-brown-dark mb-6">Choose Donation Amount</h2>
@@ -233,6 +251,7 @@ export default function FundDonationWizard({ fundId }) {
                             </div>
                         )}
 
+                        {/* STEP 2: DETAILS */}
                         {step === 2 && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-300 space-y-5">
                                 <h2 className="font-agency text-3xl text-brand-brown-dark mb-2">Your Information</h2>
@@ -245,6 +264,7 @@ export default function FundDonationWizard({ fundId }) {
                             </div>
                         )}
 
+                        {/* STEP 3: PAYMENT METHOD */}
                         {step === 3 && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
                                 <h2 className="font-agency text-3xl text-brand-brown-dark mb-2">Payment Method</h2>
@@ -257,51 +277,22 @@ export default function FundDonationWizard({ fundId }) {
                             </div>
                         )}
 
+                        {/* STEP 4: SUCCESS / BANK DETAILS */}
                         {step === 4 && (
                             <div className="animate-in fade-in zoom-in-95 duration-300 text-center">
                                 {paymentMethod === 'paystack' ? (
                                     <>
                                         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"><CheckCircle className="w-10 h-10 text-green-600" /></div>
                                         <h2 className="font-agency text-3xl text-brand-brown-dark mb-2">Donation Successful!</h2>
-                                        <p className="text-gray-500 text-sm mb-8">Thank you, {donor.name || 'Donor'}! Your support means everything.</p>
+                                        <p className="text-gray-500 text-sm mb-4">Thank you, {donor.name || 'Donor'}! Your support means everything.</p>
                                         
-                                        {/* DIGITAL RECEIPT CARD */}
+                                        {/* Auto-generated Receipt Button */}
                                         {finalTransaction && (
-                                            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mb-6 w-full max-w-sm mx-auto text-left relative overflow-hidden group hover:shadow-md transition-all">
-                                                <div className="absolute top-0 left-0 w-full h-1.5 bg-green-500"></div>
-                                                <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-4">
-                                                    <h3 className="font-agency text-lg font-bold text-gray-800 uppercase tracking-widest">E-Receipt</h3>
-                                                    <div className="bg-green-50 text-green-700 text-[10px] font-bold px-2 py-1 rounded uppercase">Paid</div>
-                                                </div>
-                                                
-                                                <div className="space-y-3 text-sm">
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-500">Amount</span>
-                                                        <span className="font-bold text-brand-brown-dark text-lg">₦{Number(finalTransaction.amount).toLocaleString()}</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-500">Ref ID</span>
-                                                        <span className="font-mono text-xs font-bold text-gray-600">{finalTransaction.reference}</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-500">Date</span>
-                                                        <span className="font-bold text-gray-700">{new Date().toLocaleDateString()}</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-500">Fund</span>
-                                                        <span className="font-bold text-gray-700 text-right line-clamp-1 w-1/2">{finalTransaction.fundTitle}</span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="mt-6 pt-4 border-t border-dashed border-gray-200 text-center">
-                                                    <p className="text-[10px] text-gray-400 uppercase tracking-widest">Al-Asad Education Foundation</p>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {finalTransaction && (
-                                            <button onClick={() => generateReceipt(finalTransaction)} className="mb-8 inline-flex items-center gap-2 px-6 py-3 bg-brand-sand/30 text-brand-brown-dark font-bold rounded-xl hover:bg-brand-sand/50 transition-colors">
-                                                <Download className="w-4 h-4" /> Save as PDF
+                                            <button 
+                                                onClick={() => generateReceipt(finalTransaction)}
+                                                className="mb-8 inline-flex items-center gap-2 px-6 py-3 bg-brand-sand/30 text-brand-brown-dark font-bold rounded-xl hover:bg-brand-sand/50 transition-colors"
+                                            >
+                                                <Download className="w-4 h-4" /> Download Receipt
                                             </button>
                                         )}
 
@@ -310,53 +301,27 @@ export default function FundDonationWizard({ fundId }) {
                                 ) : (
                                     <>
                                         <div className="w-16 h-16 bg-brand-sand/30 rounded-full flex items-center justify-center mx-auto mb-6 text-brand-brown-dark"><Landmark className="w-8 h-8" /></div>
-                                        <h2 className="font-agency text-2xl text-brand-brown-dark mb-2">Payment Pending</h2>
-                                        <p className="text-gray-500 text-xs mb-6 px-4">Please complete your transfer of <strong className="text-black">₦{amount.toLocaleString()}</strong>.</p>
+                                        <h2 className="font-agency text-2xl text-brand-brown-dark mb-2">Bank Transfer Details</h2>
+                                        <p className="text-gray-500 text-xs mb-6 px-4">Transfer <strong className="text-black">₦{amount.toLocaleString()}</strong> to the account below.</p>
                                         
-                                        {/* PAYMENT INSTRUCTION CARD */}
-                                        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mb-6 w-full max-w-sm mx-auto text-left relative overflow-hidden">
-                                            <div className="absolute top-0 left-0 w-full h-1.5 bg-orange-400"></div>
-                                            <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-4">
-                                                <h3 className="font-agency text-lg font-bold text-gray-800 uppercase tracking-widest">Bank Details</h3>
-                                                <div className="bg-orange-50 text-orange-700 text-[10px] font-bold px-2 py-1 rounded uppercase">Waiting</div>
-                                            </div>
-                                            
-                                            <div className="space-y-4">
-                                                <div>
-                                                    <p className="text-xs text-gray-400 uppercase font-bold">Bank Name</p>
-                                                    <p className="font-bold text-gray-800">{bankDetails.bankName}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs text-gray-400 uppercase font-bold">Account Number</p>
-                                                    <div className="flex justify-between items-center">
-                                                        <p className="font-bold text-2xl text-brand-brown-dark tracking-widest">{bankDetails.accountNumber}</p>
-                                                        <button onClick={() => copyToClipboard(bankDetails.accountNumber)} className="text-brand-gold hover:text-brand-brown-dark"><Copy className="w-4 h-4" /></button>
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs text-gray-400 uppercase font-bold">Account Name</p>
-                                                    <p className="font-bold text-gray-800">{bankDetails.accountName}</p>
-                                                </div>
-                                                <div className="bg-brand-sand/10 p-3 rounded-lg border border-brand-gold/30">
-                                                    <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Use this Reference</p>
-                                                    <div className="flex justify-between items-center">
-                                                        <span className="font-mono font-bold text-brand-brown-dark">{transactionRef}</span>
-                                                        <button onClick={() => copyToClipboard(transactionRef)} className="text-brand-gold"><Copy className="w-3 h-3" /></button>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                        <div className="bg-gray-50 rounded-2xl p-5 text-left space-y-4 mb-6 border border-gray-200">
+                                            <div><p className="text-xs text-gray-400 uppercase font-bold">Bank Name</p><p className="font-bold text-gray-800">{bankDetails.bankName}</p></div>
+                                            <div><p className="text-xs text-gray-400 uppercase font-bold">Account Name</p><p className="font-bold text-gray-800">{bankDetails.accountName}</p></div>
+                                            <div className="flex justify-between items-end"><div><p className="text-xs text-gray-400 uppercase font-bold">Account Number</p><p className="font-bold text-2xl text-brand-brown-dark tracking-widest">{bankDetails.accountNumber}</p></div><button onClick={() => copyToClipboard(bankDetails.accountNumber)} className="p-2 bg-white border rounded-lg hover:text-brand-gold"><Copy className="w-4 h-4" /></button></div>
+                                            <div className="pt-4 border-t border-gray-200"><p className="text-xs text-gray-400 uppercase font-bold mb-1">Reference (Important)</p><div className="flex justify-between items-center bg-white border border-brand-gold/30 rounded-lg p-3"><span className="font-mono font-bold text-brand-gold">{transactionRef}</span><button onClick={() => copyToClipboard(transactionRef)}><Copy className="w-4 h-4 text-gray-400 hover:text-brand-gold" /></button></div></div>
                                         </div>
 
+                                        {/* Receipt / Slip Button for Bank Transfer */}
                                         {finalTransaction && (
-                                            <button onClick={() => generateReceipt(finalTransaction)} className="w-full mb-4 flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-50 transition-colors">
+                                            <button 
+                                                onClick={() => generateReceipt(finalTransaction)}
+                                                className="w-full mb-4 flex items-center justify-center gap-2 py-3 bg-brand-sand/30 text-brand-brown-dark font-bold rounded-xl hover:bg-brand-sand/50 transition-colors border border-brand-gold/20"
+                                            >
                                                 <FileText className="w-4 h-4" /> Download Payment Slip
                                             </button>
                                         )}
 
-                                        <div className="bg-blue-50 p-4 rounded-xl flex gap-3 items-start text-left mb-6">
-                                            <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                                            <p className="text-xs text-blue-800">After transferring, keep your receipt safe or send proof to <strong>+234 800 000 0000</strong>.</p>
-                                        </div>
+                                        <div className="bg-blue-50 p-4 rounded-xl flex gap-3 items-start text-left mb-6"><AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" /><p className="text-xs text-blue-800">After transferring, please share your Payment Slip or proof to <strong>+234 800 000 0000</strong>.</p></div>
                                         <Link href="/" className="block w-full py-4 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-colors">I have made the transfer</Link>
                                     </>
                                 )}
