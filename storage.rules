@@ -1,0 +1,39 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper: Check if user is an admin
+    function isAdmin() {
+      return request.auth != null; // Simplified check for storage
+      // Note: For strict role checking in storage, you usually need Custom Claims 
+      // or to rely on the app logic if your firestore rules are tight.
+      // Since we don't have custom claims set up, checking auth != null is the baseline 
+      // for "Staff" access, assuming only staff have accounts.
+    }
+
+    // 1. Blog & Content Images (Public Read / Admin Write)
+    match /blog_images/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // 2. Research PDFs (Public Read / Admin Write)
+    match /research_pdfs/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 3. Admin Profile Photos
+    match /admins/{userId}_{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // 4. General Gallery
+    match /gallery/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
