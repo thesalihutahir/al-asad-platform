@@ -6,40 +6,57 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { usePaystackPayment } from 'react-paystack';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { generateReceipt } from '@/lib/pdfGenerator';
 import { 
     ArrowLeft, ArrowRight, CreditCard, Landmark, CheckCircle, 
-    Copy, User, Mail, Phone, ChevronRight, Lock, Loader2, AlertCircle
+    Copy, User, Mail, Phone, MessageSquare, ShieldCheck,
+    AlertCircle, ChevronRight, Lock, Loader2, Download, FileText
 } from 'lucide-react';
 
 export default function FundDonationWizard({ fundId }) {
     const router = useRouter();
 
+    // --- STATE ---
     const [fund, setFund] = useState(null);
     const [loading, setLoading] = useState(true);
     const [step, setStep] = useState(1); 
-    const [processing, setProcessing] = useState(false);
 
+    // Donation Data
     const [amount, setAmount] = useState(5000);
     const [customAmount, setCustomAmount] = useState('');
-    const [donor, setDonor] = useState({ name: '', email: '', phone: '', note: '' });
+    const [donor, setDonor] = useState({ name: '', email: '', phone: '', note: '', anonymous: false });
     const [paymentMethod, setPaymentMethod] = useState('paystack'); 
     
-    // Donation Reference
-    const [donationRef, setDonationRef] = useState(""); 
+    // Initialize reference state
+    const [transactionRef, setTransactionRef] = useState(""); 
+    
+    // State to hold the final transaction object for the receipt button
+    const [finalTransaction, setFinalTransaction] = useState(null);
 
     const PRESET_AMOUNTS = [1000, 5000, 10000, 20000, 50000, 100000];
     
+    // --- HELPER: Generate New Ref ---
     const generateRef = () => {
-        return `DON-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+        const ref = `REF-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        setTransactionRef(ref);
+        return ref;
     };
 
+    // --- ON MOUNT ---
+    useEffect(() => {
+        generateRef();
+    }, []);
+
+    // --- FETCH FUND ---
     useEffect(() => {
         const fetchFund = async () => {
             if (!fundId) return;
+            
             try {
                 const docRef = doc(db, "donation_funds", fundId);
                 const docSnap = await getDoc(docRef);
+
                 if (docSnap.exists()) {
                     setFund({ id: docSnap.id, ...docSnap.data() });
                 } else {
@@ -51,125 +68,134 @@ export default function FundDonationWizard({ fundId }) {
                 setLoading(false);
             }
         };
+
         fetchFund();
     }, [fundId, router]);
 
+    // --- PAYSTACK CONFIG ---
+    const paystackKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "pk_test_placeholder";
+    
     const config = {
-        reference: donationRef, 
+        reference: transactionRef, 
         email: donor.email,
         amount: Math.ceil(amount * 100), 
-        publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+        publicKey: paystackKey,
         metadata: {
-            fundId: fund?.id,
-            fundTitle: fund?.title,
-            donorName: donor.name,
+            fundId: fund?.id || "",
+            fundTitle: fund?.title || "",
+            donorName: donor.name || "",
         }
     };
     
     const initializePaystack = usePaystackPayment(config);
 
-    const createPendingRecord = async (method) => {
-        setProcessing(true);
-        const newRef = generateRef();
-        setDonationRef(newRef);
+    // --- HANDLERS ---
+    const handleAmountSelect = (val) => {
+        setAmount(val);
+        setCustomAmount('');
+    };
 
-        try {
-            await setDoc(doc(db, "donations", newRef), {
-                fundId: fund.id,
-                fundTitle: fund.title,
-                amount: amount,
-                donorName: donor.name || "Anonymous",
-                donorEmail: donor.email,
-                donorPhone: donor.phone || "",
-                message: donor.note || "",
-                method: method,
-                reference: newRef,
-                status: "Pending",
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp()
-            });
-            return newRef;
-        } catch (error) {
-            console.error("Error creating record:", error);
-            alert("Could not initialize donation. Please try again.");
-            setProcessing(false);
-            return null;
-        }
+    const handleCustomAmountChange = (e) => {
+        const val = e.target.value.replace(/[^0-9]/g, '');
+        setCustomAmount(val);
+        setAmount(val ? parseInt(val) : 0);
     };
 
     const handleNextStep = () => {
         if (step === 1 && amount < 100) return alert("Minimum donation is ₦100");
         if (step === 2 && !donor.email) return alert("Please provide an email address.");
+        
+        if (step === 2) generateRef();
+        
         setStep(prev => prev + 1);
     };
 
-    const handlePaystackPayment = async () => {
-        const ref = await createPendingRecord('paystack');
-        if (!ref) return;
+    const recordDonation = async (ref, status) => {
+        // Construct the full object
+        const transactionData = {
+            fundId: fund.id,
+            fundTitle: fund.title,
+            amount: amount,
+            donorName: donor.anonymous ? "Anonymous" : (donor.name || "Guest"),
+            donorEmail: donor.email,
+            donorPhone: donor.phone || "",
+            message: donor.note || "",
+            method: paymentMethod,
+            reference: ref,
+            status: status,
+            createdAt: serverTimestamp() // Note: This field won't display in PDF immediately since it's a Firestore object
+        };
 
-        const freshConfig = { ...config, reference: ref };
-        
-        initializePaystack({
-            config: freshConfig,
-            onSuccess: async () => {
-                try {
-                    const res = await fetch('/api/paystack/verify', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ reference: ref })
-                    });
-                    const data = await res.json();
-                    
-                    if (data.success) {
-                        setStep(4);
-                    } else {
-                        alert("Payment verification failed. Please contact support.");
-                    }
-                } catch (err) {
-                    console.error("Verification error", err);
-                } finally {
-                    setProcessing(false);
-                }
-            },
-            onClose: async () => {
-                // CHANGED: We now verify on close to distinguish 'Failed' vs 'Cancelled'
-                setProcessing(true);
-                try {
-                    await fetch('/api/paystack/verify', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ reference: ref })
-                    });
-                    // We don't alert failure here, as the user knowingly closed it.
-                    // Just update the DB silently.
-                    alert("Transaction ended.");
-                } catch (error) {
-                    console.error("Error verifying on close:", error);
-                } finally {
-                    setProcessing(false);
-                }
-            }
-        });
+        // Save to State for the Receipt Button & UI Display
+        setFinalTransaction(transactionData);
+
+        // Generate PDF Automatically (Optional: Browser might block popup, but we have manual button)
+        try {
+            generateReceipt(transactionData);
+        } catch (e) {
+            console.error("Auto-download failed (browser might have blocked it):", e);
+        }
+
+        // Save to Database
+        try {
+            await addDoc(collection(db, "donations"), transactionData);
+        } catch (error) {
+            console.error("Error recording donation:", error);
+            alert("Payment successful but failed to save record. Please contact support.");
+        }
     };
 
-    const handleBankTransfer = async () => {
-        const ref = await createPendingRecord('bank');
-        if (ref) {
+    const processPayment = () => {
+        if (paymentMethod === 'paystack') {
+            if (paystackKey === "pk_test_placeholder") {
+                alert("Paystack Key not set in environment variables.");
+                return;
+            }
+            
+            initializePaystack(
+                (response) => {
+                    recordDonation(response.reference, 'Success');
+                    generateRef(); 
+                    setStep(4);
+                },
+                () => {
+                    alert("Payment cancelled.");
+                    generateRef(); 
+                }
+            );
+        } else {
+            // Manual Bank Transfer
+            const manualRef = `BANK-${Date.now().toString().slice(-6)}`;
+            setTransactionRef(manualRef);
+            recordDonation(manualRef, 'Pending');
             setStep(4);
-            setProcessing(false);
         }
+    };
+
+    const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text);
+        alert("Copied: " + text);
     };
 
     if (loading) return <div className="flex justify-center items-center h-64"><Loader2 className="w-10 h-10 animate-spin text-brand-gold" /></div>;
     if (!fund) return null;
 
+    const bankDetails = fund.bankDetails || {
+        accountName: "Al-Asad Education Foundation",
+        bankName: "Jaiz Bank",
+        accountNumber: "0000000000"
+    };
+
     return (
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
+            
+            {/* LEFT: FUND DETAILS */}
             <div className="lg:col-span-7">
-                 <div className="sticky top-32">
+                <div className="sticky top-32">
                     <Link href="/get-involved/donate" className="inline-flex items-center text-gray-500 hover:text-brand-brown-dark mb-6 text-xs font-bold uppercase tracking-widest transition-colors">
                         <ArrowLeft className="w-4 h-4 mr-2" /> Back to Funds
                     </Link>
+
                     <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-lg mb-8">
                         <Image src={fund.coverImage || "/fallback.webp"} alt={fund.title} fill className="object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-8 text-white">
@@ -177,130 +203,151 @@ export default function FundDonationWizard({ fundId }) {
                             {fund.tagline && <p className="text-white/80 font-lato text-lg">{fund.tagline}</p>}
                         </div>
                     </div>
+
                     <div className="prose prose-lg text-gray-600 leading-relaxed font-lato">
                         <h3 className="font-agency text-2xl text-brand-brown-dark">About this Fund</h3>
                         <p>{fund.description}</p>
                     </div>
+
+                    <div className="mt-8 p-6 bg-brand-sand/20 rounded-2xl border border-brand-gold/20 flex items-start gap-4">
+                        <ShieldCheck className="w-8 h-8 text-brand-gold flex-shrink-0" />
+                        <div>
+                            <h4 className="font-bold text-brand-brown-dark text-sm mb-1">100% Secure Donation</h4>
+                            <p className="text-xs text-gray-600">Your donation is processed securely. We ensure transparency in every project we undertake.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
+            {/* RIGHT: WIZARD */}
             <div className="lg:col-span-5 relative z-10">
                 <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden sticky top-32">
+                    
                     {step < 4 && (
                         <div className="bg-gray-50 px-8 py-4 border-b border-gray-100 flex justify-between items-center text-xs font-bold text-gray-400 uppercase tracking-wider">
                             <span className={step >= 1 ? 'text-brand-brown-dark' : ''}>1. Amount</span>
                             <ChevronRight className="w-3 h-3" />
                             <span className={step >= 2 ? 'text-brand-brown-dark' : ''}>2. Details</span>
                             <ChevronRight className="w-3 h-3" />
-                            <span className={step >= 3 ? 'text-brand-brown-dark' : ''}>3. Pay</span>
+                            <span className={step >= 3 ? 'text-brand-brown-dark' : ''}>3. Payment</span>
                         </div>
                     )}
 
                     <div className="p-8">
+                        {/* STEP 1: AMOUNT */}
                         {step === 1 && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-                                <h2 className="font-agency text-3xl text-brand-brown-dark mb-6">Choose Amount</h2>
+                                <h2 className="font-agency text-3xl text-brand-brown-dark mb-6">Choose Donation Amount</h2>
                                 <div className="grid grid-cols-3 gap-3 mb-6">
                                     {PRESET_AMOUNTS.map((amt) => (
-                                        <button key={amt} onClick={() => { setAmount(amt); setCustomAmount(''); }} className={`py-3 rounded-xl text-sm font-bold border transition-all ${amount === amt && customAmount === '' ? 'bg-brand-brown-dark text-white border-brand-brown-dark shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:border-brand-gold'}`}>₦{amt.toLocaleString()}</button>
+                                        <button key={amt} onClick={() => handleAmountSelect(amt)} className={`py-3 rounded-xl text-sm font-bold border transition-all ${amount === amt && customAmount === '' ? 'bg-brand-brown-dark text-white border-brand-brown-dark shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:border-brand-gold'}`}>₦{amt.toLocaleString()}</button>
                                     ))}
                                 </div>
                                 <div className="relative mb-8">
                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₦</span>
-                                    <input type="text" value={customAmount} onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ''); setCustomAmount(v); setAmount(v ? parseInt(v) : 0); }} placeholder="Enter custom amount" className="w-full pl-8 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 font-bold text-gray-800 text-lg" />
+                                    <input type="text" value={customAmount} onChange={handleCustomAmountChange} placeholder="Enter custom amount" className="w-full pl-8 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 font-bold text-gray-800 text-lg transition-all" />
                                 </div>
                                 <button onClick={handleNextStep} className="w-full py-4 bg-brand-gold text-white font-bold rounded-xl text-lg hover:bg-brand-brown-dark transition-all shadow-lg flex items-center justify-center gap-2">Continue <ArrowRight className="w-5 h-5" /></button>
                             </div>
                         )}
 
+                        {/* STEP 2: DETAILS */}
                         {step === 2 && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-300 space-y-5">
-                                <h2 className="font-agency text-3xl text-brand-brown-dark mb-2">Your Details</h2>
-                                <div className="relative"><User className="absolute left-4 top-3.5 w-4 h-4 text-gray-400" /><input type="text" placeholder="Full Name (Optional)" value={donor.name} onChange={(e) => setDonor({...donor, name: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm" /></div>
-                                <div className="relative"><Mail className="absolute left-4 top-3.5 w-4 h-4 text-gray-400" /><input type="email" placeholder="Email Address *" value={donor.email} onChange={(e) => setDonor({...donor, email: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm" /></div>
-                                <div className="relative"><Phone className="absolute left-4 top-3.5 w-4 h-4 text-gray-400" /><input type="text" placeholder="Phone (Optional)" value={donor.phone} onChange={(e) => setDonor({...donor, phone: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm" /></div>
-                                <div className="flex gap-3 pt-2">
-                                    <button onClick={() => setStep(1)} className="px-6 py-4 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200">Back</button>
-                                    <button onClick={handleNextStep} className="flex-grow py-4 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark shadow-lg">Proceed</button>
-                                </div>
+                                <h2 className="font-agency text-3xl text-brand-brown-dark mb-2">Your Information</h2>
+                                <div className="relative"><User className="absolute left-4 top-3.5 w-4 h-4 text-gray-400" /><input type="text" placeholder="Full Name (Optional)" value={donor.name} onChange={(e) => setDonor({...donor, name: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 text-sm font-bold" /></div>
+                                <div className="relative"><Mail className="absolute left-4 top-3.5 w-4 h-4 text-gray-400" /><input type="email" placeholder="Email Address *" value={donor.email} onChange={(e) => setDonor({...donor, email: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 text-sm font-bold" /></div>
+                                <div className="relative"><Phone className="absolute left-4 top-3.5 w-4 h-4 text-gray-400" /><input type="text" placeholder="Phone Number (Optional)" value={donor.phone} onChange={(e) => setDonor({...donor, phone: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 text-sm font-bold" /></div>
+                                <div className="relative"><MessageSquare className="absolute left-4 top-3.5 w-4 h-4 text-gray-400" /><textarea placeholder="Leave a note (Optional)" rows="2" value={donor.note} onChange={(e) => setDonor({...donor, note: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 text-sm font-bold resize-none"></textarea></div>
+                                <label className="flex items-center gap-3 p-3 border border-gray-100 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors"><input type="checkbox" checked={donor.anonymous} onChange={(e) => setDonor({...donor, anonymous: e.target.checked})} className="w-5 h-5 accent-brand-gold rounded" /><span className="text-sm text-gray-600 font-bold">Make this donation anonymous</span></label>
+                                <div className="flex gap-3 pt-2"><button onClick={() => setStep(1)} className="px-6 py-4 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200">Back</button><button onClick={handleNextStep} className="flex-grow py-4 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-all shadow-lg">Review & Pay</button></div>
                             </div>
                         )}
 
+                        {/* STEP 3: PAYMENT METHOD */}
                         {step === 3 && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-                                <h2 className="font-agency text-3xl text-brand-brown-dark mb-2">Select Payment</h2>
-                                <p className="text-gray-500 text-sm mb-6">Total: <span className="text-brand-brown-dark font-bold text-lg">₦{amount.toLocaleString()}</span></p>
-                                
+                                <h2 className="font-agency text-3xl text-brand-brown-dark mb-2">Payment Method</h2>
+                                <p className="text-gray-500 text-sm mb-6">Total Amount: <span className="text-brand-brown-dark font-bold text-lg">₦{amount.toLocaleString()}</span></p>
                                 <div className="space-y-4 mb-8">
-                                    <button onClick={() => setPaymentMethod('paystack')} className={`w-full p-4 rounded-2xl border-2 flex items-center justify-between transition-all ${paymentMethod === 'paystack' ? 'border-brand-gold bg-brand-sand/10' : 'border-gray-100'}`}>
-                                        <div className="flex items-center gap-4"><div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600"><CreditCard className="w-5 h-5" /></div><span className="font-bold text-gray-800">Pay Online (Card/Transfer)</span></div>
-                                        {paymentMethod === 'paystack' && <CheckCircle className="w-5 h-5 text-brand-gold" />}
-                                    </button>
-                                    <button onClick={() => setPaymentMethod('bank')} className={`w-full p-4 rounded-2xl border-2 flex items-center justify-between transition-all ${paymentMethod === 'bank' ? 'border-brand-gold bg-brand-sand/10' : 'border-gray-100'}`}>
-                                        <div className="flex items-center gap-4"><div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center text-green-600"><Landmark className="w-5 h-5" /></div><span className="font-bold text-gray-800">Manual Bank Transfer</span></div>
-                                        {paymentMethod === 'bank' && <CheckCircle className="w-5 h-5 text-brand-gold" />}
-                                    </button>
+                                    <button onClick={() => setPaymentMethod('paystack')} className={`w-full p-4 rounded-2xl border-2 flex items-center justify-between transition-all ${paymentMethod === 'paystack' ? 'border-brand-gold bg-brand-sand/10 ring-1 ring-brand-gold' : 'border-gray-100 hover:border-gray-300'}`}><div className="flex items-center gap-4"><div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600"><CreditCard className="w-5 h-5" /></div><div className="text-left"><span className="block font-bold text-gray-800">Pay Online</span><span className="text-xs text-gray-500">Secure Instant Payment</span></div></div>{paymentMethod === 'paystack' && <CheckCircle className="w-5 h-5 text-brand-gold" />}</button>
+                                    <button onClick={() => setPaymentMethod('bank')} className={`w-full p-4 rounded-2xl border-2 flex items-center justify-between transition-all ${paymentMethod === 'bank' ? 'border-brand-gold bg-brand-sand/10 ring-1 ring-brand-gold' : 'border-gray-100 hover:border-gray-300'}`}><div className="flex items-center gap-4"><div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center text-green-600"><Landmark className="w-5 h-5" /></div><div className="text-left"><span className="block font-bold text-gray-800">Bank Transfer</span><span className="text-xs text-gray-500">Manual Transfer</span></div></div>{paymentMethod === 'bank' && <CheckCircle className="w-5 h-5 text-brand-gold" />}</button>
                                 </div>
-
-                                <div className="flex gap-3">
-                                    <button onClick={() => setStep(2)} className="px-6 py-4 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200">Back</button>
-                                    
-                                    {paymentMethod === 'paystack' ? (
-                                        <button 
-                                            onClick={handlePaystackPayment} 
-                                            disabled={processing}
-                                            className="flex-grow py-4 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark shadow-lg flex items-center justify-center gap-2"
-                                        >
-                                            {processing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Lock className="w-4 h-4" />}
-                                            {processing ? 'Processing...' : 'Pay Securely'}
-                                        </button>
-                                    ) : (
-                                        <button 
-                                            onClick={handleBankTransfer} 
-                                            disabled={processing}
-                                            className="flex-grow py-4 bg-brand-brown-dark text-white font-bold rounded-xl hover:bg-brand-gold shadow-lg flex items-center justify-center gap-2"
-                                        >
-                                            {processing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Landmark className="w-4 h-4" />}
-                                            Get Account Details
-                                        </button>
-                                    )}
-                                </div>
+                                <div className="flex gap-3"><button onClick={() => setStep(2)} className="px-6 py-4 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200">Back</button><button onClick={processPayment} className="flex-grow py-4 bg-brand-gold text-white font-bold rounded-xl hover:bg-brand-brown-dark transition-all shadow-lg flex items-center justify-center gap-2"><Lock className="w-4 h-4" /> {paymentMethod === 'paystack' ? 'Pay Now' : 'Get Bank Details'}</button></div>
                             </div>
                         )}
 
+                        {/* STEP 4: SUCCESS / BANK DETAILS */}
                         {step === 4 && (
                             <div className="animate-in fade-in zoom-in-95 duration-300 text-center">
                                 {paymentMethod === 'paystack' ? (
                                     <>
                                         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"><CheckCircle className="w-10 h-10 text-green-600" /></div>
-                                        <h2 className="font-agency text-3xl text-brand-brown-dark mb-2">Thank You!</h2>
-                                        <p className="text-gray-500 text-sm mb-8">Your donation was successful. May Allah accept it.</p>
+                                        <h2 className="font-agency text-3xl text-brand-brown-dark mb-2">Donation Successful!</h2>
+                                        <p className="text-gray-500 text-sm mb-8">Thank you, {donor.name || 'Donor'}! Your support means everything.</p>
+                                        
+                                        {/* DIGITAL RECEIPT CARD (PAYSTACK) */}
+                                        {finalTransaction && (
+                                            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mb-6 w-full max-w-sm mx-auto text-left relative overflow-hidden group hover:shadow-md transition-all">
+                                                <div className="absolute top-0 left-0 w-full h-1.5 bg-green-500"></div>
+                                                <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-4">
+                                                    <h3 className="font-agency text-lg font-bold text-gray-800 uppercase tracking-widest">E-Receipt</h3>
+                                                    <div className="bg-green-50 text-green-700 text-[10px] font-bold px-2 py-1 rounded uppercase">Paid</div>
+                                                </div>
+                                                <div className="space-y-3 text-sm">
+                                                    <div className="flex justify-between"><span className="text-gray-500">Amount</span><span className="font-bold text-brand-brown-dark text-lg">₦{Number(finalTransaction.amount).toLocaleString()}</span></div>
+                                                    <div className="flex justify-between"><span className="text-gray-500">Ref ID</span><span className="font-mono text-xs font-bold text-gray-600">{finalTransaction.reference}</span></div>
+                                                    <div className="flex justify-between"><span className="text-gray-500">Date</span><span className="font-bold text-gray-700">{new Date().toLocaleDateString()}</span></div>
+                                                    <div className="flex justify-between"><span className="text-gray-500">Fund</span><span className="font-bold text-gray-700 text-right line-clamp-1 w-1/2">{finalTransaction.fundTitle}</span></div>
+                                                </div>
+                                                <div className="mt-6 pt-4 border-t border-dashed border-gray-200 text-center"><p className="text-[10px] text-gray-400 uppercase tracking-widest">Al-Asad Education Foundation</p></div>
+                                            </div>
+                                        )}
+
+                                        {/* DOWNLOAD BUTTON */}
+                                        {finalTransaction && (
+                                            <button onClick={() => generateReceipt(finalTransaction)} className="mb-8 inline-flex items-center gap-2 px-6 py-3 bg-brand-sand/30 text-brand-brown-dark font-bold rounded-xl hover:bg-brand-sand/50 transition-colors">
+                                                <Download className="w-4 h-4" /> Download PDF Receipt
+                                            </button>
+                                        )}
+
                                         <Link href="/" className="block w-full py-4 bg-brand-brown-dark text-white font-bold rounded-xl hover:bg-brand-gold transition-colors">Return Home</Link>
                                     </>
                                 ) : (
                                     <>
                                         <div className="w-16 h-16 bg-brand-sand/30 rounded-full flex items-center justify-center mx-auto mb-6 text-brand-brown-dark"><Landmark className="w-8 h-8" /></div>
-                                        <h2 className="font-agency text-2xl text-brand-brown-dark mb-2">Bank Transfer Details</h2>
-                                        <p className="text-gray-500 text-xs mb-6 px-4">Transfer <strong className="text-black">₦{amount.toLocaleString()}</strong> to:</p>
+                                        <h2 className="font-agency text-2xl text-brand-brown-dark mb-2">Payment Pending</h2>
+                                        <p className="text-gray-500 text-xs mb-6 px-4">Please complete your transfer of <strong className="text-black">₦{amount.toLocaleString()}</strong>.</p>
                                         
-                                        <div className="bg-gray-50 rounded-2xl p-5 text-left space-y-4 mb-6 border border-gray-200">
-                                            <div><p className="text-xs text-gray-400 uppercase font-bold">Bank</p><p className="font-bold text-gray-800">{fund.bankDetails?.bankName || "Jaiz Bank"}</p></div>
-                                            <div><p className="text-xs text-gray-400 uppercase font-bold">Account</p><p className="font-bold text-gray-800">{fund.bankDetails?.accountName || "Al Asad Foundation"}</p></div>
-                                            <div className="flex justify-between items-end">
-                                                <div><p className="text-xs text-gray-400 uppercase font-bold">Number</p><p className="font-bold text-2xl text-brand-brown-dark tracking-widest">{fund.bankDetails?.accountNumber || "0000000000"}</p></div>
-                                                <button onClick={() => navigator.clipboard.writeText(fund.bankDetails?.accountNumber)} className="p-2 bg-white border rounded-lg hover:text-brand-gold"><Copy className="w-4 h-4" /></button>
+                                        {/* PAYMENT INSTRUCTION CARD */}
+                                        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mb-6 w-full max-w-sm mx-auto text-left relative overflow-hidden">
+                                            <div className="absolute top-0 left-0 w-full h-1.5 bg-orange-400"></div>
+                                            <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-4">
+                                                <h3 className="font-agency text-lg font-bold text-gray-800 uppercase tracking-widest">Bank Details</h3>
+                                                <div className="bg-orange-50 text-orange-700 text-[10px] font-bold px-2 py-1 rounded uppercase">Waiting</div>
                                             </div>
-                                            <div className="pt-4 border-t border-gray-200">
-                                                <p className="text-xs text-red-500 uppercase font-bold mb-1">Use this Reference (Required)</p>
-                                                <div className="flex justify-between items-center bg-white border border-brand-gold/30 rounded-lg p-3">
-                                                    <span className="font-mono font-bold text-brand-gold">{donationRef}</span>
-                                                    <button onClick={() => navigator.clipboard.writeText(donationRef)}><Copy className="w-4 h-4 text-gray-400 hover:text-brand-gold" /></button>
+                                            
+                                            <div className="space-y-4">
+                                                <div><p className="text-xs text-gray-400 uppercase font-bold">Bank Name</p><p className="font-bold text-gray-800">{bankDetails.bankName}</p></div>
+                                                <div><p className="text-xs text-gray-400 uppercase font-bold">Account Number</p><div className="flex justify-between items-center"><p className="font-bold text-2xl text-brand-brown-dark tracking-widest">{bankDetails.accountNumber}</p><button onClick={() => copyToClipboard(bankDetails.accountNumber)} className="text-brand-gold hover:text-brand-brown-dark"><Copy className="w-4 h-4" /></button></div></div>
+                                                <div><p className="text-xs text-gray-400 uppercase font-bold">Account Name</p><p className="font-bold text-gray-800">{bankDetails.accountName}</p></div>
+                                                <div className="bg-brand-sand/10 p-3 rounded-lg border border-brand-gold/30">
+                                                    <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Use this Reference</p>
+                                                    <div className="flex justify-between items-center"><span className="font-mono font-bold text-brand-brown-dark">{transactionRef}</span><button onClick={() => copyToClipboard(transactionRef)} className="text-brand-gold"><Copy className="w-3 h-3" /></button></div>
                                                 </div>
                                             </div>
                                         </div>
+
+                                        {/* DOWNLOAD BUTTON */}
+                                        {finalTransaction && (
+                                            <button onClick={() => generateReceipt(finalTransaction)} className="w-full mb-4 flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-50 transition-colors">
+                                                <FileText className="w-4 h-4" /> Download Payment Slip
+                                            </button>
+                                        )}
+
                                         <div className="bg-blue-50 p-4 rounded-xl flex gap-3 items-start text-left mb-6">
                                             <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                                            <p className="text-xs text-blue-800">Your donation is marked as <strong>Pending</strong>. It will be confirmed once we receive the funds.</p>
+                                            <p className="text-xs text-blue-800">After transferring, keep your receipt safe or send proof to <strong>+234 800 000 0000</strong>.</p>
                                         </div>
                                         <Link href="/" className="block w-full py-4 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-colors">I have made the transfer</Link>
                                     </>
