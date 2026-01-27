@@ -7,9 +7,10 @@ import { useRouter } from 'next/navigation';
 import { usePaystackPayment } from 'react-paystack';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { generateReceipt } from '@/lib/pdfGenerator'; // Import PDF Generator
 import { 
     ArrowLeft, ArrowRight, CreditCard, Landmark, CheckCircle, 
-    Copy, User, Mail, Phone, ChevronRight, Lock, Loader2, AlertCircle
+    Copy, User, Mail, Phone, ChevronRight, Lock, Loader2, AlertCircle, FileText, Download
 } from 'lucide-react';
 
 export default function FundDonationWizard({ fundId }) {
@@ -103,6 +104,17 @@ export default function FundDonationWizard({ fundId }) {
         setStep(prev => prev + 1);
     };
 
+    // Helper to generate receipt object from current state
+    const createReceiptData = (status) => ({
+        reference: donationRef,
+        amount: amount,
+        donorName: donor.name,
+        fundTitle: fund.title,
+        method: paymentMethod,
+        status: status,
+        createdAt: { seconds: Date.now() / 1000 } // Mock timestamp for immediate PDF
+    });
+
     const handlePaystackPayment = async () => {
         const ref = await createPendingRecord('paystack');
         if (!ref) return;
@@ -122,8 +134,12 @@ export default function FundDonationWizard({ fundId }) {
                     
                     if (data.success) {
                         setStep(4);
+                        // AUTO DOWNLOAD RECEIPT
+                        generateReceipt(createReceiptData('Success'));
                     } else {
                         alert("Payment verification failed. Please contact support.");
+                        // Optional: Generate 'Failed' receipt if needed
+                        generateReceipt(createReceiptData('Failed'));
                     }
                 } catch (err) {
                     console.error("Verification error", err);
@@ -132,7 +148,6 @@ export default function FundDonationWizard({ fundId }) {
                 }
             },
             onClose: async () => {
-                // CHANGED: We now verify on close to distinguish 'Failed' vs 'Cancelled'
                 setProcessing(true);
                 try {
                     await fetch('/api/paystack/verify', {
@@ -140,8 +155,6 @@ export default function FundDonationWizard({ fundId }) {
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({ reference: ref })
                     });
-                    // We don't alert failure here, as the user knowingly closed it.
-                    // Just update the DB silently.
                     alert("Transaction ended.");
                 } catch (error) {
                     console.error("Error verifying on close:", error);
@@ -274,7 +287,15 @@ export default function FundDonationWizard({ fundId }) {
                                     <>
                                         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"><CheckCircle className="w-10 h-10 text-green-600" /></div>
                                         <h2 className="font-agency text-3xl text-brand-brown-dark mb-2">Thank You!</h2>
-                                        <p className="text-gray-500 text-sm mb-8">Your donation was successful. May Allah accept it.</p>
+                                        <p className="text-gray-500 text-sm mb-6">Your donation was successful. A receipt has been downloaded.</p>
+                                        
+                                        <button 
+                                            onClick={() => generateReceipt(createReceiptData('Success'))}
+                                            className="inline-flex items-center gap-2 text-sm font-bold text-brand-gold hover:text-brand-brown-dark mb-8 underline"
+                                        >
+                                            <Download className="w-4 h-4" /> Download Receipt Again
+                                        </button>
+
                                         <Link href="/" className="block w-full py-4 bg-brand-brown-dark text-white font-bold rounded-xl hover:bg-brand-gold transition-colors">Return Home</Link>
                                     </>
                                 ) : (
@@ -298,10 +319,14 @@ export default function FundDonationWizard({ fundId }) {
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="bg-blue-50 p-4 rounded-xl flex gap-3 items-start text-left mb-6">
-                                            <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                                            <p className="text-xs text-blue-800">Your donation is marked as <strong>Pending</strong>. It will be confirmed once we receive the funds.</p>
-                                        </div>
+                                        
+                                        <button 
+                                            onClick={() => generateReceipt(createReceiptData('Pending'))}
+                                            className="w-full py-3 mb-4 bg-brand-sand/20 text-brand-brown-dark font-bold rounded-xl hover:bg-brand-sand/40 transition-all flex items-center justify-center gap-2 text-sm"
+                                        >
+                                            <FileText className="w-4 h-4" /> Download Payment Instructions
+                                        </button>
+
                                         <Link href="/" className="block w-full py-4 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-colors">I have made the transfer</Link>
                                     </>
                                 )}
