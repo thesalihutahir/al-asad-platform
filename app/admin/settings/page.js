@@ -52,12 +52,12 @@ export default function SettingsPage() {
             color: "text-emerald-600",
             bg: "bg-emerald-50"
         },
-        // 5. Security & Admin (New)
+        // 5. Security & Admin (Updated to point to Admin Users)
         {
-            title: "Security & Access",
-            description: "Manage maintenance mode, audit logs, and restricted admin permissions.",
+            title: "Admin Users & Roles",
+            description: "Manage system administrators, assign roles, and control access levels.",
             icon: ShieldAlert,
-            href: "/admin/settings/security",
+            href: "/admin/settings/admin-users",
             color: "text-rose-600",
             bg: "bg-rose-50"
         },
@@ -73,7 +73,7 @@ export default function SettingsPage() {
     ];
 
     return (
-        <div className="space-y-8 max-w-6xl mx-auto pb-12">
+        <div className="space-y-8 max-w-6xl mx-auto pb-12 font-lato">
 
             {/* HEADER */}
             <div>
