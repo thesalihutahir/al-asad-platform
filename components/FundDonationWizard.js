@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { usePaystackPayment } from 'react-paystack';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { generateReceipt } from '@/lib/pdfGenerator';
+import { generateReceipt } from '@/lib/pdfGenerator'; // Import PDF generator
 import { 
     ArrowLeft, ArrowRight, CreditCard, Landmark, CheckCircle, 
     Copy, User, Mail, Phone, MessageSquare, ShieldCheck,
@@ -126,10 +126,10 @@ export default function FundDonationWizard({ fundId }) {
             createdAt: serverTimestamp() // Note: This field won't display in PDF immediately since it's a Firestore object
         };
 
-        // Save to State for the Receipt Button & UI Display
+        // Save to State for the Receipt Button
         setFinalTransaction(transactionData);
 
-        // Generate PDF Automatically (Optional: Browser might block popup, but we have manual button)
+        // Generate PDF Automatically
         try {
             generateReceipt(transactionData);
         } catch (e) {
@@ -286,7 +286,7 @@ export default function FundDonationWizard({ fundId }) {
                                         <h2 className="font-agency text-3xl text-brand-brown-dark mb-2">Donation Successful!</h2>
                                         <p className="text-gray-500 text-sm mb-8">Thank you, {donor.name || 'Donor'}! Your support means everything.</p>
                                         
-                                        {/* DIGITAL RECEIPT CARD (PAYSTACK) */}
+                                        {/* DIGITAL RECEIPT CARD */}
                                         {finalTransaction && (
                                             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mb-6 w-full max-w-sm mx-auto text-left relative overflow-hidden group hover:shadow-md transition-all">
                                                 <div className="absolute top-0 left-0 w-full h-1.5 bg-green-500"></div>
@@ -294,20 +294,35 @@ export default function FundDonationWizard({ fundId }) {
                                                     <h3 className="font-agency text-lg font-bold text-gray-800 uppercase tracking-widest">E-Receipt</h3>
                                                     <div className="bg-green-50 text-green-700 text-[10px] font-bold px-2 py-1 rounded uppercase">Paid</div>
                                                 </div>
+                                                
                                                 <div className="space-y-3 text-sm">
-                                                    <div className="flex justify-between"><span className="text-gray-500">Amount</span><span className="font-bold text-brand-brown-dark text-lg">₦{Number(finalTransaction.amount).toLocaleString()}</span></div>
-                                                    <div className="flex justify-between"><span className="text-gray-500">Ref ID</span><span className="font-mono text-xs font-bold text-gray-600">{finalTransaction.reference}</span></div>
-                                                    <div className="flex justify-between"><span className="text-gray-500">Date</span><span className="font-bold text-gray-700">{new Date().toLocaleDateString()}</span></div>
-                                                    <div className="flex justify-between"><span className="text-gray-500">Fund</span><span className="font-bold text-gray-700 text-right line-clamp-1 w-1/2">{finalTransaction.fundTitle}</span></div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-500">Amount</span>
+                                                        <span className="font-bold text-brand-brown-dark text-lg">₦{Number(finalTransaction.amount).toLocaleString()}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-500">Ref ID</span>
+                                                        <span className="font-mono text-xs font-bold text-gray-600">{finalTransaction.reference}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-500">Date</span>
+                                                        <span className="font-bold text-gray-700">{new Date().toLocaleDateString()}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-500">Fund</span>
+                                                        <span className="font-bold text-gray-700 text-right line-clamp-1 w-1/2">{finalTransaction.fundTitle}</span>
+                                                    </div>
                                                 </div>
-                                                <div className="mt-6 pt-4 border-t border-dashed border-gray-200 text-center"><p className="text-[10px] text-gray-400 uppercase tracking-widest">Al-Asad Education Foundation</p></div>
+
+                                                <div className="mt-6 pt-4 border-t border-dashed border-gray-200 text-center">
+                                                    <p className="text-[10px] text-gray-400 uppercase tracking-widest">Al-Asad Education Foundation</p>
+                                                </div>
                                             </div>
                                         )}
 
-                                        {/* DOWNLOAD BUTTON */}
                                         {finalTransaction && (
                                             <button onClick={() => generateReceipt(finalTransaction)} className="mb-8 inline-flex items-center gap-2 px-6 py-3 bg-brand-sand/30 text-brand-brown-dark font-bold rounded-xl hover:bg-brand-sand/50 transition-colors">
-                                                <Download className="w-4 h-4" /> Download PDF Receipt
+                                                <Download className="w-4 h-4" /> Save as PDF
                                             </button>
                                         )}
 
@@ -328,17 +343,31 @@ export default function FundDonationWizard({ fundId }) {
                                             </div>
                                             
                                             <div className="space-y-4">
-                                                <div><p className="text-xs text-gray-400 uppercase font-bold">Bank Name</p><p className="font-bold text-gray-800">{bankDetails.bankName}</p></div>
-                                                <div><p className="text-xs text-gray-400 uppercase font-bold">Account Number</p><div className="flex justify-between items-center"><p className="font-bold text-2xl text-brand-brown-dark tracking-widest">{bankDetails.accountNumber}</p><button onClick={() => copyToClipboard(bankDetails.accountNumber)} className="text-brand-gold hover:text-brand-brown-dark"><Copy className="w-4 h-4" /></button></div></div>
-                                                <div><p className="text-xs text-gray-400 uppercase font-bold">Account Name</p><p className="font-bold text-gray-800">{bankDetails.accountName}</p></div>
+                                                <div>
+                                                    <p className="text-xs text-gray-400 uppercase font-bold">Bank Name</p>
+                                                    <p className="font-bold text-gray-800">{bankDetails.bankName}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-gray-400 uppercase font-bold">Account Number</p>
+                                                    <div className="flex justify-between items-center">
+                                                        <p className="font-bold text-2xl text-brand-brown-dark tracking-widest">{bankDetails.accountNumber}</p>
+                                                        <button onClick={() => copyToClipboard(bankDetails.accountNumber)} className="text-brand-gold hover:text-brand-brown-dark"><Copy className="w-4 h-4" /></button>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-gray-400 uppercase font-bold">Account Name</p>
+                                                    <p className="font-bold text-gray-800">{bankDetails.accountName}</p>
+                                                </div>
                                                 <div className="bg-brand-sand/10 p-3 rounded-lg border border-brand-gold/30">
                                                     <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Use this Reference</p>
-                                                    <div className="flex justify-between items-center"><span className="font-mono font-bold text-brand-brown-dark">{transactionRef}</span><button onClick={() => copyToClipboard(transactionRef)} className="text-brand-gold"><Copy className="w-3 h-3" /></button></div>
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="font-mono font-bold text-brand-brown-dark">{transactionRef}</span>
+                                                        <button onClick={() => copyToClipboard(transactionRef)} className="text-brand-gold"><Copy className="w-3 h-3" /></button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        {/* DOWNLOAD BUTTON */}
                                         {finalTransaction && (
                                             <button onClick={() => generateReceipt(finalTransaction)} className="w-full mb-4 flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-50 transition-colors">
                                                 <FileText className="w-4 h-4" /> Download Payment Slip
