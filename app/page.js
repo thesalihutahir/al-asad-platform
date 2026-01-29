@@ -484,40 +484,75 @@ export default function HomePage() {
                     </div>
                 </section>
 
-                {/* 7. UPCOMING EVENTS */}
-                <section className="py-12 md:py-20 px-6 bg-brand-sand/30">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="mb-8 border-b border-brand-brown-dark/5 pb-4">
-                            <h2 className="font-agency text-3xl text-brand-brown-dark tracking-wide">Upcoming Events</h2>
+                {/* 7. UPCOMING EVENTS (REDESIGNED) */}
+                <section className="py-20 px-6 bg-brand-sand/30 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-96 h-96 bg-brand-gold/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
+                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-brand-brown-dark/5 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4 pointer-events-none"></div>
+
+                    <div className="max-w-7xl mx-auto relative z-10">
+                        <div className="mb-10 border-b border-brand-brown-dark/10 pb-6">
+                            <h2 className="font-agency text-4xl md:text-5xl text-brand-brown-dark">Upcoming Events</h2>
+                            <p className="text-gray-500 font-lato text-sm mt-2">Join us in our journey of knowledge and community.</p>
                         </div>
-                        <div className="flex overflow-x-auto pb-4 gap-4 scrollbar-hide md:grid md:grid-cols-3 md:overflow-visible">
+
+                        <div className="flex overflow-x-auto pb-8 gap-6 scrollbar-hide md:grid md:grid-cols-3 md:overflow-visible">
                             {loading ? (
-                                [1, 2, 3].map(i => <div key={i} className="min-w-[280px] h-64 bg-gray-100 rounded-2xl animate-pulse"></div>)
+                                [1, 2, 3].map(i => <div key={i} className="min-w-[300px] h-80 bg-white rounded-3xl animate-pulse shadow-sm border border-gray-100"></div>)
                             ) : upcomingEvents.length > 0 ? (
-                                upcomingEvents.map(event => (
-                                    <div key={event.id} className="min-w-[280px] bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 flex flex-col transition-all">
-                                        <div className="bg-brand-brown-dark text-white text-center py-3 font-agency text-xl tracking-widest">
-                                            {formatSimpleDate(event.date).toUpperCase()}
-                                        </div>
-                                        <div className="p-8 flex-grow flex flex-col justify-center text-center">
-                                            <h3 className={`text-2xl text-brand-brown-dark mb-3 line-clamp-2 ${getDir(event.title) === 'rtl' ? 'font-tajawal font-bold' : 'font-agency'}`} dir={getDir(event.title)}>
-                                                {event.title}
-                                            </h3>
-                                            <div className="w-12 h-1 bg-brand-gold/30 mx-auto mb-4 rounded-full"></div>
-                                            <p className={`text-sm text-gray-500 mb-6 px-2 line-clamp-3 ${getDir(event.description) === 'rtl' ? 'font-arabic' : 'font-lato'}`} dir={getDir(event.description)}>
-                                                {event.description}
-                                            </p>
-                                            <div className="mt-auto">
-                                                <span className="inline-flex items-center gap-1 text-xs font-bold text-brand-gold uppercase tracking-widest border border-brand-gold/30 rounded-full px-4 py-2 mx-auto">
-                                                    <MapPin className="w-3 h-3" /> {event.location ? event.location.split(' ')[0] : 'View Details'}
-                                                </span>
+                                upcomingEvents.map(event => {
+                                    const dateObj = new Date(event.date);
+                                    const day = dateObj.getDate();
+                                    const month = dateObj.toLocaleString('default', { month: 'short' }).toUpperCase();
+                                    
+                                    return (
+                                        <div key={event.id} className="min-w-[300px] group relative bg-white rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-500 ease-out border border-gray-100 overflow-hidden flex flex-col h-full">
+                                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-gold to-brand-brown-dark transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+                                            
+                                            <div className="p-8 flex flex-col flex-grow relative">
+                                                <div className="flex justify-between items-start mb-6">
+                                                    <div className="flex flex-col items-center bg-brand-sand/50 border border-brand-gold/10 rounded-2xl px-4 py-2 group-hover:bg-brand-gold group-hover:text-white transition-colors duration-300">
+                                                        <span className="font-agency text-3xl font-bold leading-none">{day}</span>
+                                                        <span className="text-[10px] font-bold uppercase tracking-widest leading-none mt-1">{month}</span>
+                                                    </div>
+                                                    <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-full border border-gray-100 uppercase tracking-wide group-hover:border-brand-gold/20 transition-colors">
+                                                        {event.category || 'Event'}
+                                                    </span>
+                                                </div>
+
+                                                <div className="mb-6 flex-grow">
+                                                    <h3 className={`text-2xl text-brand-brown-dark mb-3 leading-tight group-hover:text-brand-gold transition-colors duration-300 ${getDir(event.title) === 'rtl' ? 'font-tajawal font-bold text-right' : 'font-agency text-left'}`} dir={getDir(event.title)}>
+                                                        {event.title}
+                                                    </h3>
+                                                    <p className={`text-sm text-gray-500 leading-relaxed line-clamp-3 ${getDir(event.description) === 'rtl' ? 'font-arabic text-right' : 'font-lato text-left'}`} dir={getDir(event.description)}>
+                                                        {event.description}
+                                                    </p>
+                                                </div>
+
+                                                <div className="mt-auto pt-6 border-t border-dashed border-gray-100 group-hover:border-brand-gold/20 transition-colors">
+                                                    <div className="flex items-start gap-3 text-gray-500 group-hover:text-brand-brown-dark transition-colors">
+                                                        <div className="flex-shrink-0 mt-0.5 p-1.5 bg-brand-sand rounded-full">
+                                                            <MapPin className="w-3.5 h-3.5 text-brand-gold" />
+                                                        </div>
+                                                        <span className="text-xs font-medium leading-relaxed break-words font-lato">
+                                                            {event.location || 'Venue details to be announced'}
+                                                        </span>
+                                                    </div>
+                                                    {event.time && (
+                                                        <div className="flex items-center gap-3 mt-3 text-gray-400 text-xs font-medium pl-1">
+                                                            <Clock className="w-3.5 h-3.5" />
+                                                            <span>{event.time}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             ) : (
-                                <div className="col-span-3 text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">
-                                    <p className="text-gray-400">No upcoming events scheduled at this time.</p>
+                                <div className="col-span-3 py-16 bg-white rounded-3xl border border-dashed border-gray-200 flex flex-col items-center justify-center text-center">
+                                    <Calendar className="w-10 h-10 text-gray-300 mb-2" />
+                                    <h3 className="font-agency text-xl text-gray-400">No Upcoming Events</h3>
+                                    <p className="text-gray-400 text-sm mt-1">Stay tuned for future announcements.</p>
                                 </div>
                             )}
                         </div>
