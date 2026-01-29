@@ -72,6 +72,7 @@ export default function AboutPage() {
                         </p>
                     </div>
                 </section>
+
                 {/* 2. NARRATIVE SECTION */}
                 <section className="py-20 md:py-32 px-6 md:px-12 lg:px-24 max-w-7xl mx-auto">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-start">
@@ -81,7 +82,8 @@ export default function AboutPage() {
                             <h2 className="font-agency text-4xl md:text-6xl text-brand-brown-dark mb-8 leading-[0.9]">
                                 We Are More Than <br/> Just A Foundation.
                             </h2>
-                            <div className="space-y-6 text-gray-600 text-lg leading-relaxed text-justify lg:text-left font-lato">
+                            {/* UPDATED: Removed text-justify, using text-left for cleaner spacing */}
+                            <div className="space-y-6 text-gray-600 text-lg leading-relaxed text-left font-lato">
                                 <p>
                                     Al-Asad Education Foundation is an Islamic educational and community-focused organisation established in the early 2000s, dedicated to the preservation, transmission, and practical application of authentic Islamic knowledge.
                                 </p>
@@ -127,8 +129,10 @@ export default function AboutPage() {
                                 </p>
                             </div>
                         </div>
+
                     </div>
                 </section>
+
                 {/* 3. FOUNDER'S MESSAGE */}
                 <section className="bg-brand-sand/20 py-20 md:py-32 px-6">
                     <div className="max-w-6xl mx-auto bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col lg:flex-row border border-gray-100">
@@ -198,6 +202,7 @@ export default function AboutPage() {
                         </div>
                     </div>
                 </section>
+
                 {/* 5. DYNAMIC LEADERSHIP TEAM */}
                 <section className="py-20 md:py-32 px-6 md:px-12 lg:px-24 max-w-7xl mx-auto">
                     <div className="text-center mb-16">
