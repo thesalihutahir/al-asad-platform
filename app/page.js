@@ -361,7 +361,7 @@ export default function HomePage() {
                                                     )}
                                                     <div className="absolute top-3 left-3 z-10">
                                                         <span className="bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded flex items-center gap-1">
-                                                            <Play className="w-3 h-3 fill-current" /> Video
+                                                        Video
                                                         </span>
                                                     </div>
                                                     <div className="absolute inset-0 flex items-center justify-center">
@@ -397,7 +397,7 @@ export default function HomePage() {
                                                     )}
                                                     <div className="absolute top-3 left-3 z-10">
                                                         <span className="bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded flex items-center gap-1">
-                                                            <Mic className="w-3 h-3" /> Podcast
+                                                          Podcast
                                                         </span>
                                                     </div>
                                                     <div className="absolute inset-0 flex items-center justify-center">
