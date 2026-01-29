@@ -554,7 +554,7 @@ export default function HomePage() {
                         </div>
 
                         {/* Responsive Fluid Icons Layout (Forced Row) */}
-                        <div className="flex flex-nowrap justify-center gap-4 md:gap-12 lg:gap-16 overflow-x-auto pb-4 scrollbar-hide">
+                        <div className="flex justify-center gap-3 md:gap-12 lg:gap-16 overflow-x-auto pb-4">
                             <Link href="/programs/educational-support" className="flex flex-col items-center group cursor-pointer w-24 md:w-32 flex-shrink-0">
                                 <div className="w-16 h-16 md:w-20 md:h-20 mb-3 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center transition-transform group-hover:scale-110 group-hover:bg-white group-hover:text-brand-gold text-white border border-white/30 shadow-lg">
                                     <GraduationCap className="w-8 h-8 md:w-9 md:h-9" strokeWidth={1.5} />
