@@ -1,16 +1,17 @@
-// firestore.rules (UPDATED, drop-in replacement)
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /* ---------------------------
-     * HELPERS
-     * --------------------------- */
+    /* =========================================================================
+       1. HELPER FUNCTIONS
+       ========================================================================= */
+    
+    // Check if user is logged in
     function isAuthenticated() {
       return request.auth != null;
     }
 
+    // Fetch the current user's document
     function userDoc() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid));
     }
@@ -19,16 +20,19 @@ service cloud.firestore {
       return userDoc().data;
     }
 
+    // Check if user exists in DB and is active
     function hasUserDoc() {
       return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
+    // PRIMARY ADMIN CHECK
     function isAdmin() {
       return hasUserDoc()
         && userData().active == true
         && (userData().role in ['super_admin', 'content_admin', 'finance_admin']);
     }
 
+    // ROLE SPECIFIC CHECKS
     function isSuperAdmin() {
       return isAdmin() && userData().role == 'super_admin';
     }
@@ -41,207 +45,135 @@ service cloud.firestore {
       return isAdmin() && (userData().role == 'content_admin' || userData().role == 'super_admin');
     }
 
+    // Hardcoded protection for the main super admin email to prevent accidental lockout
     function protectedEmail() {
       return 'realdahirusalihu@gmail.com';
     }
 
-    /* ---------------------------
-     * USERS (Admins)
-     * --------------------------- */
+    /* =========================================================================
+       2. USERS & AUTHENTICATION
+       ========================================================================= */
+
     match /users/{userId} {
-      // All admins can read all admin profiles (needed for UI, audit, labels)
-      allow read: if isAdmin();
+      // RULE: User can read their own doc (for AuthContext). Admins can read all.
+      allow read: if (isAuthenticated() && request.auth.uid == userId) || isAdmin();
+      
+      // RULE: Only Super Admin can create new admins
+      allow create: if isSuperAdmin();
 
-      // Create: Super Admin only
-      allow create: if isSuperAdmin()
-        && request.resource.data.email is string
-        && request.resource.data.displayName is string
-        && request.resource.data.role in ['super_admin', 'content_admin', 'finance_admin']
-        && request.resource.data.active is bool
-        // If creating the protected email, it must be super_admin and active
-        && (request.resource.data.email != protectedEmail()
-            || (request.resource.data.role == 'super_admin' && request.resource.data.active == true));
-
-      // Update: two safe lanes
-      allow update: if (
-        // Lane A: Super Admin manages any user
-        (isSuperAdmin()
-          // Never allow changing the email field
-          && request.resource.data.email == resource.data.email
-          // Role must remain valid
-          && request.resource.data.role in ['super_admin', 'content_admin', 'finance_admin']
-          && request.resource.data.active is bool
-          // Hard lock: protected email can never be downgraded or deactivated
-          && (
-            resource.data.email != protectedEmail()
-            || (request.resource.data.email == protectedEmail()
-                && request.resource.data.role == 'super_admin'
-                && request.resource.data.active == true)
-          )
-        )
-        ||
-        // Lane B: Any admin can update ONLY their own profile basics
-        (isAdmin()
-          && request.auth.uid == userId
-          // Cannot change email, role, active in self update
-          && request.resource.data.email == resource.data.email
+      // RULE: Updates
+      // 1. Super Admin can update anyone (but cannot demote the main protected email)
+      // 2. Users can update their own basic info (displayName, photoURL) but NOT role/email
+      allow update: if 
+        (isSuperAdmin() 
+          && (resource.data.email != protectedEmail() || request.resource.data.role == 'super_admin')
+        ) 
+        || 
+        (isAuthenticated() && request.auth.uid == userId 
           && request.resource.data.role == resource.data.role
+          && request.resource.data.email == resource.data.email
           && request.resource.data.active == resource.data.active
-        )
-      );
+        );
 
-      // Delete: never
-      allow delete: if false;
+      allow delete: if false; // Never delete users, only deactivate
     }
 
-    /* ---------------------------
-     * PUBLIC CONTENT (Readable by all, Writable by Content/Super)
-     * Keeping your current simplicity (no published filtering yet)
-     * --------------------------- */
-    match /articles/{docId} {
-      allow read: if true;
-      allow write: if isContentAdmin();
-    }
-    match /news/{docId} {
-      allow read: if true;
-      allow write: if isContentAdmin();
-    }
-    match /research/{docId} {
-      allow read: if true;
-      allow write: if isContentAdmin();
-    }
-    match /videos/{docId} {
-      allow read: if true;
-      allow write: if isContentAdmin();
-    }
-    match /audios/{docId} {
-      allow read: if true;
-      allow write: if isContentAdmin();
-    }
-    match /ebooks/{docId} {
-      allow read: if true;
-      allow write: if isContentAdmin();
-    }
+    /* =========================================================================
+       3. PUBLIC CONTENT (Read: Public | Write: Content Admin)
+       ========================================================================= */
 
-    // NOTE: your repo uses gallery_albums + gallery_photos (per your maps).
-    // Your old rules had /gallery which may not match your actual collections.
-    match /gallery_albums/{docId} {
-      allow read: if true;
-      allow write: if isContentAdmin();
-    }
-    match /gallery_photos/{docId} {
-      allow read: if true;
-      allow write: if isContentAdmin();
-    }
+    // Blogs & Updates
+    match /articles/{docId} { allow read: if true; allow write: if isContentAdmin(); }
+    match /news/{docId} { allow read: if true; allow write: if isContentAdmin(); }
+    match /research/{docId} { allow read: if true; allow write: if isContentAdmin(); }
 
-    // Playlists, series, shows, collections (from your system map)
-    match /video_playlists/{docId} {
-      allow read: if true;
-      allow write: if isContentAdmin();
-    }
-    match /audio_series/{docId} {
-      allow read: if true;
-      allow write: if isContentAdmin();
-    }
-    match /podcasts/{docId} {
-      allow read: if true;
-      allow write: if isContentAdmin();
-    }
-    match /podcast_shows/{docId} {
-      allow read: if true;
-      allow write: if isContentAdmin();
-    }
-    match /ebook_collections/{docId} {
-      allow read: if true;
-      allow write: if isContentAdmin();
-    }
+    // Media Resources
+    match /videos/{docId} { allow read: if true; allow write: if isContentAdmin(); }
+    match /video_playlists/{docId} { allow read: if true; allow write: if isContentAdmin(); }
+    
+    match /audios/{docId} { allow read: if true; allow write: if isContentAdmin(); }
+    match /audio_series/{docId} { allow read: if true; allow write: if isContentAdmin(); }
+    
+    match /podcasts/{docId} { allow read: if true; allow write: if isContentAdmin(); }
+    match /podcast_shows/{docId} { allow read: if true; allow write: if isContentAdmin(); }
+    
+    match /ebooks/{docId} { allow read: if true; allow write: if isContentAdmin(); }
+    match /ebook_collections/{docId} { allow read: if true; allow write: if isContentAdmin(); }
 
-    // Programs
-    match /programs/{docId} {
-      allow read: if true;
-      allow write: if isContentAdmin();
-    }
+    // Gallery
+    match /gallery_albums/{docId} { allow read: if true; allow write: if isContentAdmin(); }
+    match /gallery_photos/{docId} { allow read: if true; allow write: if isContentAdmin(); }
 
-    /* ---------------------------
-     * DONATION FUNDS
-     * Public read, finance/super write
-     * --------------------------- */
-    match /donation_funds/{docId} {
-      allow read: if true;
-      allow write: if isFinanceAdmin();
-    }
+    // Programs & Impact
+    match /programs/{docId} { allow read: if true; allow write: if isContentAdmin(); }
+    
+    // About Us / Team
+    match /team_members/{docId} { allow read: if true; allow write: if isContentAdmin(); }
+    match /leadership_team/{docId} { allow read: if true; allow write: if isContentAdmin(); }
+    match /partners/{docId} { allow read: if true; allow write: if isContentAdmin(); }
 
-    /* ---------------------------
-     * DONATIONS
-     * Public can create (initiate), admins can read,
-     * only finance/super can update/delete.
-     * This matches: "all admins read, only finance/super write"
-     * --------------------------- */
-    match /donations/{docId} {
-      // Public donation initiation (keep flexible, but enforce basics)
-      allow create: if true
-        && request.resource.data.status == 'Pending'
-        && request.resource.data.method in ['paystack', 'bank']
-        && request.resource.data.amount is number
-        && request.resource.data.amount >= 100;
+    /* =========================================================================
+       4. PUBLIC SUBMISSIONS (Create: Public | Read/Write: Admin)
+       ========================================================================= */
 
-      // All admins can read donations (needed for read-only mode)
-      allow read: if isAdmin();
-
-      // Only finance/super can write actions (verify, status change, receipt)
-      allow update, delete: if isFinanceAdmin();
-    }
-
-    /* ---------------------------
-     * VOLUNTEERS & PARTNERS
-     * Public create, content/super manage, admins read
-     * --------------------------- */
+    // Volunteers (Public Form)
     match /volunteers/{docId} {
       allow create: if true;
       allow read: if isAdmin();
       allow update, delete: if isContentAdmin();
     }
-    match /partners/{docId} {
-      allow create: if true;
-      allow read: if isAdmin();
-      allow update, delete: if isContentAdmin();
+
+    /* =========================================================================
+       5. DONATIONS & FINANCE
+       ========================================================================= */
+
+    // Funds (Campaigns)
+    match /donation_funds/{docId} {
+      allow read: if true; // Public needs to see campaigns
+      allow write: if isFinanceAdmin();
     }
 
-    /* ---------------------------
-     * SETTINGS (matches your repo)
-     * Keep it simple: admins can read, only super can write.
-     * If you later want content_admin to write contact/homepage, we can open that up.
-     * --------------------------- */
+    // Donations (Transactions)
+    match /donations/{docId} {
+      // Public can initiate a donation record
+      allow create: if true
+        && request.resource.data.amount is number
+        && request.resource.data.amount >= 100; // Minimum amount check
+      
+      // Only admins can view transaction history
+      allow read: if isAdmin();
+      
+      // Only Finance/Super can update status (verify) or delete
+      allow update, delete: if isFinanceAdmin();
+    }
+
+    /* =========================================================================
+       6. SYSTEM SETTINGS
+       ========================================================================= */
+
+    // General Settings (Public Read Required for Footer/Header/Home)
+    // This includes 'contact_info', 'homepage_hero', 'site_metadata'
+    match /general_settings/{docId} {
+      allow read: if true;
+      allow write: if isSuperAdmin(); // Strict: Only Super Admin changes site config
+    }
+
+    // Internal Settings (Private)
     match /settings/{docId} {
       allow read: if isAdmin();
       allow write: if isSuperAdmin();
     }
 
-    match /team_members/{docId} {
-      allow read: if true;
-      allow write: if isContentAdmin();
-    }
-
-    match /leadership_team/{docId} {
-      allow read: if true;
-      allow write: if isContentAdmin();
-    }
-
-    /* ---------------------------
-     * AUDIT LOGS
-     * Only admins can read/create. Immutable.
-     * --------------------------- */
+    // Audit Logs (Immutable)
     match /audit_logs/{docId} {
       allow read: if isAdmin();
-      allow create: if isAdmin()
-        && request.resource.data.action is string
-        && request.resource.data.summary is string;
-      allow update, delete: if false;
+      allow create: if isAdmin(); // System writes logs via Admin SDK or Client Admin
+      allow update, delete: if false; // Audit logs are permanent
     }
 
-    /* ---------------------------
-     * DEFAULT DENY (important)
-     * --------------------------- */
+    /* =========================================================================
+       7. CATCH-ALL (Safety Net)
+       ========================================================================= */
     match /{document=**} {
       allow read, write: if false;
     }
