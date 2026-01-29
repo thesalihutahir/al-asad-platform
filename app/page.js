@@ -18,7 +18,7 @@ import {
 
 export default function HomePage() {
     // --- UI State ---
-    const [showSplash, setShowSplash] = useState(false); // Default to false, check logic first
+    const [showSplash, setShowSplash] = useState(false); 
     const [fadeOut, setFadeOut] = useState(false);
     
     // --- Data State ---
@@ -33,6 +33,8 @@ export default function HomePage() {
     // --- 1. Smart Splash Logic ---
     useEffect(() => {
         const checkSplashLogic = () => {
+            if (typeof window === 'undefined') return;
+
             const lastActive = localStorage.getItem('lastActiveTime');
             const sessionActive = sessionStorage.getItem('sessionActive');
             const now = Date.now();
@@ -61,10 +63,9 @@ export default function HomePage() {
             }
         };
 
-        // Run check
         checkSplashLogic();
 
-        // Add activity listener to update timestamp
+        // Activity Listener
         const updateActivity = () => localStorage.setItem('lastActiveTime', Date.now().toString());
         window.addEventListener('click', updateActivity);
         window.addEventListener('scroll', updateActivity);
@@ -242,7 +243,8 @@ export default function HomePage() {
                             ) : latestUpdates.length > 0 ? (
                                 latestUpdates.map((item) => {
                                     const dateObj = formatDayMonth(item.date);
-                                    const readUrl = item.type === 'news' ? `/blogs/news` : `/blogs/read/${item.id}?type=${item.type}`;
+                                    // FIXED LINK: Directs both types to the single dynamic reader page
+                                    const readUrl = `/blogs/read/${item.id}?type=${item.type}`;
                                     const titleDir = getDir(item.title);
                                     const excerptDir = getDir(item.excerpt);
                                     
@@ -421,7 +423,7 @@ export default function HomePage() {
                                 </div>
                             </div>
 
-                            {/* RIGHT: Audio List (Improved) */}
+                            {/* RIGHT: Audio List */}
                             <div className="lg:col-span-1 flex flex-col h-full">
                                 <div className="bg-brand-sand/30 rounded-2xl p-6 border border-brand-gold/10 h-full flex flex-col">
                                     <h3 className="font-agency text-xl text-brand-brown-dark mb-4 flex items-center gap-2">
@@ -515,13 +517,13 @@ export default function HomePage() {
                                 ))
                             ) : (
                                 <div className="col-span-3 text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">
-                                    <p className="text-gray-400">No events scheduled at this time.</p>
+                                    <p className="text-gray-400">No upcoming events scheduled at this time.</p>
                                 </div>
                             )}
                         </div>
                     </div>
                 </section>
-                {/* 8. VISION AND MISSION (Glassmorphic + Fluid Icons) */}
+                {/* 8. VISION AND MISSION (Glassmorphic + Fluid Icons Fixed Row) */}
                 <section className="relative py-20 px-6 bg-brand-gold overflow-hidden">
                     <div className="absolute inset-0 mix-blend-overlay">
                         <Image src="/images/chairman/sheikh1.webp" alt="Background pattern overlay" fill className="object-cover opacity-20" />
@@ -551,27 +553,27 @@ export default function HomePage() {
                             </div>
                         </div>
 
-                        {/* Responsive Fluid Icons Layout */}
-                        <div className="flex flex-wrap justify-center gap-8 md:gap-12 lg:gap-16">
-                            <Link href="/programs/educational-support" className="flex flex-col items-center group cursor-pointer w-24 md:w-32">
+                        {/* Responsive Fluid Icons Layout (Forced Row) */}
+                        <div className="flex flex-nowrap justify-center gap-4 md:gap-12 lg:gap-16 overflow-x-auto pb-4 scrollbar-hide">
+                            <Link href="/programs/educational-support" className="flex flex-col items-center group cursor-pointer w-24 md:w-32 flex-shrink-0">
                                 <div className="w-16 h-16 md:w-20 md:h-20 mb-3 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center transition-transform group-hover:scale-110 group-hover:bg-white group-hover:text-brand-gold text-white border border-white/30 shadow-lg">
                                     <GraduationCap className="w-8 h-8 md:w-9 md:h-9" strokeWidth={1.5} />
                                 </div>
-                                <span className="font-agency text-xs md:text-sm text-white tracking-wide text-center uppercase font-bold opacity-80 group-hover:opacity-100">Educational<br/> Support</span>
+                                <span className="font-agency text-[10px] md:text-sm text-white tracking-wide text-center uppercase font-bold opacity-80 group-hover:opacity-100">Educational<br/> Support</span>
                             </Link>
 
-                            <Link href="/programs/community-development" className="flex flex-col items-center group cursor-pointer w-24 md:w-32">
+                            <Link href="/programs/community-development" className="flex flex-col items-center group cursor-pointer w-24 md:w-32 flex-shrink-0">
                                 <div className="w-16 h-16 md:w-20 md:h-20 mb-3 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center transition-transform group-hover:scale-110 group-hover:bg-white group-hover:text-brand-gold text-white border border-white/30 shadow-lg">
                                     <HandHeart className="w-8 h-8 md:w-9 md:h-9" strokeWidth={1.5} />
                                 </div>
-                                <span className="font-agency text-xs md:text-sm text-white tracking-wide text-center uppercase font-bold opacity-80 group-hover:opacity-100">Community<br/> Development</span>
+                                <span className="font-agency text-[10px] md:text-sm text-white tracking-wide text-center uppercase font-bold opacity-80 group-hover:opacity-100">Community<br/> Development</span>
                             </Link>
 
-                            <Link href="/programs/training-and-innovation" className="flex flex-col items-center group cursor-pointer w-24 md:w-32">
+                            <Link href="/programs/training-and-innovation" className="flex flex-col items-center group cursor-pointer w-24 md:w-32 flex-shrink-0">
                                 <div className="w-16 h-16 md:w-20 md:h-20 mb-3 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center transition-transform group-hover:scale-110 group-hover:bg-white group-hover:text-brand-gold text-white border border-white/30 shadow-lg">
                                     <Lightbulb className="w-8 h-8 md:w-9 md:h-9" strokeWidth={1.5} />
                                 </div>
-                                <span className="font-agency text-xs md:text-sm text-white tracking-wide text-center uppercase font-bold opacity-80 group-hover:opacity-100">Training &<br/> Innovation</span>
+                                <span className="font-agency text-[10px] md:text-sm text-white tracking-wide text-center uppercase font-bold opacity-80 group-hover:opacity-100">Training &<br/> Innovation</span>
                             </Link>
                         </div>
                     </div>
