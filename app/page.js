@@ -115,10 +115,9 @@ export default function HomePage() {
 
         fetchData();
     }, []);
-
     // --- HELPERS ---
 
-    // 1. Language Detection (Consistent with Upload Pages)
+    // 1. Language Detection
     const getDir = (text) => {
         if (!text) return 'ltr';
         const arabicPattern = /[\u0600-\u06FF]/;
@@ -160,7 +159,7 @@ export default function HomePage() {
             <Header />
 
             <main className="flex-grow">
-                {/* 1. HERO SECTION (Static) */}
+                {/* 1. HERO SECTION */}
                 <section className="w-full relative bg-white h-[60vh] md:h-[80vh] min-h-[500px]">
                     <div className="relative w-full h-full">
                         <Image src="/images/heroes/home-main-hero.webp" alt="Al-Asad Education Foundation" fill className="object-cover object-top" priority />
@@ -209,8 +208,8 @@ export default function HomePage() {
                             ) : latestUpdates.length > 0 ? (
                                 latestUpdates.map((item) => {
                                     const dateObj = formatDayMonth(item.date);
-                                    const readUrl = item.type === 'news' ? `/blogs/news` : `/blogs/read/${item.id}`;
-                                    // Check direction
+                                    // FIXED: Point to the dynamic reader page with a query param for type
+                                    const readUrl = `/blogs/read/${item.id}?type=${item.type}`;
                                     const titleDir = getDir(item.title);
                                     const excerptDir = getDir(item.excerpt);
                                     
@@ -233,17 +232,12 @@ export default function HomePage() {
                                                             {item.category || item.displayCategory || "Update"}
                                                         </span>
                                                     </div>
-                                                    
-                                                    {/* Auto-detected Font & Direction for Title */}
                                                     <h3 className={`text-xl md:text-2xl text-brand-brown-dark mb-3 leading-tight group-hover:text-brand-gold transition-colors line-clamp-2 ${titleDir === 'rtl' ? 'font-tajawal font-bold text-right' : 'font-agency text-left'}`} dir={titleDir}>
                                                         {item.title}
                                                     </h3>
-                                                    
-                                                    {/* Auto-detected Font & Direction for Excerpt */}
                                                     <p className={`text-sm text-brand-brown line-clamp-3 leading-relaxed opacity-80 mb-4 flex-grow ${excerptDir === 'rtl' ? 'font-arabic text-right' : 'font-lato text-left'}`} dir={excerptDir}>
                                                         {item.excerpt || "Click to read more details..."}
                                                     </p>
-                                                    
                                                     <span className="inline-flex items-center text-xs font-bold text-brand-brown-dark uppercase tracking-widest group-hover:text-brand-gold transition-colors mt-auto">
                                                         Read Full Story <ArrowRight className="w-3 h-3 ml-1" />
                                                     </span>
@@ -258,7 +252,6 @@ export default function HomePage() {
                         </div>
                     </div>
                 </section>
-
                 {/* 5. LATEST PROGRAM (Dynamic) */}
                 <section className="py-12 px-6 bg-white border-b border-gray-50">
                     <div className="max-w-7xl mx-auto">
@@ -278,17 +271,12 @@ export default function HomePage() {
                                     <span className="inline-block px-3 py-1 bg-brand-gold text-white text-[10px] md:text-xs font-bold uppercase rounded shadow-sm w-fit mb-4">
                                         {featuredProgram.category}
                                     </span>
-                                    
-                                    {/* Program Title Detection */}
                                     <h3 className={`text-3xl md:text-5xl text-white mb-4 leading-tight ${getDir(featuredProgram.title) === 'rtl' ? 'font-tajawal font-bold text-right' : 'font-agency text-left'}`} dir={getDir(featuredProgram.title)}>
                                         {featuredProgram.title}
                                     </h3>
-                                    
-                                    {/* Program Excerpt Detection */}
                                     <p className={`text-white/90 text-sm md:text-lg mb-8 leading-relaxed max-w-xl ${getDir(featuredProgram.excerpt) === 'rtl' ? 'font-arabic text-right' : 'font-lato text-left'}`} dir={getDir(featuredProgram.excerpt)}>
                                         {featuredProgram.excerpt}
                                     </p>
-                                    
                                     <Link href={`/programs/${featuredProgram.id}`} className="px-8 py-3 bg-white text-brand-brown-dark font-bold rounded-full hover:bg-brand-gold hover:text-white transition-all w-fit">
                                         View Program Details
                                     </Link>
@@ -302,7 +290,7 @@ export default function HomePage() {
                     </div>
                 </section>
 
-                {/* 6. MEDIA PREVIEWS (Dynamic Video & Podcast Split) */}
+                {/* 6. MEDIA PREVIEWS */}
                 <section className="py-12 md:py-20 px-6 bg-white">
                     <div className="max-w-7xl mx-auto">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
@@ -333,17 +321,12 @@ export default function HomePage() {
                                                 </div>
                                                 <div className="p-5 flex-grow flex flex-col">
                                                     <span className="text-[10px] font-bold text-brand-gold uppercase mb-2">Latest Video</span>
-                                                    
-                                                    {/* Video Title Detection */}
                                                     <h3 className={`text-xl text-brand-brown-dark mb-2 leading-tight line-clamp-2 ${getDir(latestVideo.title) === 'rtl' ? 'font-tajawal font-bold text-right' : 'font-agency text-left'}`} dir={getDir(latestVideo.title)}>
                                                         {latestVideo.title}
                                                     </h3>
-                                                    
-                                                    {/* Video Desc Detection */}
                                                     <p className={`text-xs text-gray-500 line-clamp-2 mb-4 flex-grow ${getDir(latestVideo.description) === 'rtl' ? 'font-arabic text-right' : 'font-lato text-left'}`} dir={getDir(latestVideo.description)}>
                                                         {latestVideo.description}
                                                     </p>
-                                                    
                                                     <Link href="/media/videos" className="text-xs font-bold text-brand-brown-dark hover:text-brand-gold transition-colors flex items-center gap-1">Watch More <ChevronRight className="w-3 h-3"/></Link>
                                                 </div>
                                             </>
@@ -370,17 +353,12 @@ export default function HomePage() {
                                                 </div>
                                                 <div className="p-5 flex-grow flex flex-col">
                                                     <span className="text-[10px] font-bold text-blue-600 uppercase mb-2">Latest Podcast</span>
-                                                    
-                                                    {/* Podcast Title */}
                                                     <h3 className={`text-xl text-brand-brown-dark mb-2 leading-tight line-clamp-2 ${getDir(latestPodcast.title) === 'rtl' ? 'font-tajawal font-bold text-right' : 'font-agency text-left'}`} dir={getDir(latestPodcast.title)}>
                                                         {latestPodcast.title}
                                                     </h3>
-                                                    
-                                                    {/* Podcast Desc */}
                                                     <p className={`text-xs text-gray-500 line-clamp-2 mb-4 flex-grow ${getDir(latestPodcast.description) === 'rtl' ? 'font-arabic text-right' : 'font-lato text-left'}`} dir={getDir(latestPodcast.description)}>
                                                         {latestPodcast.description}
                                                     </p>
-                                                    
                                                     <Link href="/media/podcasts" className="text-xs font-bold text-brand-brown-dark hover:text-brand-gold transition-colors flex items-center gap-1">Listen to Series <ChevronRight className="w-3 h-3"/></Link>
                                                 </div>
                                             </>
@@ -391,7 +369,7 @@ export default function HomePage() {
                                 </div>
                             </div>
 
-                            {/* RIGHT: LATEST AUDIOS (Dynamic) */}
+                            {/* RIGHT: LATEST AUDIOS (Fixed Clickable Link) */}
                             <div className="lg:col-span-1">
                                 <div className="flex justify-between items-end mb-6 mt-8 lg:mt-0">
                                     <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark">Latest Audios</h2>
@@ -403,7 +381,8 @@ export default function HomePage() {
                                         [1, 2].map(i => <div key={i} className="h-24 bg-gray-100 rounded-2xl animate-pulse" />)
                                     ) : latestAudios.length > 0 ? (
                                         latestAudios.map((audio) => (
-                                            <div key={audio.id} className="bg-white rounded-2xl p-4 shadow-md border border-gray-100 flex items-center gap-4 transition-all hover:-translate-y-1 hover:shadow-lg group">
+                                            // FIXED: Wrapped in Link for clickability
+                                            <Link href={`/media/audios/play/${audio.id}`} key={audio.id} className="bg-white rounded-2xl p-4 shadow-md border border-gray-100 flex items-center gap-4 transition-all hover:-translate-y-1 hover:shadow-lg group block">
                                                 <div className="flex-shrink-0 w-12 h-12 rounded-full bg-brand-gold text-white flex items-center justify-center shadow-sm cursor-pointer group-hover:bg-brand-brown-dark transition-colors">
                                                     <Play className="w-5 h-5 ml-1 fill-current" />
                                                 </div>
@@ -411,12 +390,9 @@ export default function HomePage() {
                                                     <div className="flex justify-between items-start mb-1">
                                                         <span className="text-[10px] font-bold text-brand-gold uppercase tracking-widest">{audio.category || "Audio"}</span>
                                                     </div>
-                                                    
-                                                    {/* Audio Title Detection */}
                                                     <h3 className={`text-lg text-brand-brown-dark leading-tight truncate group-hover:text-brand-gold transition-colors ${getDir(audio.title) === 'rtl' ? 'font-tajawal font-bold text-right' : 'font-agency text-left'}`} dir={getDir(audio.title)}>
                                                         {audio.title}
                                                     </h3>
-                                                    
                                                     <div className="flex items-center gap-3 mt-1">
                                                         {audio.fileSize && (
                                                             <p className="text-[10px] text-gray-500 font-lato">{audio.fileSize}</p>
@@ -426,7 +402,7 @@ export default function HomePage() {
                                                 <div className="flex-shrink-0 text-gray-300 hover:text-brand-gold cursor-pointer transition-colors px-1">
                                                     <Download className="w-5 h-5" />
                                                 </div>
-                                            </div>
+                                            </Link>
                                         ))
                                     ) : (
                                         <p className="text-gray-400 font-lato text-sm">No recent audios found.</p>
@@ -437,7 +413,6 @@ export default function HomePage() {
                                 </div>
                             </div>
                         </div>
-
                         {/* 7. UPCOMING EVENTS (Dynamic) */}
                         <div className="mt-16 md:mt-24">
                             <div className="flex justify-between items-end mb-8">
@@ -453,17 +428,12 @@ export default function HomePage() {
                                                 {formatSimpleDate(event.date).toUpperCase()}
                                             </div>
                                             <div className="p-8 flex-grow flex flex-col justify-center text-center bg-brand-sand/10 group-hover:bg-brand-sand/30 transition-colors">
-                                                
-                                                {/* Event Title */}
                                                 <h3 className={`text-2xl md:text-3xl text-brand-brown-dark mb-3 line-clamp-2 ${getDir(event.title) === 'rtl' ? 'font-tajawal font-bold' : 'font-agency'}`} dir={getDir(event.title)}>
                                                     {event.title}
                                                 </h3>
-                                                
-                                                {/* Event Description */}
                                                 <p className={`text-sm text-brand-brown mb-6 px-4 line-clamp-3 ${getDir(event.description) === 'rtl' ? 'font-arabic' : 'font-lato'}`} dir={getDir(event.description)}>
                                                     {event.description}
                                                 </p>
-                                                
                                                 <div className="mt-auto">
                                                     <span className="text-xs font-bold text-brand-gold uppercase tracking-widest border border-brand-gold/30 rounded-full px-6 py-2 mx-auto">
                                                         {event.location ? event.location.split(' ')[0] : 'View Details'}
@@ -493,7 +463,7 @@ export default function HomePage() {
                     </div>
                 </section>
 
-                {/* 8. VISION AND MISSION & 9. QUOTE & 10. NEWSLETTER (Preserved) */}
+                {/* 8. VISION AND MISSION & 9. QUOTE & 10. NEWSLETTER */}
                 <section className="relative py-16 md:py-24 px-6 bg-brand-gold overflow-hidden">
                     <div className="absolute inset-0 mix-blend-overlay">
                         <Image src="/images/chairman/sheikh1.webp" alt="Background pattern overlay" fill className="object-cover opacity-20" />
