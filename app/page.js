@@ -42,14 +42,12 @@ export default function HomePage() {
         const fetchData = async () => {
             try {
                 // A) Updates (Articles & News)
-                // Note: Based on upload page, 'articles' has 'status' and 'createdAt'. 'news' has 'status' and 'createdAt'.
                 const articlesQuery = query(collection(db, 'articles'), where('status', '==', 'Published'), orderBy('createdAt', 'desc'), limit(3));
                 const newsQuery = query(collection(db, 'news'), where('status', '==', 'Published'), orderBy('createdAt', 'desc'), limit(3));
                 
                 // B) Media (Videos, Podcasts, Audios)
                 const videosQuery = query(collection(db, 'videos'), orderBy('createdAt', 'desc'), limit(1));
                 const podcastsQuery = query(collection(db, 'podcasts'), orderBy('createdAt', 'desc'), limit(1));
-                // Note: Audios upload page doesn't seem to have a 'status' field in formData, assuming all are valid or check your rules
                 const audiosQuery = query(collection(db, 'audios'), orderBy('createdAt', 'desc'), limit(3));
 
                 // C) Programs (Active)
@@ -70,7 +68,6 @@ export default function HomePage() {
                 ]);
 
                 // --- PROCESS UPDATES ---
-                // Mapping based on upload page fields: 'featuredImage' is the image field for both
                 const articlesData = articlesSnap.docs.map(doc => ({
                     id: doc.id,
                     type: 'article', 
@@ -84,8 +81,8 @@ export default function HomePage() {
                     id: doc.id,
                     type: 'news', 
                     displayCategory: 'News',
-                    title: doc.data().headline, // News uses 'headline'
-                    excerpt: doc.data().shortDescription, // News uses 'shortDescription'
+                    title: doc.data().headline, 
+                    excerpt: doc.data().shortDescription, 
                     image: doc.data().featuredImage,
                     date: doc.data().createdAt,
                     ...doc.data()
@@ -119,10 +116,18 @@ export default function HomePage() {
         fetchData();
     }, []);
 
-    // Helper: Format Date
+    // --- HELPERS ---
+
+    // 1. Language Detection (Consistent with Upload Pages)
+    const getDir = (text) => {
+        if (!text) return 'ltr';
+        const arabicPattern = /[\u0600-\u06FF]/;
+        return arabicPattern.test(text) ? 'rtl' : 'ltr';
+    };
+
+    // 2. Format Date
     const formatDayMonth = (timestamp) => {
         if (!timestamp) return { day: '01', month: 'JAN' };
-        // Handle Firestore Timestamp vs Date String
         const date = timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp);
         return {
             day: date.getDate(),
@@ -133,6 +138,13 @@ export default function HomePage() {
     const formatSimpleDate = (dateStr) => {
         if (!dateStr) return '';
         return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
+
+    const getYouTubeId = (url) => {
+        if (!url) return null;
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
     };
 
     return (
@@ -197,8 +209,10 @@ export default function HomePage() {
                             ) : latestUpdates.length > 0 ? (
                                 latestUpdates.map((item) => {
                                     const dateObj = formatDayMonth(item.date);
-                                    // Construct Link: Articles go to read page, News to general news or specific? Assuming /blogs/read logic works for both if ID is valid
-                                    const readUrl = item.type === 'news' ? `/blogs/news` : `/blogs/read/${item.id}`; // Simple fallback
+                                    const readUrl = item.type === 'news' ? `/blogs/news` : `/blogs/read/${item.id}`;
+                                    // Check direction
+                                    const titleDir = getDir(item.title);
+                                    const excerptDir = getDir(item.excerpt);
                                     
                                     return (
                                         <div key={item.id} className="bg-white rounded-2xl overflow-hidden shadow-md group border border-transparent hover:border-brand-gold/20 transition-all hover:shadow-xl flex flex-col h-full">
@@ -219,12 +233,17 @@ export default function HomePage() {
                                                             {item.category || item.displayCategory || "Update"}
                                                         </span>
                                                     </div>
-                                                    <h3 className="font-agency text-xl md:text-2xl text-brand-brown-dark mb-3 leading-tight group-hover:text-brand-gold transition-colors line-clamp-2">
+                                                    
+                                                    {/* Auto-detected Font & Direction for Title */}
+                                                    <h3 className={`text-xl md:text-2xl text-brand-brown-dark mb-3 leading-tight group-hover:text-brand-gold transition-colors line-clamp-2 ${titleDir === 'rtl' ? 'font-tajawal font-bold text-right' : 'font-agency text-left'}`} dir={titleDir}>
                                                         {item.title}
                                                     </h3>
-                                                    <p className="font-lato text-sm text-brand-brown line-clamp-3 leading-relaxed opacity-80 mb-4 flex-grow">
+                                                    
+                                                    {/* Auto-detected Font & Direction for Excerpt */}
+                                                    <p className={`text-sm text-brand-brown line-clamp-3 leading-relaxed opacity-80 mb-4 flex-grow ${excerptDir === 'rtl' ? 'font-arabic text-right' : 'font-lato text-left'}`} dir={excerptDir}>
                                                         {item.excerpt || "Click to read more details..."}
                                                     </p>
+                                                    
                                                     <span className="inline-flex items-center text-xs font-bold text-brand-brown-dark uppercase tracking-widest group-hover:text-brand-gold transition-colors mt-auto">
                                                         Read Full Story <ArrowRight className="w-3 h-3 ml-1" />
                                                     </span>
@@ -259,8 +278,17 @@ export default function HomePage() {
                                     <span className="inline-block px-3 py-1 bg-brand-gold text-white text-[10px] md:text-xs font-bold uppercase rounded shadow-sm w-fit mb-4">
                                         {featuredProgram.category}
                                     </span>
-                                    <h3 className="font-agency text-3xl md:text-5xl text-white mb-4 leading-tight">{featuredProgram.title}</h3>
-                                    <p className="font-lato text-white/90 text-sm md:text-lg mb-8 leading-relaxed max-w-xl">{featuredProgram.excerpt}</p>
+                                    
+                                    {/* Program Title Detection */}
+                                    <h3 className={`text-3xl md:text-5xl text-white mb-4 leading-tight ${getDir(featuredProgram.title) === 'rtl' ? 'font-tajawal font-bold text-right' : 'font-agency text-left'}`} dir={getDir(featuredProgram.title)}>
+                                        {featuredProgram.title}
+                                    </h3>
+                                    
+                                    {/* Program Excerpt Detection */}
+                                    <p className={`text-white/90 text-sm md:text-lg mb-8 leading-relaxed max-w-xl ${getDir(featuredProgram.excerpt) === 'rtl' ? 'font-arabic text-right' : 'font-lato text-left'}`} dir={getDir(featuredProgram.excerpt)}>
+                                        {featuredProgram.excerpt}
+                                    </p>
+                                    
                                     <Link href={`/programs/${featuredProgram.id}`} className="px-8 py-3 bg-white text-brand-brown-dark font-bold rounded-full hover:bg-brand-gold hover:text-white transition-all w-fit">
                                         View Program Details
                                     </Link>
@@ -305,8 +333,17 @@ export default function HomePage() {
                                                 </div>
                                                 <div className="p-5 flex-grow flex flex-col">
                                                     <span className="text-[10px] font-bold text-brand-gold uppercase mb-2">Latest Video</span>
-                                                    <h3 className="font-agency text-xl text-brand-brown-dark mb-2 leading-tight line-clamp-2">{latestVideo.title}</h3>
-                                                    <p className="text-xs text-gray-500 line-clamp-2 mb-4 flex-grow">{latestVideo.description}</p>
+                                                    
+                                                    {/* Video Title Detection */}
+                                                    <h3 className={`text-xl text-brand-brown-dark mb-2 leading-tight line-clamp-2 ${getDir(latestVideo.title) === 'rtl' ? 'font-tajawal font-bold text-right' : 'font-agency text-left'}`} dir={getDir(latestVideo.title)}>
+                                                        {latestVideo.title}
+                                                    </h3>
+                                                    
+                                                    {/* Video Desc Detection */}
+                                                    <p className={`text-xs text-gray-500 line-clamp-2 mb-4 flex-grow ${getDir(latestVideo.description) === 'rtl' ? 'font-arabic text-right' : 'font-lato text-left'}`} dir={getDir(latestVideo.description)}>
+                                                        {latestVideo.description}
+                                                    </p>
+                                                    
                                                     <Link href="/media/videos" className="text-xs font-bold text-brand-brown-dark hover:text-brand-gold transition-colors flex items-center gap-1">Watch More <ChevronRight className="w-3 h-3"/></Link>
                                                 </div>
                                             </>
@@ -333,8 +370,17 @@ export default function HomePage() {
                                                 </div>
                                                 <div className="p-5 flex-grow flex flex-col">
                                                     <span className="text-[10px] font-bold text-blue-600 uppercase mb-2">Latest Podcast</span>
-                                                    <h3 className="font-agency text-xl text-brand-brown-dark mb-2 leading-tight line-clamp-2">{latestPodcast.title}</h3>
-                                                    <p className="text-xs text-gray-500 line-clamp-2 mb-4 flex-grow">{latestPodcast.description}</p>
+                                                    
+                                                    {/* Podcast Title */}
+                                                    <h3 className={`text-xl text-brand-brown-dark mb-2 leading-tight line-clamp-2 ${getDir(latestPodcast.title) === 'rtl' ? 'font-tajawal font-bold text-right' : 'font-agency text-left'}`} dir={getDir(latestPodcast.title)}>
+                                                        {latestPodcast.title}
+                                                    </h3>
+                                                    
+                                                    {/* Podcast Desc */}
+                                                    <p className={`text-xs text-gray-500 line-clamp-2 mb-4 flex-grow ${getDir(latestPodcast.description) === 'rtl' ? 'font-arabic text-right' : 'font-lato text-left'}`} dir={getDir(latestPodcast.description)}>
+                                                        {latestPodcast.description}
+                                                    </p>
+                                                    
                                                     <Link href="/media/podcasts" className="text-xs font-bold text-brand-brown-dark hover:text-brand-gold transition-colors flex items-center gap-1">Listen to Series <ChevronRight className="w-3 h-3"/></Link>
                                                 </div>
                                             </>
@@ -365,7 +411,12 @@ export default function HomePage() {
                                                     <div className="flex justify-between items-start mb-1">
                                                         <span className="text-[10px] font-bold text-brand-gold uppercase tracking-widest">{audio.category || "Audio"}</span>
                                                     </div>
-                                                    <h3 className="font-agency text-lg text-brand-brown-dark leading-tight truncate group-hover:text-brand-gold transition-colors">{audio.title}</h3>
+                                                    
+                                                    {/* Audio Title Detection */}
+                                                    <h3 className={`text-lg text-brand-brown-dark leading-tight truncate group-hover:text-brand-gold transition-colors ${getDir(audio.title) === 'rtl' ? 'font-tajawal font-bold text-right' : 'font-agency text-left'}`} dir={getDir(audio.title)}>
+                                                        {audio.title}
+                                                    </h3>
+                                                    
                                                     <div className="flex items-center gap-3 mt-1">
                                                         {audio.fileSize && (
                                                             <p className="text-[10px] text-gray-500 font-lato">{audio.fileSize}</p>
@@ -402,8 +453,17 @@ export default function HomePage() {
                                                 {formatSimpleDate(event.date).toUpperCase()}
                                             </div>
                                             <div className="p-8 flex-grow flex flex-col justify-center text-center bg-brand-sand/10 group-hover:bg-brand-sand/30 transition-colors">
-                                                <h3 className="font-agency text-2xl md:text-3xl text-brand-brown-dark mb-3 line-clamp-2">{event.title}</h3>
-                                                <p className="font-lato text-sm text-brand-brown mb-6 px-4 line-clamp-3">{event.description}</p>
+                                                
+                                                {/* Event Title */}
+                                                <h3 className={`text-2xl md:text-3xl text-brand-brown-dark mb-3 line-clamp-2 ${getDir(event.title) === 'rtl' ? 'font-tajawal font-bold' : 'font-agency'}`} dir={getDir(event.title)}>
+                                                    {event.title}
+                                                </h3>
+                                                
+                                                {/* Event Description */}
+                                                <p className={`text-sm text-brand-brown mb-6 px-4 line-clamp-3 ${getDir(event.description) === 'rtl' ? 'font-arabic' : 'font-lato'}`} dir={getDir(event.description)}>
+                                                    {event.description}
+                                                </p>
+                                                
                                                 <div className="mt-auto">
                                                     <span className="text-xs font-bold text-brand-gold uppercase tracking-widest border border-brand-gold/30 rounded-full px-6 py-2 mx-auto">
                                                         {event.location ? event.location.split(' ')[0] : 'View Details'}
