@@ -82,14 +82,14 @@ export default function HomePage() {
                 // --- PROCESS MIXED UPDATES (Articles + News) ---
                 const articlesData = articlesSnap.docs.map(doc => ({
                     id: doc.id,
-                    type: 'article', // Tag source
+                    type: 'article', 
                     displayCategory: 'Article',
                     ...doc.data()
                 }));
 
                 const newsData = newsSnap.docs.map(doc => ({
                     id: doc.id,
-                    type: 'news', // Tag source
+                    type: 'news', 
                     displayCategory: 'News',
                     ...doc.data()
                 }));
@@ -217,7 +217,6 @@ export default function HomePage() {
                                     const dateObj = formatDayMonth(item.publishedAt);
                                     
                                     // Determine destination URL based on type
-                                    // We append ?type= to help the reader page if needed, or purely for analytics
                                     const readUrl = `/blogs/read/${item.id}?type=${item.type}`;
                                     
                                     return (
