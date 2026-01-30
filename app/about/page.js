@@ -46,33 +46,34 @@ export default function AboutPage() {
 
             <main className="flex-grow pb-0">
 
-                {/* 1. HERO SECTION (Animated) */}
-                <section className="relative h-[60vh] md:h-[70vh] w-full flex items-center justify-center overflow-hidden">
+                {/* 1. HERO SECTION */}
+                <section className="relative h-[60vh] md:h-[70vh] w-full flex items-center justify-center overflow-hidden group">
                     <Image
                         src="/images/heroes/about-hero.webp" 
                         alt="About Al-Asad Foundation"
                         fill
-                        className="object-cover object-center animate-in fade-in duration-1000"
+                        className="object-cover object-center transition-transform duration-[2000ms] group-hover:scale-105"
                         priority
                     />
                     {/* Gradient Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30"></div>
                     
                     <div className="relative z-10 text-center px-6 max-w-5xl mx-auto text-white">
-                        <div className="inline-block mb-4 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-100">
+                        <div className="inline-block mb-4 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-100 fill-mode-forwards opacity-0" style={{ animationFillMode: 'forwards' }}>
                             <span className="bg-white/10 backdrop-blur-md border border-white/20 text-white text-[10px] md:text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg">
                                 Our Essence
                             </span>
                         </div>
-                        <h1 className="font-agency text-5xl md:text-7xl lg:text-8xl leading-none mb-6 drop-shadow-lg animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
+                        <h1 className="font-agency text-5xl md:text-7xl lg:text-8xl leading-none mb-6 drop-shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200 fill-mode-forwards opacity-0" style={{ animationFillMode: 'forwards' }}>
                             Faith. Knowledge. Service.
                         </h1>
-                        <p className="font-lato text-lg md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed font-light animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-300">
+                        <p className="font-lato text-lg md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed font-light animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300 fill-mode-forwards opacity-0" style={{ animationFillMode: 'forwards' }}>
                             Building minds, nurturing character, and serving communities through Islamic education and purposeful action.
                         </p>
                     </div>
                 </section>
-    {/* 2. NARRATIVE SECTION (Animated) */}
+
+                {/* 2. NARRATIVE SECTION */}
                 <section className="py-20 md:py-32 px-6 md:px-12 lg:px-24 max-w-7xl mx-auto">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-start">
                         
@@ -102,7 +103,7 @@ export default function AboutPage() {
                         {/* Right: Mission & Vision Cards */}
                         <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-right-8 duration-1000 delay-500">
                             {/* Mission */}
-                            <div className="bg-brand-sand/30 p-8 md:p-10 rounded-3xl border border-brand-gold/10 hover:border-brand-gold/30 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg">
+                            <div className="bg-brand-sand/30 p-8 md:p-10 rounded-3xl border border-brand-gold/10 hover:border-brand-gold/30 transition-all duration-500 hover:shadow-lg transform hover:-translate-y-1">
                                 <div className="flex items-center gap-4 mb-4">
                                     <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-brand-gold shadow-sm">
                                         <Target className="w-6 h-6" />
@@ -110,12 +111,12 @@ export default function AboutPage() {
                                     <h3 className="font-agency text-3xl text-brand-brown-dark">Our Mission</h3>
                                 </div>
                                 <p className="text-brand-brown leading-relaxed text-lg">
-                                    To provide accessible, authentic Islamic education; to nurture moral excellence and intellectual discipline; and to serve communities through programmes that reflect the values of Islam with clarity, balance, and compassion.
+                                    Expanding access to knowledge through Qur'an-centered and community driven education that nurtures both mind and soul.
                                 </p>
                             </div>
 
                             {/* Vision */}
-                            <div className="bg-white p-8 md:p-10 rounded-3xl border border-gray-100 shadow-xl shadow-gray-100/50 hover:shadow-2xl hover:shadow-gray-200/50 transition-all duration-300 transform hover:-translate-y-1">
+                            <div className="bg-white p-8 md:p-10 rounded-3xl border border-gray-100 shadow-xl shadow-gray-100/50 hover:shadow-2xl hover:shadow-gray-200/50 transition-all duration-500 transform hover:-translate-y-1">
                                 <div className="flex items-center gap-4 mb-4">
                                     <div className="w-12 h-12 bg-brand-brown-dark rounded-full flex items-center justify-center text-white shadow-sm">
                                         <Eye className="w-6 h-6" />
@@ -123,7 +124,7 @@ export default function AboutPage() {
                                     <h3 className="font-agency text-3xl text-brand-brown-dark">Our Vision</h3>
                                 </div>
                                 <p className="text-gray-600 leading-relaxed text-lg">
-                                    To raise generations grounded in faith, guided by knowledge, and committed to service, individuals who embody Islamic values and contribute meaningfully to society locally and beyond.
+                                    To be a leading force in transforming education through Qur'an values, excellence in learning, and empowerment of communities.
                                 </p>
                             </div>
                         </div>
@@ -131,16 +132,16 @@ export default function AboutPage() {
                     </div>
                 </section>
 
-                {/* 3. FOUNDER'S MESSAGE (Fade Up) */}
+                {/* 3. FOUNDER'S MESSAGE */}
                 <section className="bg-brand-sand/20 py-20 md:py-32 px-6">
-                    <div className="max-w-6xl mx-auto bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col lg:flex-row border border-gray-100 animate-in fade-in slide-in-from-bottom-12 duration-1000">
+                    <div className="max-w-6xl mx-auto bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col lg:flex-row border border-gray-100 animate-in fade-in zoom-in-95 duration-1000">
                         {/* Image Side */}
-                        <div className="lg:w-5/12 relative h-[500px] lg:h-auto bg-brand-brown-dark">
+                        <div className="lg:w-5/12 relative h-[500px] lg:h-auto bg-brand-brown-dark group overflow-hidden">
                             <Image 
                                 src="/images/chairman/sheikh2.webp" 
                                 alt="Sheikh Goni Dr. Muneer Ja‘afar Katsina" 
                                 fill 
-                                className="object-cover object-top opacity-95 hover:scale-105 transition-transform duration-1000"
+                                className="object-cover object-top opacity-95 transition-transform duration-1000 group-hover:scale-105"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent lg:bg-gradient-to-r"></div>
                             <div className="absolute bottom-8 left-8 text-white z-10 pr-8">
@@ -175,10 +176,11 @@ export default function AboutPage() {
                         </div>
                     </div>
                 </section>
-    {/* 4. CORE VALUES */}
+
+                {/* 4. CORE VALUES */}
                 <section className="py-20 md:py-32 bg-brand-brown-dark text-white px-6 md:px-12 lg:px-24">
                     <div className="max-w-7xl mx-auto">
-                        <div className="text-center mb-16 animate-in fade-in zoom-in-95 duration-1000">
+                        <div className="text-center mb-16">
                             <span className="text-brand-gold text-xs font-bold tracking-[0.2em] uppercase mb-4 block">Our DNA</span>
                             <h2 className="font-agency text-4xl md:text-6xl">The Values We Live By</h2>
                         </div>
@@ -187,7 +189,7 @@ export default function AboutPage() {
                             {values.map((val, idx) => {
                                 const Icon = val.icon;
                                 return (
-                                    <div key={idx} className={`group relative bg-white/5 p-8 rounded-3xl border border-white/10 hover:bg-white hover:border-white transition-all duration-500 hover:-translate-y-2 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-${idx * 100}`}>
+                                    <div key={idx} className="group relative bg-white/5 p-8 rounded-3xl border border-white/10 hover:bg-white hover:border-white transition-all duration-500 hover:-translate-y-2">
                                         <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-6 text-brand-gold group-hover:text-white group-hover:bg-brand-brown-dark transition-colors duration-500">
                                             <Icon className="w-7 h-7" />
                                         </div>
@@ -202,7 +204,7 @@ export default function AboutPage() {
 
                 {/* 5. DYNAMIC LEADERSHIP TEAM */}
                 <section className="py-20 md:py-32 px-6 md:px-12 lg:px-24 max-w-7xl mx-auto">
-                    <div className="text-center mb-16 animate-in fade-in duration-1000">
+                    <div className="text-center mb-16">
                         <h2 className="font-agency text-4xl md:text-6xl text-brand-brown-dark mb-6">
                             Our Leadership
                         </h2>
@@ -217,8 +219,8 @@ export default function AboutPage() {
                         </div>
                     ) : leaders.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {leaders.map((leader, index) => (
-                                <div key={leader.id} className={`group relative bg-white rounded-3xl shadow-sm hover:shadow-2xl border border-gray-100 overflow-hidden transition-all duration-500 h-[480px] animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-${index * 100}`}>
+                            {leaders.map((leader) => (
+                                <div key={leader.id} className="group relative bg-white rounded-3xl shadow-sm hover:shadow-2xl border border-gray-100 overflow-hidden transition-all duration-500 h-[480px]">
                                     
                                     {/* Image Section */}
                                     <div className="relative h-full w-full bg-gray-200">
@@ -228,7 +230,7 @@ export default function AboutPage() {
                                             fill 
                                             className="object-cover object-top transition-transform duration-700 group-hover:scale-105" 
                                         />
-                                        {/* Gradient Overlay - Always visible but darker on hover */}
+                                        {/* Gradient Overlay */}
                                         <div className="absolute inset-0 bg-gradient-to-t from-brand-brown-dark via-brand-brown-dark/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-500"></div>
                                         
                                         {/* Content Positioned at Bottom */}
@@ -255,97 +257,23 @@ export default function AboutPage() {
                         </div>
                     )}
                 </section>
-{/* 4. CORE VALUES */}
-                <section className="py-20 md:py-32 bg-brand-brown-dark text-white px-6 md:px-12 lg:px-24">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="text-center mb-16 animate-in fade-in zoom-in-95 duration-1000">
-                            <span className="text-brand-gold text-xs font-bold tracking-[0.2em] uppercase mb-4 block">Our DNA</span>
-                            <h2 className="font-agency text-4xl md:text-6xl">The Values We Live By</h2>
-                        </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {values.map((val, idx) => {
-                                const Icon = val.icon;
-                                return (
-                                    <div key={idx} className={`group relative bg-white/5 p-8 rounded-3xl border border-white/10 hover:bg-white hover:border-white transition-all duration-500 hover:-translate-y-2 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-${idx * 100}`}>
-                                        <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-6 text-brand-gold group-hover:text-white group-hover:bg-brand-brown-dark transition-colors duration-500">
-                                            <Icon className="w-7 h-7" />
-                                        </div>
-                                        <h3 className="font-agency text-2xl text-white group-hover:text-brand-brown-dark mb-3 transition-colors duration-500">{val.title}</h3>
-                                        <p className="font-lato text-sm text-white/60 group-hover:text-gray-600 leading-relaxed transition-colors duration-500">{val.text}</p>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </section>
-
-                {/* 5. DYNAMIC LEADERSHIP TEAM */}
-                <section className="py-20 md:py-32 px-6 md:px-12 lg:px-24 max-w-7xl mx-auto">
-                    <div className="text-center mb-16 animate-in fade-in duration-1000">
-                        <h2 className="font-agency text-4xl md:text-6xl text-brand-brown-dark mb-6">
-                            Our Leadership
-                        </h2>
-                        <p className="font-lato text-gray-500 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed">
-                            Al-Asad Education Foundation is guided by scholars, educators, and professionals committed to Islamic ethics, transparency, and long-term impact. Leadership is exercised as responsibility, not privilege, with accountability to Allah and to the communities we serve.
-                        </p>
-                    </div>
-
-                    {loading ? (
-                        <div className="flex justify-center items-center h-64">
-                            <Loader2 className="w-10 h-10 animate-spin text-brand-gold" />
-                        </div>
-                    ) : leaders.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {leaders.map((leader, index) => (
-                                <div key={leader.id} className={`group relative bg-white rounded-3xl shadow-sm hover:shadow-2xl border border-gray-100 overflow-hidden transition-all duration-500 h-[480px] animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-${index * 100}`}>
-                                    
-                                    {/* Image Section */}
-                                    <div className="relative h-full w-full bg-gray-200">
-                                        <Image 
-                                            src={leader.image || "/fallback.webp"} 
-                                            alt={leader.name} 
-                                            fill 
-                                            className="object-cover object-top transition-transform duration-700 group-hover:scale-105" 
-                                        />
-                                        {/* Gradient Overlay - Always visible but darker on hover */}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-brand-brown-dark via-brand-brown-dark/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-500"></div>
-                                        
-                                        {/* Content Positioned at Bottom */}
-                                        <div className="absolute bottom-0 left-0 w-full p-8 text-white z-20 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                                            <div className="border-l-2 border-brand-gold pl-4 mb-2">
-                                                <h3 className="font-agency text-3xl leading-none mb-1 text-shadow-sm">{leader.name}</h3>
-                                                <p className="font-lato text-xs font-bold text-brand-gold uppercase tracking-widest">{leader.position}</p>
-                                            </div>
-                                            
-                                            {/* Expandable Bio */}
-                                            <div className="overflow-hidden max-h-0 group-hover:max-h-40 transition-all duration-700 ease-in-out opacity-0 group-hover:opacity-100">
-                                                <p className="font-lato text-sm text-white/80 mt-4 leading-relaxed line-clamp-4">
-                                                    {leader.bio || "Dedicated to serving the community through excellence and integrity."}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-16 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
-                            <p className="text-gray-400 font-agency text-xl">Leadership profiles are currently being updated.</p>
-                        </div>
-                    )}
-                </section>
-{/* 6. CLOSING STATEMENT (Refined Design) */}
-                <section className="py-24 px-6 bg-brand-sand/20 border-t border-brand-gold/10">
-                    <div className="max-w-3xl mx-auto text-center animate-in zoom-in-95 duration-1000 delay-200">
-                        <div className="w-12 h-1 bg-brand-gold/50 mx-auto mb-8 rounded-full"></div>
-                        <h2 className="font-agency text-2xl md:text-4xl text-brand-brown-dark leading-snug tracking-wide">
-                            "Al-Asad Education Foundation continues its journey with humility, purpose, and trust in Allah, seeking to educate, uplift, and serve, today and for generations to come."
-                        </h2>
-                        <div className="mt-8 flex justify-center">
-                            <div className="h-1 w-1 bg-brand-brown-dark/20 rounded-full mx-1"></div>
-                            <div className="h-1 w-1 bg-brand-brown-dark/20 rounded-full mx-1"></div>
-                            <div className="h-1 w-1 bg-brand-brown-dark/20 rounded-full mx-1"></div>
+                {/* 6. CLOSING STATEMENT (Futuristic Redesign) */}
+                <section className="py-24 px-6 bg-white relative overflow-hidden">
+                    {/* Subtle Background Elements */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-brand-gold/5 rounded-full blur-3xl pointer-events-none"></div>
+                    
+                    <div className="max-w-5xl mx-auto relative z-10">
+                        <div className="bg-white/80 backdrop-blur-xl border border-brand-brown-dark/5 rounded-[3rem] p-10 md:p-16 shadow-2xl text-center transform hover:scale-[1.01] transition-transform duration-700">
+                            <div className="w-20 h-1.5 bg-gradient-to-r from-brand-gold to-brand-brown-dark mx-auto mb-10 rounded-full"></div>
+                            
+                            <h2 className="font-agency text-3xl md:text-5xl lg:text-6xl text-brand-brown-dark leading-tight mb-6">
+                                "Seeking to educate, uplift, and serve, today and for generations to come."
+                            </h2>
+                            
+                            <p className="font-lato text-lg text-gray-500 max-w-2xl mx-auto">
+                                Al-Asad Education Foundation continues its journey with humility, purpose, and trust in Allah.
+                            </p>
                         </div>
                     </div>
                 </section>
