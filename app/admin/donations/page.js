@@ -145,6 +145,11 @@ export default function AdminDonationsPage() {
     // --- ACTIONS ---
     const copyToClipboard = (text) => { navigator.clipboard.writeText(text); alert("Copied!"); };
 
+    // FIXED: Added missing handler
+    const handleDownloadReport = () => {
+        generateTransactionReport(filteredDonations, `${startDate || 'Start'} - ${endDate || 'End'}`, "Custom Transaction Report");
+    };
+
     const handleVerifyBank = async (donation) => {
         if (!canManage) return;
         showConfirm({
@@ -340,24 +345,24 @@ export default function AdminDonationsPage() {
                                     </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-                                        <div className="bg-gray-50 p-4 rounded-xl">
-                                            <p className="text-xs text-gray-400 uppercase font-bold mb-2">Donor Details</p>
-                                            <div className="space-y-1">
-                                                <p className="font-bold text-gray-800">{selectedWorkItem.donorName || "Anonymous"}</p>
-                                                <p className="text-sm text-gray-600 break-all">{selectedWorkItem.donorEmail}</p>
-                                                <p className="text-sm text-gray-600">{selectedWorkItem.donorPhone || "No Phone"}</p>
+                                            <div className="bg-gray-50 p-4 rounded-xl">
+                                                <p className="text-xs text-gray-400 uppercase font-bold mb-2">Donor Details</p>
+                                                <div className="space-y-1">
+                                                    <p className="font-bold text-gray-800">{selectedWorkItem.donorName || "Anonymous"}</p>
+                                                    <p className="text-sm text-gray-600 break-all">{selectedWorkItem.donorEmail}</p>
+                                                    <p className="text-sm text-gray-600">{selectedWorkItem.donorPhone || "No Phone"}</p>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="bg-gray-50 p-4 rounded-xl">
-                                            <p className="text-xs text-gray-400 uppercase font-bold mb-2">Payment Method</p>
-                                            <div className="flex items-center gap-2 mb-2">
-                                                {selectedWorkItem.method === 'paystack' ? <CreditCard className="w-5 h-5 text-blue-500" /> : <Landmark className="w-5 h-5 text-green-500" />}
-                                                <span className="capitalize font-bold text-gray-700">{selectedWorkItem.method}</span>
+                                            <div className="bg-gray-50 p-4 rounded-xl">
+                                                <p className="text-xs text-gray-400 uppercase font-bold mb-2">Payment Method</p>
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    {selectedWorkItem.method === 'paystack' ? <CreditCard className="w-5 h-5 text-blue-500" /> : <Landmark className="w-5 h-5 text-green-500" />}
+                                                    <span className="capitalize font-bold text-gray-700">{selectedWorkItem.method}</span>
+                                                </div>
+                                                {selectedWorkItem.bankProofUrl ? (
+                                                    <a href={selectedWorkItem.bankProofUrl} target="_blank" className="text-xs text-blue-600 underline hover:text-blue-800 flex items-center gap-1"><FileText className="w-3 h-3" /> View Receipt</a>
+                                                ) : <span className="text-xs text-gray-400 italic">No receipt uploaded</span>}
                                             </div>
-                                            {selectedWorkItem.bankProofUrl ? (
-                                                <a href={selectedWorkItem.bankProofUrl} target="_blank" className="text-xs text-blue-600 underline hover:text-blue-800 flex items-center gap-1"><FileText className="w-3 h-3" /> View Receipt</a>
-                                            ) : <span className="text-xs text-gray-400 italic">No receipt uploaded</span>}
-                                        </div>
                                     </div>
 
                                     {canManage ? (
@@ -414,6 +419,7 @@ export default function AdminDonationsPage() {
                                     <span className="text-gray-400 self-center">-</span>
                                     <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-gold/20" />
                                 </div>
+                                {/* FIXED: Calling handleDownloadReport now works */}
                                 <button onClick={handleDownloadReport} className="w-full sm:w-auto px-6 py-2 bg-brand-brown-dark text-white rounded-lg text-sm font-bold shadow-md hover:bg-brand-gold transition-colors flex items-center justify-center gap-2">
                                     <Download className="w-4 h-4" /> Download PDF Report
                                 </button>
