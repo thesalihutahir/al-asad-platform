@@ -8,12 +8,12 @@ import Footer from '@/components/Footer';
 // Firebase
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
-import { Play, Mic, Video, BookOpen, Camera, Headphones, ArrowRight, Loader2, Library } from 'lucide-react';
+import { Play, Mic, Video, BookOpen, Camera, Headphones, ArrowRight, Loader2, Library, Eye } from 'lucide-react';
 
 export default function MediaPage() {
-    // State to handle Video Facade & Data
-    const [playVideo, setPlayVideo] = useState(false);
-    const [latestVideo, setLatestVideo] = useState(null);
+    
+    // --- STATE ---
+    const [latestItems, setLatestItems] = useState([]);
     const [loading, setLoading] = useState(true);
 
     // Media Categories Configuration
@@ -60,28 +60,45 @@ export default function MediaPage() {
         }
     ];
 
-    // --- FETCH LATEST VIDEO ---
+    // --- FETCH LATEST ITEMS ---
     useEffect(() => {
-        const fetchLatestVideo = async () => {
+        const fetchLatestContent = async () => {
             try {
-                const q = query(
-                    collection(db, "videos"), 
-                    orderBy("createdAt", "desc"), 
-                    limit(1)
-                );
-                const snapshot = await getDocs(q);
-                if (!snapshot.empty) {
-                    const docData = snapshot.docs[0].data();
-                    setLatestVideo({ id: snapshot.docs[0].id, ...docData });
-                }
+                // Define fetch logic for each type
+                const fetchOne = async (colName) => {
+                    const q = query(collection(db, colName), orderBy("createdAt", "desc"), limit(1));
+                    const snap = await getDocs(q);
+                    return snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() };
+                };
+
+                // Execute all fetches in parallel
+                const [video, audio, podcast, ebook, gallery] = await Promise.all([
+                    fetchOne('videos'),
+                    fetchOne('audios'),
+                    fetchOne('podcasts'),
+                    fetchOne('ebooks'),
+                    fetchOne('gallery_photos') // Assuming this collection name based on typical structure
+                ]);
+
+                // Normalize Data Structure for Rendering
+                const items = [
+                    video && { ...video, type: 'Video', link: `/media/videos/${video.id}`, cta: 'Watch Video', icon: Play },
+                    audio && { ...audio, type: 'Audio', link: `/media/audios/play/${audio.id}`, cta: 'Listen Now', icon: Mic },
+                    podcast && { ...podcast, type: 'Podcast', link: `/media/podcasts/play/${podcast.id}`, cta: 'Start Listening', icon: Headphones },
+                    ebook && { ...ebook, type: 'eBook', link: `/media/ebooks/read/${ebook.id}`, cta: 'Read Publication', icon: BookOpen },
+                    gallery && { ...gallery, type: 'Gallery', link: '/media/gallery', cta: 'View Photos', icon: Camera } // Gallery usually links to main gallery if single photo
+                ].filter(Boolean); // Remove nulls
+
+                setLatestItems(items);
+
             } catch (error) {
-                console.error("Error fetching latest video:", error);
+                console.error("Error fetching latest content:", error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchLatestVideo();
+        fetchLatestContent();
     }, []);
 
     return (
@@ -171,81 +188,72 @@ export default function MediaPage() {
                     </div>
                 </section>
 
-                {/* 3. FEATURED / LATEST UPLOAD */}
+                {/* 3. FEATURED / LATEST UPLOADS (Updated Grid) */}
                 {loading ? (
                     <div className="flex justify-center items-center py-20">
                         <Loader2 className="w-10 h-10 text-brand-gold animate-spin" />
                     </div>
-                ) : latestVideo && (
+                ) : latestItems.length > 0 && (
                     <section className="px-6 md:px-12 lg:px-24 max-w-7xl mx-auto">
                         <div className="mb-10 text-center md:text-left">
-                            <span className="text-brand-gold text-xs font-bold tracking-[0.2em] uppercase mb-2 block">Featured Content</span>
+                            <span className="text-brand-gold text-xs font-bold tracking-[0.2em] uppercase mb-2 block">Fresh Content</span>
                             <h2 className="font-agency text-4xl md:text-6xl text-brand-brown-dark">
-                                Latest Release
+                                Latest Releases
                             </h2>
                         </div>
 
-                        <div className="bg-brand-brown-dark rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col lg:flex-row border border-gray-800">
-                            {/* Video Preview Area */}
-                            <div className="relative w-full lg:w-2/3 aspect-video bg-black group">
-                                {!playVideo ? (
-                                    <button 
-                                        onClick={() => setPlayVideo(true)}
-                                        className="absolute inset-0 w-full h-full relative cursor-pointer"
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {latestItems.map((item, idx) => {
+                                const TypeIcon = item.icon;
+                                return (
+                                    <Link 
+                                        key={item.id} 
+                                        href={item.link}
+                                        className="group flex flex-col bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 hover:border-brand-gold/20 transition-all duration-300 hover:-translate-y-1 h-full"
                                     >
-                                        <Image 
-                                            src={latestVideo.thumbnail || "/fallback.webp"} 
-                                            alt={latestVideo.title} 
-                                            fill 
-                                            className="object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500" 
-                                        />
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                            {/* Custom Play Button */}
-                                            <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 text-white shadow-2xl group-hover:scale-110 group-hover:bg-brand-gold group-hover:border-brand-gold transition-all duration-300">
-                                                <Play className="w-8 h-8 fill-current ml-1" />
+                                        {/* Image Area */}
+                                        <div className="relative h-56 w-full bg-gray-100 overflow-hidden">
+                                            <Image 
+                                                src={item.thumbnail || item.coverImage || item.image || "/fallback.webp"} 
+                                                alt={item.title} 
+                                                fill 
+                                                className="object-cover group-hover:scale-105 transition-transform duration-500" 
+                                            />
+                                            
+                                            {/* Type Badge */}
+                                            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-brand-brown-dark uppercase tracking-wider shadow-sm flex items-center gap-1.5">
+                                                <TypeIcon className="w-3 h-3 text-brand-gold" />
+                                                {item.type}
+                                            </div>
+
+                                            {/* Play/Action Overlay */}
+                                            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 duration-300">
+                                                <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-full flex items-center justify-center border border-white/50 text-white">
+                                                    <ArrowRight className="w-5 h-5" />
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="absolute bottom-6 left-6 bg-black/60 backdrop-blur px-3 py-1 rounded text-[10px] font-bold text-white uppercase tracking-wider">
-                                            Click to Play
+
+                                        {/* Content Area */}
+                                        <div className="p-6 flex flex-col flex-grow">
+                                            <h3 className="font-agency text-2xl text-brand-brown-dark mb-2 line-clamp-2 leading-tight group-hover:text-brand-gold transition-colors">
+                                                {item.title || "Untitled Content"}
+                                            </h3>
+                                            
+                                            <p className="font-lato text-sm text-gray-500 line-clamp-2 mb-6 flex-grow leading-relaxed">
+                                                {item.description || item.excerpt || item.caption || "Click to view full details."}
+                                            </p>
+
+                                            <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
+                                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">New Addition</span>
+                                                <span className="flex items-center gap-1 text-xs font-bold text-brand-brown-dark group-hover:text-brand-gold transition-colors">
+                                                    {item.cta} <ArrowRight className="w-3 h-3" />
+                                                </span>
+                                            </div>
                                         </div>
-                                    </button>
-                                ) : (
-                                    <iframe
-                                        className="absolute inset-0 w-full h-full"
-                                        src={`https://www.youtube.com/embed/${latestVideo.videoId}?rel=0&modestbranding=1&autoplay=1`}
-                                        title={latestVideo.title}
-                                        frameBorder="0"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                        allowFullScreen
-                                    ></iframe>
-                                )}
-                            </div>
-
-                            {/* Info Area */}
-                            <div className="p-10 lg:w-1/3 flex flex-col justify-center bg-brand-brown-dark text-white relative overflow-hidden">
-                                {/* Subtle Background Pattern */}
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-brand-gold/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
-
-                                <div className="relative z-10">
-                                    <span className="inline-block px-3 py-1 bg-brand-gold text-brand-brown-dark text-[10px] font-bold uppercase rounded-md shadow-sm w-fit mb-5">
-                                        {latestVideo.category || "New Video"}
-                                    </span>
-                                    <h3 className="font-agency text-3xl md:text-4xl mb-4 leading-tight">
-                                        {latestVideo.title}
-                                    </h3>
-                                    <div className="w-12 h-1 bg-brand-gold/30 rounded-full mb-6"></div>
-                                    <p className="font-lato text-sm md:text-base text-white/70 line-clamp-4 leading-relaxed mb-8">
-                                        {latestVideo.description || "Watch our latest lecture to gain insights and knowledge."}
-                                    </p>
-                                    
-                                    <Link 
-                                        href="/media/videos" 
-                                        className="inline-flex items-center gap-2 text-brand-gold font-bold text-xs uppercase tracking-widest hover:text-white transition-colors group"
-                                    >
-                                        Browse Video Library <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                                     </Link>
-                                </div>
-                            </div>
+                                );
+                            })}
                         </div>
                     </section>
                 )}
