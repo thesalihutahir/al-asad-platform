@@ -10,7 +10,7 @@ import { useModal } from '@/context/ModalContext';
 // Firebase
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, query, orderBy, getDocs, doc, getDoc } from 'firebase/firestore';
-import { MapPin, Phone, Mail, Globe, Facebook, Youtube, Instagram, Twitter, MessageCircle, Loader2, Send, Info } from 'lucide-react';
+import { MapPin, Phone, Mail, Globe, Facebook, Youtube, Instagram, Twitter, MessageCircle, Loader2, Send, Info, BadgeCheck } from 'lucide-react';
 
 export default function ContactPage() {
     const { showSuccess } = useModal();
@@ -19,7 +19,7 @@ export default function ContactPage() {
     const [loading, setLoading] = useState(true);
 
     // Dynamic Data
-    const [sortedTeam, setSortedTeam] = useState([]); // Unified list for rendering
+    const [sortedTeam, setSortedTeam] = useState([]); 
 
     // Contact Info State
     const [contactInfo, setContactInfo] = useState({
@@ -27,8 +27,8 @@ export default function ContactPage() {
         email: 'Loading email...',
         phone: 'Loading phone...',
         facebook: '', twitter: '', instagram: '', youtube: '', whatsapp: '', telegram: '',
-        mapLatitude: '12.970758', // Default: Katsina
-        mapLongitude: '7.636398'  // Default: Katsina
+        mapLatitude: '12.970758', 
+        mapLongitude: '7.636398' 
     });
 
     // Form State
@@ -63,15 +63,19 @@ export default function ContactPage() {
                 const teamSnap = await getDocs(teamQ);
                 let allMembers = teamSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-                // Sorting Logic: Lead First -> Others -> Esteemed Members Last
-                const teamLead = allMembers.find(m => m.isLead);
-                const esteemed = allMembers.filter(m => m.name === "Esteemed Members" || m.role === "Esteemed Members");
-                const others = allMembers.filter(m => !m.isLead && m.name !== "Esteemed Members" && m.role !== "Esteemed Members");
+                // Sorting Logic: 
+                // 1. Team Lead
+                // 2. Regular Roles (Operations, Content, etc.)
+                // 3. Esteemed Members (Last)
+                
+                const teamLeads = allMembers.filter(m => m.primaryRole === "Team Lead");
+                const esteemedMembers = allMembers.filter(m => m.primaryRole === "Esteemed Member");
+                const regularMembers = allMembers.filter(m => m.primaryRole !== "Team Lead" && m.primaryRole !== "Esteemed Member");
 
                 const sortedList = [
-                    ...(teamLead ? [teamLead] : []),
-                    ...others,
-                    ...esteemed
+                    ...teamLeads,
+                    ...regularMembers,
+                    ...esteemedMembers
                 ];
 
                 setSortedTeam(sortedList);
@@ -137,7 +141,7 @@ export default function ContactPage() {
 
             <main className="flex-grow pb-16">
 
-                {/* 1. HERO SECTION (Redesigned) */}
+                {/* 1. HERO SECTION */}
                 <section className="relative h-[50vh] min-h-[400px] w-full flex items-center justify-center overflow-hidden bg-brand-brown-dark">
                     <Image
                         src="/images/heroes/contact-hero.webp"
@@ -167,12 +171,9 @@ export default function ContactPage() {
 
                         {/* LEFT: Contact Information & Map */}
                         <div className="flex-1 space-y-8">
-
-                            {/* Contact Details Card */}
                             <div className="bg-white p-8 md:p-10 rounded-3xl border border-gray-100 shadow-xl">
                                 <h2 className="font-agency text-3xl text-brand-brown-dark mb-8 border-b border-gray-100 pb-4">Contact Information</h2>
                                 <div className="space-y-8">
-                                    {/* Address */}
                                     <div className="flex items-start gap-5 group">
                                         <div className="w-12 h-12 rounded-2xl bg-brand-sand flex items-center justify-center text-brand-gold shadow-inner mt-1 flex-shrink-0 group-hover:bg-brand-gold group-hover:text-white transition-colors duration-300"><MapPin className="w-6 h-6" /></div>
                                         <div>
@@ -180,7 +181,6 @@ export default function ContactPage() {
                                             <p className="font-lato text-base text-gray-500 leading-relaxed whitespace-pre-wrap">{contactInfo.address}</p>
                                         </div>
                                     </div>
-                                    {/* Phone/Email */}
                                     <div className="flex items-start gap-5 group">
                                         <div className="w-12 h-12 rounded-2xl bg-brand-sand flex items-center justify-center text-brand-gold shadow-inner mt-1 flex-shrink-0 group-hover:bg-brand-gold group-hover:text-white transition-colors duration-300"><Phone className="w-6 h-6" /></div>
                                         <div>
@@ -189,7 +189,6 @@ export default function ContactPage() {
                                             <a href={`tel:${contactInfo.phone}`} className="block font-lato text-base text-gray-500 hover:text-brand-gold transition-colors">{contactInfo.phone}</a>
                                         </div>
                                     </div>
-                                    {/* Socials */}
                                     {socialLinks.length > 0 && (
                                         <div className="flex items-start gap-5 pt-4 border-t border-gray-50">
                                             <div className="w-12 h-12 rounded-2xl bg-brand-sand flex items-center justify-center text-brand-gold shadow-inner mt-1 flex-shrink-0"><Globe className="w-6 h-6" /></div>
@@ -210,23 +209,11 @@ export default function ContactPage() {
                                     )}
                                 </div>
                             </div>
-
-                            {/* 16:9 Map */}
                             <div className="bg-white p-2 rounded-3xl shadow-lg border border-gray-100">
                                 <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-gray-100">
-                                    <iframe 
-                                        src={mapEmbedUrl} 
-                                        width="100%" 
-                                        height="100%" 
-                                        style={{ border: 0 }} 
-                                        allowFullScreen="" 
-                                        loading="lazy" 
-                                        referrerPolicy="no-referrer-when-downgrade"
-                                        className="absolute inset-0"
-                                    ></iframe>
+                                    <iframe src={mapEmbedUrl} width="100%" height="100%" style={{ border: 0 }} allowFullScreen="" loading="lazy" referrerPolicy="no-referrer-when-downgrade" className="absolute inset-0"></iframe>
                                 </div>
                             </div>
-
                         </div>
 
                         {/* RIGHT: Contact Form */}
@@ -237,27 +224,21 @@ export default function ContactPage() {
                                 <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Email Address</label><input type="email" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:border-brand-gold" placeholder="Enter your email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required /></div>
                                 <CustomSelect label="Subject" options={subjects} value={formData.subject} onChange={(val) => setFormData({...formData, subject: val})} placeholder="Select Subject" />
                                 <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Message</label><textarea rows="5" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-brand-brown-dark focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all focus:border-brand-gold resize-none" placeholder="How can we help you?" value={formData.message} onChange={(e) => setFormData({...formData, message: e.target.value})} required></textarea></div>
-
                                 <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-brand-brown-dark text-white font-agency text-xl rounded-xl hover:bg-brand-gold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2 disabled:opacity-70">
                                     {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Send Message <Send className="w-4 h-4" /></>}
                                 </button>
-
                                 <div className="bg-brand-sand/10 border border-brand-gold/20 rounded-xl p-4 mt-6 flex gap-3 items-start">
                                     <Info className="w-5 h-5 text-brand-gold flex-shrink-0 mt-0.5" />
                                     <div className="space-y-2">
-                                        <p className="text-xs text-brand-brown leading-relaxed">
-                                            This contact form is intended for general inquiries, feedback, and non-urgent communication.
-                                        </p>
-                                        <p className="text-[10px] text-gray-400 uppercase tracking-wide pt-1">
-                                            Thank you for your understanding.
-                                        </p>
+                                        <p className="text-xs text-brand-brown leading-relaxed">This contact form is intended for general inquiries, feedback, and non-urgent communication.</p>
+                                        <p className="text-[10px] text-gray-400 uppercase tracking-wide pt-1">Thank you for your understanding.</p>
                                     </div>
                                 </div>
                             </form>
                         </div>
                     </div>
                 </section>
-                {/* 3. MEDIA TEAM (Redesigned Grid Cards) */}
+                {/* 3. MEDIA TEAM (Redesigned Cards) */}
                 <section className="px-6 md:px-12 lg:px-24 mb-16 md:mb-24 max-w-7xl mx-auto border-t border-gray-100 pt-20">
                     <div className="text-center mb-16">
                         <span className="text-brand-gold text-xs font-bold tracking-[0.2em] uppercase mb-3 block">Behind the Scenes</span>
@@ -266,48 +247,77 @@ export default function ContactPage() {
                     </div>
 
                     {loading ? <div className="flex justify-center py-12"><Loader2 className="w-10 h-10 animate-spin text-brand-gold" /></div> : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                             {sortedTeam.length > 0 ? (
                                 sortedTeam.map((member) => (
-                                    <div key={member.id} className="group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col h-full">
+                                    <div key={member.id} className="group bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 flex flex-col h-full hover:-translate-y-2">
                                         
-                                        {/* Image Area */}
-                                        <div className="relative w-full aspect-[4/5] bg-gray-100 overflow-hidden">
-                                            <Image 
-                                                src={member.image || "/fallback.webp"} 
-                                                alt={member.name} 
-                                                fill 
-                                                className="object-cover transition-transform duration-700 group-hover:scale-105" 
-                                            />
-                                            {/* Role Badge (Top Right) */}
-                                            {member.isLead && (
-                                                <div className="absolute top-3 right-3 bg-brand-gold text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm z-10">
-                                                    Team Lead
+                                        {/* Image Header */}
+                                        <div className="relative w-full h-72 bg-brand-sand/30 overflow-hidden">
+                                            {member.image ? (
+                                                <Image 
+                                                    src={member.image} 
+                                                    alt={member.name} 
+                                                    fill 
+                                                    className="object-cover transition-transform duration-700 group-hover:scale-105" 
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                                    <span className="font-agency text-4xl opacity-20">PHOTO</span>
                                                 </div>
                                             )}
-                                            {/* Gradient Overlay */}
+                                            
+                                            {/* Role Badge (Floating) */}
+                                            {member.primaryRole && member.primaryRole !== "Esteemed Member" && (
+                                                <div className="absolute top-4 left-4">
+                                                    <span className="bg-white/90 backdrop-blur-md text-brand-brown-dark text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm border border-gray-100">
+                                                        {member.primaryRole}
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            {/* Gradient for Text Contrast */}
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
+                                            
+                                            {/* Name Overlay */}
+                                            <div className="absolute bottom-0 left-0 w-full p-6 text-white translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                                                <h3 className="font-agency text-2xl leading-none text-shadow-sm">{member.name}</h3>
+                                            </div>
                                         </div>
 
-                                        {/* Content Area */}
-                                        <div className="p-6 flex flex-col flex-grow relative -mt-16 z-10">
-                                            <div className="bg-white rounded-xl p-5 shadow-lg border border-gray-50 flex-grow flex flex-col items-center text-center transform transition-transform duration-300 group-hover:-translate-y-2">
-                                                <h3 className="font-agency text-xl text-brand-brown-dark leading-tight mb-1">{member.name}</h3>
-                                                <p className="font-lato text-xs font-bold text-brand-gold uppercase tracking-widest mb-3">{member.role}</p>
-                                                
-                                                {/* Divider */}
-                                                <div className="w-8 h-0.5 bg-gray-100 mb-3"></div>
-
-                                                {/* Responsibility */}
-                                                <p className="font-lato text-xs text-gray-500 leading-relaxed italic">
-                                                    "{member.responsibility || 'Media & Technical Support'}"
-                                                </p>
+                                        {/* Body Content */}
+                                        <div className="p-6 flex flex-col flex-grow bg-white relative z-10">
+                                            {/* Responsibilities Section */}
+                                            <div className="flex-grow">
+                                                <div className="flex items-center gap-2 mb-3 opacity-60">
+                                                    <BadgeCheck className="w-3.5 h-3.5 text-brand-gold" />
+                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Core Focus</span>
+                                                </div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {member.responsibilities && member.responsibilities.length > 0 ? (
+                                                        member.responsibilities.slice(0, 3).map((res, i) => (
+                                                            <span key={i} className="text-[10px] font-medium text-brand-brown-dark bg-brand-sand px-2 py-1 rounded border border-brand-gold/10">
+                                                                {res}
+                                                            </span>
+                                                        ))
+                                                    ) : (
+                                                        <span className="text-xs text-gray-400 italic">General Support</span>
+                                                    )}
+                                                    {member.responsibilities && member.responsibilities.length > 3 && (
+                                                        <span className="text-[10px] font-bold text-brand-gold px-1 py-1">+{member.responsibilities.length - 3}</span>
+                                                    )}
+                                                </div>
                                             </div>
+                                            
+                                            {/* Decorative Bottom Bar */}
+                                            <div className="mt-6 w-full h-1 bg-gradient-to-r from-brand-gold/0 via-brand-gold/50 to-brand-gold/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <p className="col-span-4 text-center text-gray-400 italic">Team members will be listed here.</p>
+                                <div className="col-span-4 py-16 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                                    <p className="text-gray-400 font-agency text-xl">Media team directory is being updated.</p>
+                                </div>
                             )}
                         </div>
                     )}
