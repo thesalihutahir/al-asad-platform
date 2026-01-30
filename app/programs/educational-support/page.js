@@ -106,7 +106,7 @@ export default function EducationalSupportPage() {
                         </div>
                         <div className="relative h-[600px] w-full rounded-[2.5rem] overflow-hidden shadow-2xl border-8 border-white transform rotate-2 hover:rotate-0 transition-transform duration-700">
                             <Image 
-                                src="/fallback.webp" 
+                                src="/images/heroes/programs-educational-support-hero.webp" 
                                 alt="Classroom Session" 
                                 fill 
                                 className="object-cover"
