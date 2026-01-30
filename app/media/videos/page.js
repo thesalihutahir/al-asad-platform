@@ -82,6 +82,13 @@ export default function VideosPage() {
         const arabicPattern = /[\u0600-\u06FF]/;
         return arabicPattern.test(text) ? 'rtl' : 'ltr';
     };
+
+    const getDateValue = (dateStr) => {
+        if (!dateStr) return 0;
+        const d = new Date(dateStr);
+        return isNaN(d.getTime()) ? 0 : d.getTime();
+    };
+
     // --- FILTER & SORT LOGIC ---
     const filteredVideos = videos.filter(video => {
         const matchesCategory = activeFilter === "All Videos" || video.category === activeFilter;
@@ -89,11 +96,11 @@ export default function VideosPage() {
         return matchesCategory && matchesSearch;
     });
 
-    // Sorting by Manual Date
+    // Sorting by Manual Date (Safe Sort)
     const sortedVideos = [...filteredVideos].sort((a, b) => {
-        const dateA = new Date(a.date || 0); 
-        const dateB = new Date(b.date || 0);
-        return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+        const valA = getDateValue(a.date);
+        const valB = getDateValue(b.date);
+        return sortOrder === 'desc' ? valB - valA : valA - valB;
     });
 
     const visibleVideos = sortedVideos.slice(0, visibleCount);
@@ -234,6 +241,7 @@ export default function VideosPage() {
                                 </div>
                             </div>
                         </section>
+
                         {/* 4. ALL VIDEOS GRID (Slim & Modern) */}
                         <section className="px-6 md:px-12 lg:px-24 max-w-7xl mx-auto">
                              <div className="flex flex-row items-center justify-between gap-4 mb-8">
