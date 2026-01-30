@@ -188,67 +188,61 @@ export default function MediaPage() {
                     </div>
                 </section>
 
-                {/* 3. FEATURED / LATEST UPLOADS (Updated Grid) */}
+                                {/* 3. FEATURED / LATEST UPLOADS (Updated Grid) */}
                 {loading ? (
                     <div className="flex justify-center items-center py-20">
                         <Loader2 className="w-10 h-10 text-brand-gold animate-spin" />
                     </div>
                 ) : latestItems.length > 0 && (
-                    <section className="px-6 md:px-12 lg:px-24 max-w-7xl mx-auto">
-                        <div className="mb-10 text-center md:text-left">
-                            <span className="text-brand-gold text-xs font-bold tracking-[0.2em] uppercase mb-2 block">Fresh Content</span>
-                            <h2 className="font-agency text-4xl md:text-6xl text-brand-brown-dark">
-                                Latest Releases
-                            </h2>
+                    <section className="px-6 md:px-12 lg:px-24 max-w-5xl mx-auto">
+                        <div className="mb-8 flex items-end justify-between border-b border-gray-100 pb-4">
+                            <div>
+                                <span className="text-brand-gold text-xs font-bold tracking-[0.2em] uppercase mb-1 block">Fresh Content</span>
+                                <h2 className="font-agency text-3xl md:text-4xl text-brand-brown-dark">
+                                    Latest Releases
+                                </h2>
+                            </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div className="flex flex-col gap-3">
                             {latestItems.map((item, idx) => {
                                 const TypeIcon = item.icon;
                                 return (
                                     <Link 
                                         key={item.id} 
                                         href={item.link}
-                                        className="group flex flex-col bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 hover:border-brand-gold/20 transition-all duration-300 hover:-translate-y-1 h-full"
+                                        className="group flex items-center gap-4 bg-white p-3 rounded-xl border border-gray-100 hover:border-brand-gold/30 hover:bg-brand-sand/10 transition-all duration-300"
                                     >
-                                        {/* Image Area */}
-                                        <div className="relative h-56 w-full bg-gray-100 overflow-hidden">
+                                        {/* Minimal Thumbnail */}
+                                        <div className="relative w-20 h-20 md:w-24 md:h-16 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden border border-gray-50">
                                             <Image 
                                                 src={item.thumbnail || item.coverImage || item.image || "/fallback.webp"} 
                                                 alt={item.title} 
                                                 fill 
-                                                className="object-cover group-hover:scale-105 transition-transform duration-500" 
+                                                className="object-cover transition-transform duration-500 group-hover:scale-105" 
                                             />
-                                            
-                                            {/* Type Badge */}
-                                            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-brand-brown-dark uppercase tracking-wider shadow-sm flex items-center gap-1.5">
-                                                <TypeIcon className="w-3 h-3 text-brand-gold" />
-                                                {item.type}
-                                            </div>
-
-                                            {/* Play/Action Overlay */}
-                                            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 duration-300">
-                                                <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-full flex items-center justify-center border border-white/50 text-white">
-                                                    <ArrowRight className="w-5 h-5" />
-                                                </div>
-                                            </div>
+                                            <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors"></div>
                                         </div>
 
-                                        {/* Content Area */}
-                                        <div className="p-6 flex flex-col flex-grow">
-                                            <h3 className="font-agency text-2xl text-brand-brown-dark mb-2 line-clamp-2 leading-tight group-hover:text-brand-gold transition-colors">
+                                        {/* Text Info */}
+                                        <div className="flex-grow min-w-0 py-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="text-[9px] font-bold uppercase tracking-wider text-brand-gold border border-brand-gold/20 px-1.5 py-0.5 rounded-sm">
+                                                    {item.type}
+                                                </span>
+                                            </div>
+                                            <h3 className="font-agency text-lg md:text-xl text-brand-brown-dark leading-tight line-clamp-1 group-hover:text-brand-gold transition-colors">
                                                 {item.title || "Untitled Content"}
                                             </h3>
-                                            
-                                            <p className="font-lato text-sm text-gray-500 line-clamp-2 mb-6 flex-grow leading-relaxed">
+                                            <p className="font-lato text-xs text-gray-500 line-clamp-1 mt-0.5">
                                                 {item.description || item.excerpt || item.caption || "Click to view full details."}
                                             </p>
+                                        </div>
 
-                                            <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
-                                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">New Addition</span>
-                                                <span className="flex items-center gap-1 text-xs font-bold text-brand-brown-dark group-hover:text-brand-gold transition-colors">
-                                                    {item.cta} <ArrowRight className="w-3 h-3" />
-                                                </span>
+                                        {/* Action Icon */}
+                                        <div className="flex-shrink-0 pr-2">
+                                            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-50 text-gray-300 group-hover:bg-brand-gold group-hover:text-white transition-all duration-300">
+                                                <ArrowRight className="w-4 h-4" />
                                             </div>
                                         </div>
                                     </Link>
@@ -257,6 +251,7 @@ export default function MediaPage() {
                         </div>
                     </section>
                 )}
+
 
             </main>
 
