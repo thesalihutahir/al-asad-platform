@@ -17,7 +17,7 @@ export default function AboutPage() {
         const fetchLeaders = async () => {
             try {
                 const q = query(
-                    collection(db, "leadership_team"),
+                    collection(db, "leadership_members"),
                     where("visibility", "==", "Visible"),
                     orderBy("order", "asc")
                 );
@@ -112,7 +112,7 @@ export default function AboutPage() {
                                     <h3 className="font-agency text-3xl text-brand-brown-dark">Our Mission</h3>
                                 </div>
                                 <p className="text-brand-brown leading-relaxed text-lg">
-                                    To provide accessible, authentic Islamic education; to nurture moral excellence and intellectual discipline; and to serve communities through programmes that reflect the values of Islam with clarity, balance, and compassion.
+                                    Expanding access to knowledge through Qur'an-centered and community driven education that nurtures both mind and soul.
                                 </p>
                             </div>
 
@@ -125,7 +125,7 @@ export default function AboutPage() {
                                     <h3 className="font-agency text-3xl text-brand-brown-dark">Our Vision</h3>
                                 </div>
                                 <p className="text-gray-600 leading-relaxed text-lg">
-                                    To raise generations grounded in faith, guided by knowledge, and committed to service, individuals who embody Islamic values and contribute meaningfully to society locally and beyond.
+                                    To be a leading force in transforming education through Qur'an values, excellence in learning, and empowerment of communities.
                                 </p>
                             </div>
                         </div>
