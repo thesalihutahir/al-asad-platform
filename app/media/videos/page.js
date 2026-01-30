@@ -17,13 +17,13 @@ export default function VideosPage() {
     const [videos, setVideos] = useState([]);
     const [playlists, setPlaylists] = useState([]);
     const [loading, setLoading] = useState(true);
-    
+
     // Filters & Search
     const [activeFilter, setActiveFilter] = useState("All Videos");
     const [searchTerm, setSearchTerm] = useState("");
     const [visibleCount, setVisibleCount] = useState(6);
-    
-    // Sort Order State ('desc' = Newest Date Recorded First)
+
+    // Sort Order State ('desc' = Newest First)
     const [sortOrder, setSortOrder] = useState('desc');
 
     const filters = ["All Videos", "English", "Hausa", "Arabic"];
@@ -49,9 +49,14 @@ export default function VideosPage() {
                     ...doc.data()
                 }));
 
-                // 3. CALCULATE REAL COUNTS
+                // 3. CALCULATE REAL COUNTS (Robust Logic)
                 fetchedPlaylists = fetchedPlaylists.map(playlist => {
-                    const realCount = fetchedVideos.filter(v => v.playlist === playlist.title).length;
+                    // Try exact ID match first, fallback to Title match
+                    const realCount = fetchedVideos.filter(v => 
+                        (v.playlistId && v.playlistId === playlist.id) || 
+                        (!v.playlistId && v.playlist === playlist.title)
+                    ).length;
+                    
                     return { ...playlist, count: realCount };
                 });
 
@@ -68,9 +73,10 @@ export default function VideosPage() {
     }, []);
 
     // --- HELPERS ---
-    const formatDate = (dateString) => {
-        if (!dateString) return '';
-        const date = new Date(dateString);
+    const formatDate = (val) => {
+        if (!val) return '';
+        // Handle Firestore Timestamp or Date String
+        const date = val.seconds ? new Date(val.seconds * 1000) : new Date(val);
         return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     };
 
@@ -88,12 +94,15 @@ export default function VideosPage() {
     });
 
     const sortedVideos = [...filteredVideos].sort((a, b) => {
-        const dateA = new Date(a.date || 0); 
-        const dateB = new Date(b.date || 0);
+        // Prefer 'createdAt' timestamp, fallback to 'date' string
+        const dateA = a.createdAt ? a.createdAt.seconds : new Date(a.date || 0).getTime() / 1000;
+        const dateB = b.createdAt ? b.createdAt.seconds : new Date(b.date || 0).getTime() / 1000;
+        
         return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
 
     const visibleVideos = sortedVideos.slice(0, visibleCount);
+
     return (
         <div className="min-h-screen flex flex-col bg-white font-lato">
             <Header />
@@ -154,7 +163,7 @@ export default function VideosPage() {
                                         <Link 
                                             key={playlist.id} 
                                             href={`/media/videos/playlists/${playlist.id}`} 
-                                            className="snap-center min-w-[260px] md:min-w-0 bg-brand-sand/30 rounded-2xl overflow-hidden cursor-pointer group hover:shadow-lg transition-all"
+                                            className="snap-center min-w-[260px] md:min-w-0 bg-brand-sand/30 rounded-2xl overflow-hidden cursor-pointer group hover:shadow-lg transition-all border border-transparent hover:border-brand-gold/20"
                                         >
                                             <div className="relative w-full aspect-[16/10] bg-gray-200">
                                                 <Image 
@@ -164,11 +173,11 @@ export default function VideosPage() {
                                                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                                                 />
                                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/30 transition-colors">
-                                                    <div className="bg-white/20 backdrop-blur-sm p-3 rounded-full">
+                                                    <div className="bg-white/20 backdrop-blur-sm p-3 rounded-full border border-white/30">
                                                         <ListVideo className="w-8 h-8 text-white" />
                                                     </div>
                                                 </div>
-                                                <div className="absolute bottom-2 right-2 bg-black/80 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
+                                                <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
                                                     <ListVideo className="w-3 h-3" /> {playlist.count} Videos
                                                 </div>
                                             </div>
@@ -177,8 +186,8 @@ export default function VideosPage() {
                                                 <h3 className={`font-agency text-lg md:text-xl text-brand-brown-dark leading-tight group-hover:text-brand-gold transition-colors line-clamp-1 ${getDir(playlist.title) === 'rtl' ? 'font-tajawal font-bold' : ''}`}>
                                                     {playlist.title}
                                                 </h3>
-                                                <p className="text-xs text-gray-500 mt-1 font-bold uppercase tracking-wider">
-                                                    {getDir(playlist.title) === 'rtl' ? 'عرض السلسلة ←' : 'View Full Playlist →'}
+                                                <p className="text-xs text-gray-500 mt-1 font-bold uppercase tracking-wider group-hover:text-brand-gold/80 transition-colors">
+                                                    {getDir(playlist.title) === 'rtl' ? 'عرض السلسلة ←' : 'View Series →'}
                                                 </p>
                                             </div>
                                         </Link>
@@ -189,7 +198,7 @@ export default function VideosPage() {
 
                         {/* 3. SEARCH & FILTERS SECTION */}
                         <section className="px-6 md:px-12 lg:px-24 mb-8">
-                            
+
                             {/* SEARCH BAR */}
                             <div className="max-w-2xl mx-auto mb-6">
                                 <div className="relative group">
@@ -261,7 +270,7 @@ export default function VideosPage() {
                                             <Link 
                                                 key={video.id} 
                                                 href={`/media/videos/${video.id}`} 
-                                                className="group block bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 transition-all hover:shadow-xl hover:border-brand-gold/20"
+                                                className="group block bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 transition-all hover:shadow-xl hover:border-brand-gold/20 hover:-translate-y-1 duration-300"
                                             >
                                                 {/* Thumbnail Container */}
                                                 <div className="relative w-full aspect-video bg-black">
@@ -272,47 +281,45 @@ export default function VideosPage() {
                                                         className="object-cover opacity-90 group-hover:opacity-100 transition-opacity"
                                                     />
                                                     <div className="absolute inset-0 flex items-center justify-center">
-                                                        <div className="w-12 h-12 md:w-16 md:h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:bg-brand-gold group-hover:scale-110 transition-all duration-300 shadow-md">
+                                                        <div className="w-12 h-12 md:w-16 md:h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:bg-brand-gold group-hover:scale-110 transition-all duration-300 shadow-md border border-white/40">
                                                             <Play className="w-5 h-5 md:w-7 md:h-7 text-white fill-current ml-1" />
                                                         </div>
                                                     </div>
-                                                    <div className="absolute bottom-3 right-3 bg-black/70 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
+                                                    <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
                                                         <Clock className="w-3 h-3" /> Watch
                                                     </div>
                                                 </div>
 
                                                 {/* Content */}
-                                                <div className="p-5 flex flex-col h-full" dir={dir}>
+                                                <div className="p-5 flex flex-col h-full bg-white" dir={dir}>
                                                     {/* Meta Row: Category & Date */}
                                                     <div className="flex justify-between items-center mb-3" dir="ltr">
-                                                        <span className="text-[10px] font-bold text-brand-brown-dark bg-brand-sand px-2 py-1 rounded uppercase tracking-wider">
+                                                        <span className="text-[10px] font-bold text-brand-brown-dark bg-brand-sand px-2 py-1 rounded uppercase tracking-wider border border-brand-gold/10">
                                                             {video.category}
                                                         </span>
                                                         <span className="text-[10px] text-gray-400 font-bold">
-                                                            {formatDate(video.date)}
+                                                            {formatDate(video.createdAt || video.date)}
                                                         </span>
                                                     </div>
 
                                                     {/* Title */}
-                                                    <h3 className={`font-agency text-xl md:text-2xl text-brand-brown-dark leading-tight mb-2 group-hover:text-brand-gold transition-colors ${dir === 'rtl' ? 'font-tajawal font-bold' : ''}`}>
+                                                    <h3 className={`font-agency text-xl md:text-2xl text-brand-brown-dark leading-tight mb-2 group-hover:text-brand-gold transition-colors line-clamp-2 ${dir === 'rtl' ? 'font-tajawal font-bold' : ''}`}>
                                                         {video.title}
                                                     </h3>
 
-                                                    {/* Description */}
-                                                    {video.description && (
-                                                        <p className={`text-sm text-gray-600 line-clamp-2 leading-relaxed hover:text-gray-900 transition-colors ${dir === 'rtl' ? 'font-arabic' : 'font-lato'}`}>
-                                                            {video.description}
-                                                        </p>
-                                                    )}
+                                                    {/* Description (Reduced visual noise) */}
+                                                    <p className={`text-sm text-gray-500 line-clamp-2 leading-relaxed ${dir === 'rtl' ? 'font-arabic' : 'font-lato'}`}>
+                                                        {video.description || "Click to watch full video..."}
+                                                    </p>
                                                 </div>
                                             </Link>
                                         );
                                     })}
                                 </div>
                             ) : (
-                                <div className="text-center py-12 text-gray-400">
-                                    <Play className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                                    <p>No videos found matching your criteria.</p>
+                                <div className="text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                                    <Play className="w-12 h-12 mx-auto mb-3 opacity-20 text-gray-400" />
+                                    <p className="text-gray-400">No videos found matching your criteria.</p>
                                 </div>
                             )}
                         </section>
@@ -322,7 +329,7 @@ export default function VideosPage() {
                             <section className="py-12 text-center">
                                 <button 
                                     onClick={() => setVisibleCount(prev => prev + 6)}
-                                    className="px-8 py-3 border-2 border-brand-sand text-brand-brown-dark rounded-full font-agency text-lg hover:bg-brand-brown-dark hover:text-white transition-colors uppercase tracking-wide"
+                                    className="px-8 py-3 border-2 border-brand-sand text-brand-brown-dark rounded-full font-agency text-lg hover:bg-brand-brown-dark hover:text-white transition-colors uppercase tracking-wide shadow-sm"
                                 >
                                     Load More Videos
                                 </button>
