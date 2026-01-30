@@ -19,8 +19,7 @@ export default function ContactPage() {
     const [loading, setLoading] = useState(true);
 
     // Dynamic Data
-    const [teamLead, setTeamLead] = useState(null);
-    const [teamMembers, setTeamMembers] = useState([]);
+    const [sortedTeam, setSortedTeam] = useState([]); // Unified list for rendering
 
     // Contact Info State
     const [contactInfo, setContactInfo] = useState({
@@ -59,16 +58,23 @@ export default function ContactPage() {
                     }));
                 }
 
-                // B. Fetch Team Members
+                // B. Fetch Team Members & Sort
                 const teamQ = query(collection(db, "team_members"), orderBy("createdAt", "desc"));
                 const teamSnap = await getDocs(teamQ);
-                const allMembers = teamSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                let allMembers = teamSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-                const lead = allMembers.find(m => m.isLead);
-                const rest = allMembers.filter(m => m.id !== lead?.id);
+                // Sorting Logic: Lead First -> Others -> Esteemed Members Last
+                const teamLead = allMembers.find(m => m.isLead);
+                const esteemed = allMembers.filter(m => m.name === "Esteemed Members" || m.role === "Esteemed Members");
+                const others = allMembers.filter(m => !m.isLead && m.name !== "Esteemed Members" && m.role !== "Esteemed Members");
 
-                setTeamLead(lead || null);
-                setTeamMembers(rest);
+                const sortedList = [
+                    ...(teamLead ? [teamLead] : []),
+                    ...others,
+                    ...esteemed
+                ];
+
+                setSortedTeam(sortedList);
 
             } catch (error) {
                 console.error("Error fetching data:", error);
@@ -125,7 +131,6 @@ export default function ContactPage() {
 
     // Dynamic Map URL
     const mapEmbedUrl = `https://maps.google.com/maps?q=${contactInfo.mapLatitude},${contactInfo.mapLongitude}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
-
     return (
         <div className="min-h-screen flex flex-col bg-white font-lato text-brand-brown-dark">
             <Header />
@@ -224,7 +229,7 @@ export default function ContactPage() {
 
                         </div>
 
-                        {/* RIGHT: Contact Form (Design Preserved) */}
+                        {/* RIGHT: Contact Form */}
                         <div className="flex-1 bg-white rounded-3xl shadow-2xl p-8 md:p-12 border-t-8 border-brand-gold h-fit relative">
                             <h2 className="font-agency text-3xl md:text-4xl text-brand-brown-dark mb-6">Send us a Message</h2>
                             <form onSubmit={handleFormSubmit} className="space-y-6">
@@ -252,57 +257,59 @@ export default function ContactPage() {
                         </div>
                     </div>
                 </section>
-
-                {/* 3. MEDIA TEAM (Redesigned) */}
+                {/* 3. MEDIA TEAM (Redesigned Grid Cards) */}
                 <section className="px-6 md:px-12 lg:px-24 mb-16 md:mb-24 max-w-7xl mx-auto border-t border-gray-100 pt-20">
                     <div className="text-center mb-16">
                         <span className="text-brand-gold text-xs font-bold tracking-[0.2em] uppercase mb-3 block">Behind the Scenes</span>
                         <h2 className="font-agency text-4xl md:text-5xl text-brand-brown-dark">Our Media Team</h2>
+                        <div className="w-24 h-1 bg-brand-gold mx-auto mt-6 rounded-full"></div>
                     </div>
 
                     {loading ? <div className="flex justify-center py-12"><Loader2 className="w-10 h-10 animate-spin text-brand-gold" /></div> : (
-                        <>
-                            {/* Team Lead Card - Centered & Prominent */}
-                            {teamLead && (
-                                <div className="flex justify-center mb-16">
-                                    <div className="group relative bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100 w-full max-w-sm hover:shadow-2xl transition-all duration-500">
-                                        <div className="relative h-80 w-full bg-brand-brown-dark">
-                                            <Image src={teamLead.image || "/fallback.webp"} alt={teamLead.name} fill className="object-cover opacity-90 group-hover:scale-105 transition-transform duration-700" />
-                                            <div className="absolute top-4 right-4 bg-brand-gold text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
-                                                Team Lead
-                                            </div>
-                                        </div>
-                                        <div className="p-8 text-center relative">
-                                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-20 h-1 bg-brand-gold rounded-full shadow-lg"></div>
-                                            <h3 className="font-agency text-3xl text-brand-brown-dark mb-1">{teamLead.name}</h3>
-                                            <p className="font-lato text-sm font-bold text-brand-gold uppercase tracking-widest mb-4">{teamLead.role}</p>
-                                            <p className="font-lato text-sm text-gray-500 italic">"{teamLead.responsibility || 'Leading our digital narrative.'}"</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Team Members Grid */}
-                            {teamMembers.length > 0 ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                                    {teamMembers.map((member) => (
-                                        <div key={member.id} className="group bg-white rounded-2xl border border-gray-100 p-4 hover:border-brand-gold/30 hover:shadow-lg transition-all duration-300 flex flex-col items-center text-center">
-                                            <div className="relative w-32 h-32 rounded-full overflow-hidden mb-4 border-4 border-gray-50 group-hover:border-brand-gold transition-colors duration-300">
-                                                <Image src={member.image || "/fallback.webp"} alt={member.name} fill className="object-cover" />
-                                            </div>
-                                            <h3 className="font-agency text-xl text-brand-brown-dark mb-1">{member.name}</h3>
-                                            <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">{member.role}</p>
-                                            
-                                            {member.responsibility && (
-                                                <div className="mt-auto w-full pt-3 border-t border-dashed border-gray-100">
-                                                    <p className="font-lato text-xs text-brand-gold italic">{member.responsibility}</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                            {sortedTeam.length > 0 ? (
+                                sortedTeam.map((member) => (
+                                    <div key={member.id} className="group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col h-full">
+                                        
+                                        {/* Image Area */}
+                                        <div className="relative w-full aspect-[4/5] bg-gray-100 overflow-hidden">
+                                            <Image 
+                                                src={member.image || "/fallback.webp"} 
+                                                alt={member.name} 
+                                                fill 
+                                                className="object-cover transition-transform duration-700 group-hover:scale-105" 
+                                            />
+                                            {/* Role Badge (Top Right) */}
+                                            {member.isLead && (
+                                                <div className="absolute top-3 right-3 bg-brand-gold text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm z-10">
+                                                    Team Lead
                                                 </div>
                                             )}
+                                            {/* Gradient Overlay */}
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
                                         </div>
-                                    ))}
-                                </div>
-                            ) : (!teamLead && <p className="text-center text-gray-400 italic">Team members will be listed here.</p>)}
-                        </>
+
+                                        {/* Content Area */}
+                                        <div className="p-6 flex flex-col flex-grow relative -mt-16 z-10">
+                                            <div className="bg-white rounded-xl p-5 shadow-lg border border-gray-50 flex-grow flex flex-col items-center text-center transform transition-transform duration-300 group-hover:-translate-y-2">
+                                                <h3 className="font-agency text-xl text-brand-brown-dark leading-tight mb-1">{member.name}</h3>
+                                                <p className="font-lato text-xs font-bold text-brand-gold uppercase tracking-widest mb-3">{member.role}</p>
+                                                
+                                                {/* Divider */}
+                                                <div className="w-8 h-0.5 bg-gray-100 mb-3"></div>
+
+                                                {/* Responsibility */}
+                                                <p className="font-lato text-xs text-gray-500 leading-relaxed italic">
+                                                    "{member.responsibility || 'Media & Technical Support'}"
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="col-span-4 text-center text-gray-400 italic">Team members will be listed here.</p>
+                            )}
+                        </div>
                     )}
                 </section>
 
