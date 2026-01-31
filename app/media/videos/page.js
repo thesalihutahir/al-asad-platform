@@ -9,7 +9,7 @@ import Loader from '@/components/Loader';
 // Firebase Imports
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
-import { Play, ListVideo, Clock, Filter, Loader2, ArrowUpDown, Search, X, ChevronRight, Calendar, Film, ArrowRight } from 'lucide-react';
+import { Play, ListVideo, Clock, Filter, Loader2, ArrowUpDown, Search, X, ChevronRight, Calendar, ArrowRight, Film } from 'lucide-react';
 
 export default function VideosPage() {
 
@@ -49,7 +49,7 @@ export default function VideosPage() {
                     ...doc.data()
                 }));
 
-                // 3. CALCULATE REAL COUNTS (Robust: ID -> Title Match)
+                // 3. CALCULATE REAL COUNTS
                 fetchedPlaylists = fetchedPlaylists.map(playlist => {
                     const realCount = fetchedVideos.filter(v => 
                         v.playlistId === playlist.id || v.playlist === playlist.title
@@ -82,6 +82,7 @@ export default function VideosPage() {
         const arabicPattern = /[\u0600-\u06FF]/;
         return arabicPattern.test(text) ? 'rtl' : 'ltr';
     };
+
     // --- FILTER & SORT LOGIC ---
     const filteredVideos = videos.filter(video => {
         const matchesCategory = activeFilter === "All Videos" || video.category === activeFilter;
@@ -89,7 +90,6 @@ export default function VideosPage() {
         return matchesCategory && matchesSearch;
     });
 
-    // Sorting by Manual Date
     const sortedVideos = [...filteredVideos].sort((a, b) => {
         const dateA = new Date(a.date || 0); 
         const dateB = new Date(b.date || 0);
@@ -97,8 +97,7 @@ export default function VideosPage() {
     });
 
     const visibleVideos = sortedVideos.slice(0, visibleCount);
-
-    return (
+return (
         <div className="min-h-screen flex flex-col bg-white font-lato">
             <Header />
 
@@ -275,7 +274,7 @@ export default function VideosPage() {
                                                         </div>
                                                     </div>
                                                     
-                                                    {/* Duration Badge (Mocked or Real if available) */}
+                                                    {/* Duration Badge */}
                                                     {video.duration && (
                                                         <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded border border-white/10">
                                                             {video.duration}
@@ -304,6 +303,13 @@ export default function VideosPage() {
                                                             {video.description}
                                                         </p>
                                                     )}
+
+                                                    <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
+                                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">New Addition</span>
+                                                        <span className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-brand-gold group-hover:text-white transition-colors">
+                                                            <ArrowRight className="w-3 h-3" />
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </Link>
                                         );
