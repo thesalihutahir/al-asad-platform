@@ -9,7 +9,7 @@ import Loader from '@/components/Loader';
 // Firebase Imports
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
-import { Play, ListVideo, Clock, Filter, Loader2, ArrowUpDown, Search, X, ChevronRight, Calendar, ArrowRight, Film, LayoutGrid, List } from 'lucide-react';
+import { Play, ListVideo, Clock, Filter, Loader2, ArrowUpDown, Search, X, ChevronRight, Calendar, ArrowRight, Film } from 'lucide-react';
 
 export default function VideosPage() {
 
@@ -82,7 +82,7 @@ export default function VideosPage() {
         const arabicPattern = /[\u0600-\u06FF]/;
         return arabicPattern.test(text) ? 'rtl' : 'ltr';
     };
-// --- FILTER & SORT LOGIC ---
+    // --- FILTER & SORT LOGIC ---
     const filteredVideos = videos.filter(video => {
         const matchesCategory = activeFilter === "All Videos" || video.category === activeFilter;
         const matchesSearch = video.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -98,12 +98,12 @@ export default function VideosPage() {
     const visibleVideos = sortedVideos.slice(0, visibleCount);
 
     return (
-        <div className="min-h-screen flex flex-col bg-white font-lato text-brand-brown-dark">
+        <div className="min-h-screen flex flex-col bg-white font-lato">
             <Header />
 
             <main className="flex-grow pb-20">
 
-                {/* 1. COMPACT HERO BAND */}
+                {/* 1. HERO SECTION */}
                 <section className="relative h-[220px] w-full overflow-hidden bg-brand-brown-dark mb-12">
                     <Image
                         src="/images/heroes/media-videos-hero.webp" 
@@ -131,7 +131,7 @@ export default function VideosPage() {
                     </div>
                 ) : (
                     <>
-                        {/* 2. SERIES SHELF (Compact Playlists) */}
+                        {/* 2. SERIES SHELF */}
                         {playlists.length > 0 && (
                             <section className="px-6 md:px-12 lg:px-24 mb-16 border-b border-gray-100 pb-12">
                                 <div className="flex items-center justify-between mb-6">
@@ -176,10 +176,10 @@ export default function VideosPage() {
                             </section>
                         )}
 
-                        {/* 3. MAIN CONTENT LAYOUT (2 Columns) */}
+                        {/* 3. CONTROL BAR (Refined Filters) */}
                         <section className="px-6 md:px-12 lg:px-24 mb-12 flex flex-col lg:flex-row gap-12 items-start">
                             
-                            {/* LEFT RAIL: Filter & Search (Sticky) */}
+                            {/* LEFT RAIL */}
                             <div className="w-full lg:w-[280px] lg:sticky lg:top-24 flex-shrink-0 space-y-8">
                                 <div>
                                     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Search</h3>
@@ -207,29 +207,25 @@ export default function VideosPage() {
                                             <button 
                                                 key={filter}
                                                 onClick={() => setActiveFilter(filter)}
-                                                className={`px-4 py-2 rounded-lg text-sm font-bold text-left transition-all flex items-center justify-between group ${
+                                                // REFINED PADDING: Reduced for balance
+                                                className={`px-3 py-1.5 lg:px-4 lg:py-2 rounded-lg text-xs lg:text-sm font-bold text-left transition-all flex items-center justify-between group flex-shrink-0 whitespace-nowrap ${
                                                     activeFilter === filter 
                                                     ? 'bg-brand-brown-dark text-white shadow-md' 
                                                     : 'bg-white border border-gray-100 text-gray-600 hover:bg-gray-50 hover:text-brand-brown-dark'
                                                 }`}
                                             >
                                                 {filter}
-                                                {activeFilter === filter && <div className="w-1.5 h-1.5 rounded-full bg-brand-gold"></div>}
+                                                {activeFilter === filter && <div className="w-1.5 h-1.5 rounded-full bg-brand-gold hidden lg:block"></div>}
                                             </button>
                                         ))}
                                     </div>
                                 </div>
                             </div>
-{/* RIGHT: RESULTS LIST */}
+                            {/* RIGHT: RESULTS LIST */}
                             <div className="flex-grow w-full">
-                                {/* Header Row */}
+                                {/* Header Row - Moved "Showing..." to bottom */}
                                 <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
-                                    <div className="flex items-baseline gap-3">
-                                        <h2 className="font-agency text-2xl text-brand-brown-dark">Recent Uploads</h2>
-                                        <span className="text-xs font-bold text-gray-400">
-                                            Showing {visibleVideos.length} of {filteredVideos.length}
-                                        </span>
-                                    </div>
+                                    <h2 className="font-agency text-2xl text-brand-brown-dark">Recent Uploads</h2>
                                     <button 
                                         onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
                                         className="flex items-center gap-1.5 text-xs font-bold text-gray-600 hover:text-brand-brown-dark transition-colors"
@@ -250,7 +246,7 @@ export default function VideosPage() {
                                                     href={`/media/videos/${video.id}`} 
                                                     className="group flex items-start gap-4 p-3 rounded-2xl bg-white border border-gray-100 hover:border-brand-gold/30 hover:bg-gray-50/50 transition-all duration-300"
                                                 >
-                                                    {/* Thumbnail (Small & Fixed) */}
+                                                    {/* Thumbnail */}
                                                     <div className="relative w-32 md:w-40 aspect-video flex-shrink-0 bg-black rounded-lg overflow-hidden border border-gray-100">
                                                         <Image
                                                             src={video.thumbnail || "/fallback.webp"}
@@ -281,7 +277,8 @@ export default function VideosPage() {
                                                             </span>
                                                         </div>
 
-                                                        <h3 className={`font-agency text-lg md:text-xl text-brand-brown-dark leading-tight mb-1 group-hover:text-brand-gold transition-colors line-clamp-1 ${dir === 'rtl' ? 'font-tajawal font-bold' : ''}`}>
+                                                        {/* TITLE: Removed line-clamp-1 to show full name */}
+                                                        <h3 className={`font-agency text-lg md:text-xl text-brand-brown-dark leading-tight mb-1 group-hover:text-brand-gold transition-colors ${dir === 'rtl' ? 'font-tajawal font-bold' : ''}`}>
                                                             {video.title}
                                                         </h3>
 
@@ -318,17 +315,20 @@ export default function VideosPage() {
                                     </div>
                                 )}
 
-                                {/* LOAD MORE */}
-                                {visibleCount < sortedVideos.length && (
-                                    <div className="py-10 text-center">
+                                {/* FOOTER STATUS & LOAD MORE */}
+                                <div className="py-10 text-center space-y-4">
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                        Showing {visibleVideos.length} of {filteredVideos.length} Videos
+                                    </p>
+                                    {visibleCount < sortedVideos.length && (
                                         <button 
                                             onClick={() => setVisibleCount(prev => prev + 6)}
                                             className="px-8 py-2.5 bg-white border border-gray-200 text-brand-brown-dark rounded-full font-bold text-xs hover:border-brand-brown-dark transition-all uppercase tracking-wider shadow-sm"
                                         >
                                             Load More Videos
                                         </button>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
 
                         </section>
