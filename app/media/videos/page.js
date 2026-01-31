@@ -192,7 +192,7 @@ export default function VideosPage() {
 
                         {/* 3. CONTROL BAR */}
                         <section className="px-6 md:px-12 lg:px-24 mb-12 flex flex-col lg:flex-row gap-12 items-start">
-                            
+
                             {/* LEFT RAIL */}
                             <div className="w-full lg:w-[280px] lg:sticky lg:top-24 flex-shrink-0 space-y-8">
                                 <div>
@@ -248,7 +248,7 @@ export default function VideosPage() {
                                     </button>
                                 </div>
 
-                                {/* LIST ROWS (Redesigned) */}
+                                {/* LIST ROWS (Redesigned: Square Thumb, No Desc) */}
                                 {visibleVideos.length > 0 ? (
                                     <div className="flex flex-col gap-4">
                                         {visibleVideos.map((video) => {
@@ -260,8 +260,8 @@ export default function VideosPage() {
                                                     href={`/media/videos/${video.id}`} 
                                                     className="group relative flex items-start gap-4 p-3 rounded-2xl bg-white border border-gray-100 hover:border-brand-gold/30 hover:bg-brand-sand/10 transition-all duration-300"
                                                 >
-                                                    {/* Thumbnail (Fixed Size) */}
-                                                    <div className="relative w-28 h-20 md:w-32 md:h-24 flex-shrink-0 bg-black rounded-xl overflow-hidden border border-gray-100">
+                                                    {/* Thumbnail (Square) */}
+                                                    <div className="relative w-24 md:w-32 aspect-square flex-shrink-0 bg-black rounded-xl overflow-hidden border border-gray-100 shadow-sm">
                                                         <Image
                                                             src={video.thumbnail || "/fallback.webp"}
                                                             alt={video.title}
@@ -273,41 +273,41 @@ export default function VideosPage() {
                                                                 <Play className="w-3 h-3 fill-current ml-0.5" />
                                                             </div>
                                                         </div>
+                                                        {video.duration && (
+                                                            <div className="absolute bottom-1 right-1 bg-black/80 text-white text-[9px] font-bold px-1.5 rounded">
+                                                                {video.duration}
+                                                            </div>
+                                                        )}
                                                     </div>
 
                                                     {/* Info Stack */}
-                                                    <div className="flex-grow min-w-0 py-0.5" dir={dir}>
-                                                        {/* Meta Row */}
-                                                        <div className="flex flex-wrap items-center gap-2 mb-1.5" dir="ltr">
-                                                            <span className="text-[9px] font-bold text-brand-gold border border-brand-gold/20 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                                                                {video.category}
-                                                            </span>
-                                                            <span className="text-[10px] text-gray-400 font-medium">
-                                                                {formatDate(video.date)}
-                                                            </span>
-                                                        </div>
+                                                    <div className="flex-grow min-w-0 py-1 flex flex-col justify-between h-full" dir={dir}>
+                                                        <div>
+                                                            {/* Meta Row */}
+                                                            <div className="flex flex-wrap items-center gap-2 mb-2" dir="ltr">
+                                                                <span className="text-[9px] font-bold text-brand-gold border border-brand-gold/20 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                                                    {video.category}
+                                                                </span>
+                                                                <span className="text-[10px] text-gray-400 font-medium">
+                                                                    {formatDate(video.date)}
+                                                                </span>
+                                                            </div>
 
-                                                        {/* Title with Expand Logic */}
-                                                        <div className="relative pr-6">
-                                                            <h3 className={`font-agency text-lg md:text-xl text-brand-brown-dark leading-snug group-hover:text-brand-gold transition-colors ${isExpanded ? '' : 'line-clamp-2'} ${dir === 'rtl' ? 'font-tajawal font-bold' : ''}`}>
-                                                                {video.title}
-                                                            </h3>
-                                                            
-                                                            {/* Expand Button */}
-                                                            <button 
-                                                                onClick={(e) => toggleExpand(e, video.id)}
-                                                                className="absolute right-0 top-0 p-1 text-gray-300 hover:text-brand-gold transition-colors"
-                                                            >
-                                                                {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                            </button>
+                                                            {/* Title with Expand Logic */}
+                                                            <div className="relative pr-6">
+                                                                <h3 className={`font-agency text-lg md:text-xl text-brand-brown-dark leading-snug group-hover:text-brand-gold transition-colors ${isExpanded ? '' : 'line-clamp-3'} ${dir === 'rtl' ? 'font-tajawal font-bold' : ''}`}>
+                                                                    {video.title}
+                                                                </h3>
+                                                                
+                                                                {/* Expand Button */}
+                                                                <button 
+                                                                    onClick={(e) => toggleExpand(e, video.id)}
+                                                                    className="absolute right-0 top-0 p-1 text-gray-300 hover:text-brand-gold transition-colors"
+                                                                >
+                                                                    {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                                </button>
+                                                            </div>
                                                         </div>
-
-                                                        {/* Description (Optional/Subtle) */}
-                                                        {video.description && !isExpanded && (
-                                                            <p className={`text-xs text-gray-400 line-clamp-1 mt-1 ${dir === 'rtl' ? 'font-arabic' : 'font-lato'}`}>
-                                                                {video.description}
-                                                            </p>
-                                                        )}
                                                     </div>
                                                 </Link>
                                             );
