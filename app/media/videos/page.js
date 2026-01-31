@@ -9,7 +9,7 @@ import Loader from '@/components/Loader';
 // Firebase Imports
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
-import { Play, ListVideo, Clock, Filter, Loader2, ArrowUpDown, Search, X, ChevronRight, Calendar, ArrowRight, Film } from 'lucide-react';
+import { Play, ListVideo, Clock, Filter, Loader2, ArrowUpDown, Search, X, ChevronRight, Calendar, ArrowRight, Film, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function VideosPage() {
 
@@ -21,7 +21,10 @@ export default function VideosPage() {
     // Filters & Search
     const [activeFilter, setActiveFilter] = useState("All Videos");
     const [searchTerm, setSearchTerm] = useState("");
-    const [visibleCount, setVisibleCount] = useState(9); // Show 9 initially
+    const [visibleCount, setVisibleCount] = useState(9); 
+
+    // UI State for Card Expansion
+    const [expandedIds, setExpandedIds] = useState(new Set());
 
     // Sort Order State ('desc' = Newest Date Recorded First)
     const [sortOrder, setSortOrder] = useState('desc');
@@ -81,6 +84,17 @@ export default function VideosPage() {
         if (!text) return 'ltr';
         const arabicPattern = /[\u0600-\u06FF]/;
         return arabicPattern.test(text) ? 'rtl' : 'ltr';
+    };
+
+    const toggleExpand = (e, id) => {
+        e.preventDefault(); // Prevent navigation
+        e.stopPropagation();
+        setExpandedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
     };
     // --- FILTER & SORT LOGIC ---
     const filteredVideos = videos.filter(video => {
@@ -176,7 +190,7 @@ export default function VideosPage() {
                             </section>
                         )}
 
-                        {/* 3. CONTROL BAR (Refined Filters) */}
+                        {/* 3. CONTROL BAR */}
                         <section className="px-6 md:px-12 lg:px-24 mb-12 flex flex-col lg:flex-row gap-12 items-start">
                             
                             {/* LEFT RAIL */}
@@ -207,7 +221,6 @@ export default function VideosPage() {
                                             <button 
                                                 key={filter}
                                                 onClick={() => setActiveFilter(filter)}
-                                                // REFINED PADDING: Reduced for balance
                                                 className={`px-3 py-1.5 lg:px-4 lg:py-2 rounded-lg text-xs lg:text-sm font-bold text-left transition-all flex items-center justify-between group flex-shrink-0 whitespace-nowrap ${
                                                     activeFilter === filter 
                                                     ? 'bg-brand-brown-dark text-white shadow-md' 
@@ -223,7 +236,7 @@ export default function VideosPage() {
                             </div>
                             {/* RIGHT: RESULTS LIST */}
                             <div className="flex-grow w-full">
-                                {/* Header Row - Moved "Showing..." to bottom */}
+                                {/* Header Row */}
                                 <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
                                     <h2 className="font-agency text-2xl text-brand-brown-dark">Recent Uploads</h2>
                                     <button 
@@ -235,19 +248,20 @@ export default function VideosPage() {
                                     </button>
                                 </div>
 
-                                {/* LIST ROWS */}
+                                {/* LIST ROWS (Redesigned) */}
                                 {visibleVideos.length > 0 ? (
                                     <div className="flex flex-col gap-4">
                                         {visibleVideos.map((video) => {
                                             const dir = getDir(video.title);
+                                            const isExpanded = expandedIds.has(video.id);
                                             return (
                                                 <Link 
                                                     key={video.id} 
                                                     href={`/media/videos/${video.id}`} 
-                                                    className="group flex items-start gap-4 p-3 rounded-2xl bg-white border border-gray-100 hover:border-brand-gold/30 hover:bg-gray-50/50 transition-all duration-300"
+                                                    className="group relative flex items-start gap-4 p-3 rounded-2xl bg-white border border-gray-100 hover:border-brand-gold/30 hover:bg-brand-sand/10 transition-all duration-300"
                                                 >
-                                                    {/* Thumbnail */}
-                                                    <div className="relative w-32 md:w-40 aspect-video flex-shrink-0 bg-black rounded-lg overflow-hidden border border-gray-100">
+                                                    {/* Thumbnail (Fixed Size) */}
+                                                    <div className="relative w-28 h-20 md:w-32 md:h-24 flex-shrink-0 bg-black rounded-xl overflow-hidden border border-gray-100">
                                                         <Image
                                                             src={video.thumbnail || "/fallback.webp"}
                                                             alt={video.title}
@@ -259,17 +273,13 @@ export default function VideosPage() {
                                                                 <Play className="w-3 h-3 fill-current ml-0.5" />
                                                             </div>
                                                         </div>
-                                                        {video.duration && (
-                                                            <div className="absolute bottom-1 right-1 bg-black/80 text-white text-[9px] font-bold px-1.5 rounded">
-                                                                {video.duration}
-                                                            </div>
-                                                        )}
                                                     </div>
 
-                                                    {/* Info */}
-                                                    <div className="flex-grow min-w-0 py-1" dir={dir}>
-                                                        <div className="flex flex-wrap items-center gap-2 mb-1" dir="ltr">
-                                                            <span className="text-[10px] font-bold text-brand-gold border border-brand-gold/20 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                                    {/* Info Stack */}
+                                                    <div className="flex-grow min-w-0 py-0.5" dir={dir}>
+                                                        {/* Meta Row */}
+                                                        <div className="flex flex-wrap items-center gap-2 mb-1.5" dir="ltr">
+                                                            <span className="text-[9px] font-bold text-brand-gold border border-brand-gold/20 px-1.5 py-0.5 rounded uppercase tracking-wider">
                                                                 {video.category}
                                                             </span>
                                                             <span className="text-[10px] text-gray-400 font-medium">
@@ -277,23 +287,27 @@ export default function VideosPage() {
                                                             </span>
                                                         </div>
 
-                                                        {/* TITLE: Removed line-clamp-1 to show full name */}
-                                                        <h3 className={`font-agency text-lg md:text-xl text-brand-brown-dark leading-tight mb-1 group-hover:text-brand-gold transition-colors ${dir === 'rtl' ? 'font-tajawal font-bold' : ''}`}>
-                                                            {video.title}
-                                                        </h3>
+                                                        {/* Title with Expand Logic */}
+                                                        <div className="relative pr-6">
+                                                            <h3 className={`font-agency text-lg md:text-xl text-brand-brown-dark leading-snug group-hover:text-brand-gold transition-colors ${isExpanded ? '' : 'line-clamp-3'} ${dir === 'rtl' ? 'font-tajawal font-bold' : ''}`}>
+                                                                {video.title}
+                                                            </h3>
+                                                            
+                                                            {/* Expand Button */}
+                                                            <button 
+                                                                onClick={(e) => toggleExpand(e, video.id)}
+                                                                className="absolute right-0 top-0 p-1 text-gray-300 hover:text-brand-gold transition-colors"
+                                                            >
+                                                                {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                            </button>
+                                                        </div>
 
-                                                        {video.description && (
-                                                            <p className={`text-xs text-gray-500 line-clamp-1 leading-relaxed ${dir === 'rtl' ? 'font-arabic' : 'font-lato'}`}>
+                                                        {/* Description (Optional/Subtle) */}
+                                                        {video.description && !isExpanded && (
+                                                            <p className={`text-xs text-gray-400 line-clamp-1 mt-1 ${dir === 'rtl' ? 'font-arabic' : 'font-lato'}`}>
                                                                 {video.description}
                                                             </p>
                                                         )}
-                                                    </div>
-
-                                                    {/* Action Icon (Desktop) */}
-                                                    <div className="hidden sm:flex flex-shrink-0 self-center pr-2">
-                                                        <div className="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center text-gray-300 group-hover:border-brand-gold group-hover:bg-brand-gold group-hover:text-white transition-all">
-                                                            <ArrowRight className="w-4 h-4" />
-                                                        </div>
                                                     </div>
                                                 </Link>
                                             );
